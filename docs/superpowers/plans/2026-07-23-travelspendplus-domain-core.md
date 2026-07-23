@@ -322,7 +322,7 @@ ssh mac 'cd ~/TravelSpendPlus && git push origin main'
 
 **Interfaces:**
 - Consumes: `Money` from Task 2 (`Money.fromMajor`, `.currencyCode`, `.major`).
-- Produces: `class ExchangeRate { final String fromCurrency; final String toCurrency; final double rate; Money convert(Money amount); }`. Used by Task 4's `Expense` to compute `amountInHomeCurrency` from a manually-entered rate.
+- Produces: `class ExchangeRate { final String fromCurrency; final String toCurrency; final double rate; Money convert(Money amount); }`. Note: `Expense` (Task 4) does NOT reference `ExchangeRate` directly — it just stores whatever `amountInHomeCurrency` it's constructed with. `ExchangeRate.convert()` is the tool a caller (the not-yet-built UI's "add expense" flow) uses to compute that value before constructing the `Expense`. The rate itself isn't persisted anywhere in this plan — see the Global Constraints/exclusions note on `custom_exchange_rate`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1038,8 +1038,12 @@ void main() {
       paidFor: [alice, bob],
     );
     final balances = BalanceCalculator.netBalances(expenses: [planned], homeCurrency: 'EUR');
-    expect(balances[alice]!.minorUnits, 0);
-    expect(balances[bob]!.minorUnits, 0);
+    // A participant who appears only in split-excluded expenses gets no map
+    // entry at all (consistent with the "no expenses => empty map" test
+    // below) — not a zero-value entry. Checking balances[alice]!  here
+    // would throw a null-check error, since alice/bob were never inserted.
+    expect(balances.containsKey(alice), isFalse);
+    expect(balances.containsKey(bob), isFalse);
   });
 
   test('planned expense with includeInSplit=true is included in balances', () {
@@ -1182,7 +1186,9 @@ void main() {
     );
   }
 
-  test('groups by category, sums amounts, computes percentages, sorts descending', () {
+  test('groups by category, sums amounts, computes percentages, '
+      'and breaks a tie alphabetically (not left to List.sort\'s '
+      'unspecified tie-break order)', () {
     final expenses = [
       makeExpense('Food', 60.00),
       makeExpense('Food', 40.00),
@@ -1191,10 +1197,12 @@ void main() {
     final slices = CategoryBreakdownCalculator.breakdown(expenses: expenses, homeCurrency: 'EUR');
 
     expect(slices.length, 2);
-    expect(slices[0].category, 'Transport'); // 100 > 100... tie broken, see next test for a clear case
+    // Food (60+40=100) and Transport (100) tie exactly — alphabetically
+    // 'Food' < 'Transport', so Food sorts first.
+    expect(slices[0].category, 'Food');
     expect(slices[0].total.major, closeTo(100.00, 0.01));
     expect(slices[0].percentage, closeTo(50.0, 0.1));
-    expect(slices[1].category, 'Food');
+    expect(slices[1].category, 'Transport');
     expect(slices[1].total.major, closeTo(100.00, 0.01));
     expect(slices[1].percentage, closeTo(50.0, 0.1));
   });
@@ -1275,7 +1283,11 @@ class CategoryBreakdownCalculator {
       return CategorySlice(category: entry.key, total: entry.value, percentage: percentage);
     }).toList();
 
-    slices.sort((a, b) => b.total.minorUnits.compareTo(a.total.minorUnits));
+    slices.sort((a, b) {
+      final byTotal = b.total.minorUnits.compareTo(a.total.minorUnits);
+      if (byTotal != 0) return byTotal;
+      return a.category.compareTo(b.category); // deterministic tie-break, not left to sort-stability luck
+    });
     return slices;
   }
 }
@@ -1792,3 +1804,5 @@ ssh mac 'cd ~/TravelSpendPlus && git push origin main'
 - Live exchange-rate fetching/caching — `ExchangeRate` here only does conversion math given a rate; entering that rate (manually or via a live API) is UI/networking work for later.
 - Settlement recording ("mark as settled") — `docs/design.md`'s `Settlement` entity isn't built here; add it alongside the balances UI once that's being designed, since its shape depends on how the balances screen wants to display/act on it.
 - Debt-simplification ("minimum number of transactions to settle up") — `docs/design.md` only asks for net balances per person, not an optimal settlement-transaction graph. Don't add this speculatively.
+- The exchange rate actually used for a conversion (`custom_exchange_rate` in `docs/design.md`'s data model) is not persisted anywhere — `Expenses` stores only the resulting `amountInHomeCurrencyMinorUnits`, not the rate that produced it. Fine for this plan's math (everything downstream reads `amountInHomeCurrency`), but means a later "what rate did I use for this expense?" display/edit feature needs a schema change, not just new UI. Flagging explicitly per Fable's plan review (2026-07-23) rather than leaving it a silent gap.
+- Trip invites / multi-device shared trips (`docs/design.md` section 1.3's "generate an invite link, pull friends in" flow) — `Participant` here is purely local to one device's database, no networking/sync/auth. Out of scope for both this plan and the UI follow-up unless the user asks for it explicitly.
