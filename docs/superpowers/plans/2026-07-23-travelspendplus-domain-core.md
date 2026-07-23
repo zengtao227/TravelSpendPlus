@@ -1516,6 +1516,7 @@ ssh mac 'cd ~/TravelSpendPlus && git push origin main'
 
 **Interfaces:**
 - Consumes: `AppDatabase` and generated table row/companion classes from Task 8; `Trip`, `Participant`, `Expense`, `ExpenseStatus`, `Money` from Tasks 2 and 4.
+- **Naming collision, discovered during implementation, not by static review:** Drift names each table's generated row class after the singular of the table name, so `database.g.dart` (from Task 8's `Trips`/`Participants`/`Expenses` tables) generates classes literally named `Trip`, `Participant`, `Expense` — identical to the domain classes of the same names. Task 8's own test never imports domain types alongside `database.dart`, so this stays latent until Task 9, the first place both are used together. Fix: both files below import `database.dart` with `hide Trip, Participant, Expense` — safe here because neither file ever names those generated classes directly (only via inferred-type locals from `.get()`/`.getSingleOrNull()`, accessed by property). A cleaner long-term fix (`@DataClassName('TripRow')` etc. on Task 8's tables, requiring regeneration) is available if Task 8 is ever revisited, but isn't worth reopening a completed, tested task for.
 - Produces:
   ```dart
   class TripRepository {
@@ -1538,7 +1539,7 @@ import 'package:travelspendplus/domain/money.dart';
 import 'package:travelspendplus/domain/participant.dart';
 import 'package:travelspendplus/domain/trip.dart';
 import 'package:travelspendplus/domain/expense.dart';
-import 'package:travelspendplus/persistence/database.dart';
+import 'package:travelspendplus/persistence/database.dart' hide Trip, Participant, Expense;
 import 'package:travelspendplus/persistence/trip_repository.dart';
 
 void main() {
@@ -1658,7 +1659,7 @@ import '../domain/money.dart';
 import '../domain/participant.dart';
 import '../domain/trip.dart';
 import '../domain/expense.dart';
-import 'database.dart';
+import 'database.dart' hide Trip, Participant, Expense;
 
 class TripRepository {
   final AppDatabase _db;
