@@ -77,6 +77,33 @@ void main() {
     expect(loaded.first.status, ExpenseStatus.actual);
   });
 
+  test('a stored row with an empty paidForIds (e.g. legacy data predating '
+      "Expense's empty-paidFor rejection) fails loudly with a clear "
+      "ArgumentError, not a confusing null-check crash on participant id ''", () async {
+    await repo.createTrip(makeTrip());
+    // Insert directly via the Companion, bypassing Expense's constructor
+    // (which now rejects an empty paidFor) — simulates data written before
+    // that validation existed. ''.split(',') would otherwise return ['']
+    // and crash looking up a participant with id '' rather than either
+    // recovering as [] or failing with a clear message.
+    await db.into(db.expenses).insert(ExpensesCompanion.insert(
+          id: 'e-legacy',
+          tripId: 't1',
+          category: 'Food',
+          amountMinorUnits: 1000,
+          amountCurrency: 'EUR',
+          amountInHomeCurrencyMinorUnits: 1000,
+          description: 'legacy row',
+          date: DateTime(2026, 1, 2),
+          status: 'actual',
+          includeInSplit: true,
+          paidById: 'p1',
+          paidForIds: '',
+        ));
+
+    await expectLater(repo.getExpenses('t1'), throwsA(isA<ArgumentError>()));
+  });
+
   test('updateExpense overwrites an existing expense', () async {
     await repo.createTrip(makeTrip());
     final expense = Expense(

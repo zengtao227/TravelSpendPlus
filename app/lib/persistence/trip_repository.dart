@@ -69,7 +69,15 @@ class TripRepository {
     };
 
     return expenseRows.map((row) {
-      final paidFor = row.paidForIds.split(',').map((id) => participantsById[id]!).toList();
+      // ''.split(',') returns [''] (one empty string), not [] — an empty
+      // paidForIds must map to an empty list, not a lookup of participant
+      // id ''. Expense's own constructor rejects an empty paidFor with a
+      // clear ArgumentError, which is what should surface if this ever
+      // happens (it shouldn't, now that Expense validates on construction,
+      // but stored data could predate that check).
+      final paidFor = row.paidForIds.isEmpty
+          ? <Participant>[]
+          : row.paidForIds.split(',').map((id) => participantsById[id]!).toList();
       return Expense(
         id: row.id,
         tripId: row.tripId,

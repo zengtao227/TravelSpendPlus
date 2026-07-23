@@ -39,6 +39,16 @@ class Expense {
     if (status == ExpenseStatus.actual && !includeInSplit) {
       throw ArgumentError('Actual expenses must have includeInSplit = true');
     }
+    if (paidFor.isEmpty) {
+      // An expense split among zero people is meaningless, and the
+      // persistence layer joins paidFor's ids with ',' — an empty list
+      // joins to '', and ''.split(',') in Dart returns [''] (one empty
+      // string), not [] (confirmed empirically: 'x'.split(',').length
+      // for x='' is 1, not 0). That would crash TripRepository.getExpenses
+      // on the round trip with a null-check error looking up participant
+      // id ''. Reject it here instead of letting it round-trip into a crash.
+      throw ArgumentError('paidFor must not be empty');
+    }
   }
 
   Expense copyWith({

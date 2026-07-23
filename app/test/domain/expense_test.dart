@@ -30,6 +30,28 @@ void main() {
     );
   });
 
+  test('empty paidFor throws — an expense split among zero people is meaningless, '
+      'and would silently round-trip through persistence as a lookup of '
+      'participant id \'\' rather than an empty list '
+      '(\'\'.split(\',\') returns [\'\'], not [])', () {
+    expect(
+      () => Expense(
+        id: 'e1',
+        tripId: 't1',
+        category: 'Food',
+        amount: Money.fromMajor(30.00, 'EUR'),
+        amountInHomeCurrency: Money.fromMajor(30.00, 'EUR'),
+        description: 'Dinner',
+        date: DateTime(2026, 1, 3),
+        status: ExpenseStatus.actual,
+        includeInSplit: true,
+        paidBy: alice,
+        paidFor: [],
+      ),
+      throwsArgumentError,
+    );
+  });
+
   test('actual expense with includeInSplit=true constructs fine', () {
     final e = makeExpense(status: ExpenseStatus.actual, includeInSplit: true);
     expect(e.status, ExpenseStatus.actual);
