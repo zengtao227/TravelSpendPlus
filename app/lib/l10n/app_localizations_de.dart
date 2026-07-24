@@ -68,4 +68,42 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get errorCurrencyCode => '3-stelligen Währungscode eingeben';
+
+  @override
+  String get addExpense => 'Ausgabe hinzufügen';
+
+  @override
+  String get category => 'Kategorie';
+
+  @override
+  String get amount => 'Betrag';
+
+  @override
+  String get currency => 'Währung';
+
+  @override
+  String get description => 'Beschreibung';
+
+  @override
+  String get date => 'Datum';
+
+  @override
+  String get statusPlanned => 'Geplant';
+
+  @override
+  String get statusActual => 'Tatsächlich';
+
+  @override
+  String get saveExpense => 'Ausgabe speichern';
+
+  @override
+  String get errorSelectCategory => 'Kategorie auswählen';
+
+  @override
+  String get errorPositiveRate => 'Positiven Wechselkurs eingeben';
+
+  @override
+  String exchangeRatePrompt(String currency, String homeCurrency) {
+    return '1 $currency = ? $homeCurrency';
+  }
 }

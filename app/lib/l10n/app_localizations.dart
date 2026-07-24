@@ -219,6 +219,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a 3-letter currency code'**
   String get errorCurrencyCode;
+
+  /// No description provided for @addExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Expense'**
+  String get addExpense;
+
+  /// No description provided for @category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get category;
+
+  /// No description provided for @amount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get amount;
+
+  /// No description provided for @currency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get currency;
+
+  /// No description provided for @description.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get description;
+
+  /// No description provided for @date.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get date;
+
+  /// No description provided for @statusPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned'**
+  String get statusPlanned;
+
+  /// No description provided for @statusActual.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual'**
+  String get statusActual;
+
+  /// No description provided for @saveExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Expense'**
+  String get saveExpense;
+
+  /// No description provided for @errorSelectCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a category'**
+  String get errorSelectCategory;
+
+  /// No description provided for @errorPositiveRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive exchange rate'**
+  String get errorPositiveRate;
+
+  /// No description provided for @exchangeRatePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'1 {currency} = ? {homeCurrency}'**
+  String exchangeRatePrompt(String currency, String homeCurrency);
 }
 
 class _AppLocalizationsDelegate

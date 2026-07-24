@@ -19,5 +19,17 @@
   "errorEnterTripName": "Reisenamen eingeben",
   "errorPositiveAmount": "Positiven Betrag eingeben",
   "errorEndDateBeforeStart": "Enddatum darf nicht vor dem Startdatum liegen",
-  "errorCurrencyCode": "3-stelligen Währungscode eingeben"
+  "errorCurrencyCode": "3-stelligen Währungscode eingeben",
+  "addExpense": "Ausgabe hinzufügen",
+  "category": "Kategorie",
+  "amount": "Betrag",
+  "currency": "Währung",
+  "description": "Beschreibung",
+  "date": "Datum",
+  "statusPlanned": "Geplant",
+  "statusActual": "Tatsächlich",
+  "saveExpense": "Ausgabe speichern",
+  "errorSelectCategory": "Kategorie auswählen",
+  "errorPositiveRate": "Positiven Wechselkurs eingeben",
+  "exchangeRatePrompt": "1 {currency} = ? {homeCurrency}"
 }

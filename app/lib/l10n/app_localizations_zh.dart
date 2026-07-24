@@ -67,4 +67,42 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorCurrencyCode => '请输入3位货币代码';
+
+  @override
+  String get addExpense => '记一笔';
+
+  @override
+  String get category => '类别';
+
+  @override
+  String get amount => '金额';
+
+  @override
+  String get currency => '币种';
+
+  @override
+  String get description => '备注';
+
+  @override
+  String get date => '日期';
+
+  @override
+  String get statusPlanned => '计划中';
+
+  @override
+  String get statusActual => '已发生';
+
+  @override
+  String get saveExpense => '保存';
+
+  @override
+  String get errorSelectCategory => '请选择类别';
+
+  @override
+  String get errorPositiveRate => '请输入大于0的汇率';
+
+  @override
+  String exchangeRatePrompt(String currency, String homeCurrency) {
+    return '1 $currency = ? $homeCurrency';
+  }
 }

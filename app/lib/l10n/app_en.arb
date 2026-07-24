@@ -20,5 +20,20 @@
   "errorEnterTripName": "Enter a trip name",
   "errorPositiveAmount": "Enter a positive amount",
   "errorEndDateBeforeStart": "End date must be on or after the start date",
-  "errorCurrencyCode": "Enter a 3-letter currency code"
+  "errorCurrencyCode": "Enter a 3-letter currency code",
+  "addExpense": "Add Expense",
+  "category": "Category",
+  "amount": "Amount",
+  "currency": "Currency",
+  "description": "Description",
+  "date": "Date",
+  "statusPlanned": "Planned",
+  "statusActual": "Actual",
+  "saveExpense": "Save Expense",
+  "errorSelectCategory": "Select a category",
+  "errorPositiveRate": "Enter a positive exchange rate",
+  "exchangeRatePrompt": "1 {currency} = ? {homeCurrency}",
+  "@exchangeRatePrompt": {
+    "placeholders": {"currency": {"type": "String"}, "homeCurrency": {"type": "String"}}
+  }
 }

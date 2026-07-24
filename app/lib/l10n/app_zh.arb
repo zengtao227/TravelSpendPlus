@@ -19,5 +19,17 @@
   "errorEnterTripName": "请输入行程名称",
   "errorPositiveAmount": "请输入大于0的金额",
   "errorEndDateBeforeStart": "结束日期不能早于开始日期",
-  "errorCurrencyCode": "请输入3位货币代码"
+  "errorCurrencyCode": "请输入3位货币代码",
+  "addExpense": "记一笔",
+  "category": "类别",
+  "amount": "金额",
+  "currency": "币种",
+  "description": "备注",
+  "date": "日期",
+  "statusPlanned": "计划中",
+  "statusActual": "已发生",
+  "saveExpense": "保存",
+  "errorSelectCategory": "请选择类别",
+  "errorPositiveRate": "请输入大于0的汇率",
+  "exchangeRatePrompt": "1 {currency} = ? {homeCurrency}"
 }

@@ -68,4 +68,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorCurrencyCode => 'Enter a 3-letter currency code';
+
+  @override
+  String get addExpense => 'Add Expense';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get amount => 'Amount';
+
+  @override
+  String get currency => 'Currency';
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get date => 'Date';
+
+  @override
+  String get statusPlanned => 'Planned';
+
+  @override
+  String get statusActual => 'Actual';
+
+  @override
+  String get saveExpense => 'Save Expense';
+
+  @override
+  String get errorSelectCategory => 'Select a category';
+
+  @override
+  String get errorPositiveRate => 'Enter a positive exchange rate';
+
+  @override
+  String exchangeRatePrompt(String currency, String homeCurrency) {
+    return '1 $currency = ? $homeCurrency';
+  }
 }
