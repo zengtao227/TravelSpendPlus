@@ -29,6 +29,15 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
     _ratesFuture = widget.repository.getExchangeRates(widget.trip.id);
   }
 
+  @override
+  void dispose() {
+    _newRateCurrency.dispose();
+    _newRateValue.dispose();
+    _newHomeCurrency.dispose();
+    _oldToNewRate.dispose();
+    super.dispose();
+  }
+
   void _refresh() => setState(() {
         _ratesFuture = widget.repository.getExchangeRates(widget.trip.id);
       });
