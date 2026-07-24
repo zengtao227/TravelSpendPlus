@@ -48,5 +48,21 @@
     "placeholders": {"oldCurrency": {"type": "String"}, "newCurrency": {"type": "String"}}
   },
   "confirmChangeCurrency": "Confirm change",
-  "changeCurrencyWarning": "This will rescale the total budget and every expense using the rate you provide."
+  "changeCurrencyWarning": "This will rescale the total budget and every expense using the rate you provide.",
+  "daysUntilDeparture": "{days, plural, =1{1 day until departure} other{{days} days until departure}}",
+  "@daysUntilDeparture": {"placeholders": {"days": {"type": "int"}}},
+  "tripFinished": "Trip finished",
+  "dailyBudgetRemaining": "Daily budget remaining: {amount}/day",
+  "@dailyBudgetRemaining": {"placeholders": {"amount": {"type": "String"}}},
+  "plannedLabel": "Planned",
+  "actualLabel": "Actual",
+  "remainingLabel": "Remaining",
+  "viewInCurrency": "View in",
+  "spendingByCategory": "Spending by category",
+  "noExpensesYet": "No expenses yet",
+  "expenses": "Expenses",
+  "markAsSpent": "Mark as spent",
+  "markAsSpentPrompt": "Update the amount if it differs from the estimate, or leave it as is.",
+  "confirm": "Confirm",
+  "cancel": "Cancel"
 }

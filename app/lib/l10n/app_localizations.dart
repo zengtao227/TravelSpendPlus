@@ -351,6 +351,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This will rescale the total budget and every expense using the rate you provide.'**
   String get changeCurrencyWarning;
+
+  /// No description provided for @daysUntilDeparture.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day until departure} other{{days} days until departure}}'**
+  String daysUntilDeparture(int days);
+
+  /// No description provided for @tripFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip finished'**
+  String get tripFinished;
+
+  /// No description provided for @dailyBudgetRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily budget remaining: {amount}/day'**
+  String dailyBudgetRemaining(String amount);
+
+  /// No description provided for @plannedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned'**
+  String get plannedLabel;
+
+  /// No description provided for @actualLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual'**
+  String get actualLabel;
+
+  /// No description provided for @remainingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get remainingLabel;
+
+  /// No description provided for @viewInCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'View in'**
+  String get viewInCurrency;
+
+  /// No description provided for @spendingByCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Spending by category'**
+  String get spendingByCategory;
+
+  /// No description provided for @noExpensesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No expenses yet'**
+  String get noExpensesYet;
+
+  /// No description provided for @expenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses'**
+  String get expenses;
+
+  /// No description provided for @markAsSpent.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as spent'**
+  String get markAsSpent;
+
+  /// No description provided for @markAsSpentPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the amount if it differs from the estimate, or leave it as is.'**
+  String get markAsSpentPrompt;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
 }
 
 class _AppLocalizationsDelegate

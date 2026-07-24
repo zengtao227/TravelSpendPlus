@@ -137,4 +137,50 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get changeCurrencyWarning => '会按你填的换算率，重新计算总预算和所有支出的金额。';
+
+  @override
+  String daysUntilDeparture(int days) {
+    return '距出发还有 $days 天';
+  }
+
+  @override
+  String get tripFinished => '行程已结束';
+
+  @override
+  String dailyBudgetRemaining(String amount) {
+    return '每日剩余预算：$amount/天';
+  }
+
+  @override
+  String get plannedLabel => '计划中';
+
+  @override
+  String get actualLabel => '已发生';
+
+  @override
+  String get remainingLabel => '预计还剩';
+
+  @override
+  String get viewInCurrency => '查看币种';
+
+  @override
+  String get spendingByCategory => '支出分类';
+
+  @override
+  String get noExpensesYet => '还没有记账';
+
+  @override
+  String get expenses => '支出明细';
+
+  @override
+  String get markAsSpent => '标记为已发生';
+
+  @override
+  String get markAsSpentPrompt => '如果实际金额和预估不一样可以在这里改，不改也可以。';
+
+  @override
+  String get confirm => '确认';
+
+  @override
+  String get cancel => '取消';
 }

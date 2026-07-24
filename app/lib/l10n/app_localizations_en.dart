@@ -139,4 +139,57 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get changeCurrencyWarning =>
       'This will rescale the total budget and every expense using the rate you provide.';
+
+  @override
+  String daysUntilDeparture(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days until departure',
+      one: '1 day until departure',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripFinished => 'Trip finished';
+
+  @override
+  String dailyBudgetRemaining(String amount) {
+    return 'Daily budget remaining: $amount/day';
+  }
+
+  @override
+  String get plannedLabel => 'Planned';
+
+  @override
+  String get actualLabel => 'Actual';
+
+  @override
+  String get remainingLabel => 'Remaining';
+
+  @override
+  String get viewInCurrency => 'View in';
+
+  @override
+  String get spendingByCategory => 'Spending by category';
+
+  @override
+  String get noExpensesYet => 'No expenses yet';
+
+  @override
+  String get expenses => 'Expenses';
+
+  @override
+  String get markAsSpent => 'Mark as spent';
+
+  @override
+  String get markAsSpentPrompt =>
+      'Update the amount if it differs from the estimate, or leave it as is.';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get cancel => 'Cancel';
 }

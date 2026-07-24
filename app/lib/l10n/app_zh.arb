@@ -41,5 +41,19 @@
   "newHomeCurrency": "新本位币",
   "oldToNewRateLabel": "1 {oldCurrency} = ? {newCurrency}",
   "confirmChangeCurrency": "确认修改",
-  "changeCurrencyWarning": "会按你填的换算率，重新计算总预算和所有支出的金额。"
+  "changeCurrencyWarning": "会按你填的换算率，重新计算总预算和所有支出的金额。",
+  "daysUntilDeparture": "距出发还有 {days} 天",
+  "tripFinished": "行程已结束",
+  "dailyBudgetRemaining": "每日剩余预算：{amount}/天",
+  "plannedLabel": "计划中",
+  "actualLabel": "已发生",
+  "remainingLabel": "预计还剩",
+  "viewInCurrency": "查看币种",
+  "spendingByCategory": "支出分类",
+  "noExpensesYet": "还没有记账",
+  "expenses": "支出明细",
+  "markAsSpent": "标记为已发生",
+  "markAsSpentPrompt": "如果实际金额和预估不一样可以在这里改，不改也可以。",
+  "confirm": "确认",
+  "cancel": "取消"
 }

@@ -139,4 +139,57 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get changeCurrencyWarning =>
       'Das Gesamtbudget und alle Ausgaben werden mit dem angegebenen Kurs neu berechnet.';
+
+  @override
+  String daysUntilDeparture(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days Tage bis zur Abreise',
+      one: '1 Tag bis zur Abreise',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripFinished => 'Reise beendet';
+
+  @override
+  String dailyBudgetRemaining(String amount) {
+    return 'Verbleibendes Tagesbudget: $amount/Tag';
+  }
+
+  @override
+  String get plannedLabel => 'Geplant';
+
+  @override
+  String get actualLabel => 'Tatsächlich';
+
+  @override
+  String get remainingLabel => 'Verbleibend';
+
+  @override
+  String get viewInCurrency => 'Anzeigen in';
+
+  @override
+  String get spendingByCategory => 'Ausgaben nach Kategorie';
+
+  @override
+  String get noExpensesYet => 'Noch keine Ausgaben';
+
+  @override
+  String get expenses => 'Ausgaben';
+
+  @override
+  String get markAsSpent => 'Als ausgegeben markieren';
+
+  @override
+  String get markAsSpentPrompt =>
+      'Betrag anpassen, falls er vom Schätzwert abweicht, sonst unverändert lassen.';
+
+  @override
+  String get confirm => 'Bestätigen';
+
+  @override
+  String get cancel => 'Abbrechen';
 }

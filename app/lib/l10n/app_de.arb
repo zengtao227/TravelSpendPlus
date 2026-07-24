@@ -41,5 +41,20 @@
   "newHomeCurrency": "Neue Heimatwährung",
   "oldToNewRateLabel": "1 {oldCurrency} = ? {newCurrency}",
   "confirmChangeCurrency": "Änderung bestätigen",
-  "changeCurrencyWarning": "Das Gesamtbudget und alle Ausgaben werden mit dem angegebenen Kurs neu berechnet."
+  "changeCurrencyWarning": "Das Gesamtbudget und alle Ausgaben werden mit dem angegebenen Kurs neu berechnet.",
+  "daysUntilDeparture": "{days, plural, =1{1 Tag bis zur Abreise} other{{days} Tage bis zur Abreise}}",
+  "@daysUntilDeparture": {"placeholders": {"days": {"type": "int"}}},
+  "tripFinished": "Reise beendet",
+  "dailyBudgetRemaining": "Verbleibendes Tagesbudget: {amount}/Tag",
+  "plannedLabel": "Geplant",
+  "actualLabel": "Tatsächlich",
+  "remainingLabel": "Verbleibend",
+  "viewInCurrency": "Anzeigen in",
+  "spendingByCategory": "Ausgaben nach Kategorie",
+  "noExpensesYet": "Noch keine Ausgaben",
+  "expenses": "Ausgaben",
+  "markAsSpent": "Als ausgegeben markieren",
+  "markAsSpentPrompt": "Betrag anpassen, falls er vom Schätzwert abweicht, sonst unverändert lassen.",
+  "confirm": "Bestätigen",
+  "cancel": "Abbrechen"
 }
