@@ -3,6 +3,7 @@ import 'package:travelspendplus/domain/money.dart';
 import 'package:travelspendplus/domain/participant.dart';
 import 'package:travelspendplus/domain/trip.dart';
 import 'package:travelspendplus/domain/expense.dart';
+import 'package:travelspendplus/domain/exchange_rate.dart';
 import 'package:travelspendplus/persistence/database.dart' hide Trip, Participant, Expense;
 import 'package:travelspendplus/persistence/trip_repository.dart';
 
@@ -131,5 +132,124 @@ void main() {
     expect(loaded.length, 1);
     expect(loaded.first.status, ExpenseStatus.actual);
     expect(loaded.first.amount, Money.fromMajor(35.00, 'EUR'));
+  });
+
+  test('getAllTrips returns an empty list when there are no trips', () async {
+    expect(await repo.getAllTrips(), isEmpty);
+  });
+
+  test('getAllTrips returns every trip with its participants', () async {
+    await repo.createTrip(makeTrip());
+    final secondTrip = Trip(
+      id: 't2',
+      name: 'Italy',
+      startDate: DateTime(2026, 3, 1),
+      endDate: DateTime(2026, 3, 5),
+      homeCurrency: 'EUR',
+      totalBudget: Money.fromMajor(500, 'EUR'),
+      // A distinct participant id, not `alice` — Participants.id is a
+      // globally unique primary key (each trip mints its own participant
+      // ids in the real app), so reusing `alice`'s id ('p1') across two
+      // independently created trips would violate that uniqueness and
+      // fail in createTrip's setup, before getAllTrips is ever exercised.
+      participants: [Participant(id: 'p3', name: 'Carol')],
+    );
+    await repo.createTrip(secondTrip);
+
+    final trips = await repo.getAllTrips();
+    expect(trips.length, 2);
+    expect(trips.map((t) => t.name).toSet(), {'Japan', 'Italy'});
+  });
+
+  test('updateTrip changes name, dates, and budget but not participants', () async {
+    final trip = makeTrip();
+    await repo.createTrip(trip);
+    final updated = Trip(
+      id: trip.id,
+      name: 'Japan (renamed)',
+      startDate: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 13),
+      homeCurrency: trip.homeCurrency,
+      totalBudget: Money.fromMajor(3000, trip.homeCurrency),
+      participants: trip.participants,
+    );
+    await repo.updateTrip(updated);
+
+    final reloaded = await repo.getTrip(trip.id);
+    expect(reloaded!.name, 'Japan (renamed)');
+    expect(reloaded.startDate, DateTime(2026, 10, 6));
+    expect(reloaded.totalBudget, Money.fromMajor(3000, trip.homeCurrency));
+  });
+
+  test('setExchangeRate then getExchangeRates round-trips, and re-setting the same currency replaces it',
+      () async {
+    await repo.createTrip(makeTrip());
+    await repo.setExchangeRate(
+        't1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'EUR', rate: 0.0062));
+    var rates = await repo.getExchangeRates('t1');
+    expect(rates.length, 1);
+    expect(rates.first.rate, 0.0062);
+
+    await repo.setExchangeRate(
+        't1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'EUR', rate: 0.0065));
+    rates = await repo.getExchangeRates('t1');
+    expect(rates.length, 1, reason: 'setting the same currency again should replace, not duplicate');
+    expect(rates.first.rate, 0.0065);
+  });
+
+  test('changeHomeCurrency rescales the budget, every expense, and an unrelated rate', () async {
+    await repo.createTrip(makeTrip()); // EUR home currency, 1000 EUR budget
+    // USD is unrelated to the currency change below (EUR -> JPY) — its rate
+    // must be rescaled (still meaningful: "1 USD = ? JPY" after the change),
+    // not deleted. The self-referential case (a rate entry for the currency
+    // you're changing *to*) is covered by the next test.
+    await repo.setExchangeRate(
+        't1', const ExchangeRate(fromCurrency: 'USD', toCurrency: 'EUR', rate: 0.92));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(30, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
+      description: 'Dinner',
+      date: DateTime(2026, 10, 6),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+
+    // 1 EUR = 155 JPY
+    await repo.changeHomeCurrency(tripId: 't1', newCurrency: 'JPY', oldToNewRate: 155);
+
+    final trip = await repo.getTrip('t1');
+    expect(trip!.homeCurrency, 'JPY');
+    expect(trip.totalBudget.major, closeTo(1000 * 155, 0.01));
+
+    final expenses = await repo.getExpenses('t1');
+    expect(expenses.first.amountInHomeCurrency.currencyCode, 'JPY');
+    expect(expenses.first.amountInHomeCurrency.major, closeTo(30 * 155, 0.01));
+
+    final rates = await repo.getExchangeRates('t1');
+    expect(rates.length, 1);
+    expect(rates.first.fromCurrency, 'USD');
+    expect(rates.first.toCurrency, 'JPY');
+    expect(rates.first.rate, closeTo(0.92 * 155, 0.0001));
+  });
+
+  test('changeHomeCurrency deletes (not rescales) a rate entry for the currency being switched to',
+      () async {
+    await repo.createTrip(makeTrip()); // EUR home currency
+    // A pre-existing "1 JPY = 0.0062 EUR" rate becomes meaningless the
+    // moment JPY itself becomes the home currency — rescaling it would
+    // produce a self-referential "1 JPY = X JPY" row that can never be
+    // cleaned up later (this app has no delete-a-single-rate flow).
+    await repo.setExchangeRate(
+        't1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'EUR', rate: 0.0062));
+
+    await repo.changeHomeCurrency(tripId: 't1', newCurrency: 'JPY', oldToNewRate: 155);
+
+    final rates = await repo.getExchangeRates('t1');
+    expect(rates, isEmpty);
   });
 }
