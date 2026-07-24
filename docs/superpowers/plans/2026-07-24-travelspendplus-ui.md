@@ -2988,6 +2988,7 @@ Replace `app/test/widget_test.dart` entirely:
 
 ```dart
 // app/test/widget_test.dart
+import 'package:flutter/material.dart'; // for Locale — app_localizations.dart imports it but doesn't export it
 import 'package:flutter_test/flutter_test.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
 import 'package:travelspendplus/main.dart';
@@ -3105,7 +3106,7 @@ import 'package:travelspendplus/ui/trip_detail_screen.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('golden path: create trip -> add planned expense -> mark as spent -> currency switch',
+  testWidgets('golden path: create trip -> add planned expense -> mark as spent -> edit expense',
       (tester) async {
     final db = await AppDatabase.openOnDevice();
     final repo = TripRepository(db);
@@ -3147,11 +3148,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('标记为已发生'), findsNothing);
 
+    // Edit the now-actual expense (added after Task 13 was first written —
+    // AddExpenseScreen gained edit mode, opened by tapping the row itself).
+    await tester.tap(find.text('交通'));
+    await tester.pumpAndSettle();
+    expect(find.text('编辑支出'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '3500');
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
     // Verify against the real on-device database directly, not just the UI.
     final trips = await repo.getAllTrips();
     final trip = trips.firstWhere((t) => t.name == 'Golden Path Japan');
     final expenses = await repo.getExpenses(trip.id);
     expect(expenses.single.status.toString(), contains('actual'));
+    expect(expenses.single.amount.major, 3500.0);
 
     await db.close();
   });
