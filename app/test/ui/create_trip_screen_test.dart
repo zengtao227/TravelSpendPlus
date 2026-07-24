@@ -73,5 +73,7 @@ void main() {
     final reloaded = await repo.getTrip('t1');
     expect(reloaded!.name, 'Japan Trip (updated)');
     expect(reloaded.participants.map((p) => p.id).toList(), ['p1']);
+    expect(reloaded.homeCurrency, 'CNY');
+    expect(reloaded.totalBudget.currencyCode, 'CNY');
   });
 }
