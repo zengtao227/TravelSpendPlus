@@ -1435,6 +1435,7 @@ Run `flutter gen-l10n`.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
+import 'package:travelspendplus/domain/expense.dart';
 import 'package:travelspendplus/domain/money.dart';
 import 'package:travelspendplus/domain/participant.dart';
 import 'package:travelspendplus/domain/trip.dart';
@@ -1465,6 +1466,7 @@ void main() {
   tearDown(() async => db.close());
 
   Widget wrap() => MaterialApp(
+        locale: const Locale('zh'), // tests tap Chinese labels below; pin the locale explicitly
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: AddExpenseScreen(trip: trip, repository: repo),
@@ -2169,6 +2171,7 @@ void main() {
   tearDown(() async => db.close());
 
   Widget wrap(String tripId) => MaterialApp(
+        locale: const Locale('zh'), // tests tap/assert Chinese labels below; pin the locale explicitly
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: TripDetailScreen(tripId: tripId, repository: repo),
