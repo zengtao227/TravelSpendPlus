@@ -25,7 +25,9 @@ class _TripListScreenState extends State<TripListScreen> {
     _future = widget.repository.getAllTrips();
   }
 
-  void _refresh() => setState(() => _future = widget.repository.getAllTrips());
+  void _refresh() => setState(() {
+        _future = widget.repository.getAllTrips();
+      });
 
   @override
   Widget build(BuildContext context) {
