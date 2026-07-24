@@ -84,9 +84,17 @@ class _TripCard extends StatelessWidget {
       builder: (context, snapshot) {
         final expenses = snapshot.data ?? [];
         final summary = BudgetCalculator.summarize(trip: trip, expenses: expenses);
-        final spent = summary.plannedTotal + summary.actualTotal;
-        final progress =
-            trip.totalBudget.minorUnits == 0 ? 0.0 : spent.minorUnits / trip.totalBudget.minorUnits;
+        // Total *committed* money (already spent + planned/estimated) is
+        // what the progress bar should reflect against the budget — that's
+        // not the bug. The bug was showing this combined figure under the
+        // single "Spent" label, which misrepresents planned money as
+        // already spent. Below, actual and planned are shown as two
+        // distinct, separately-labeled figures (matching the pattern
+        // TripDetailScreen's budget-summary card already uses).
+        final committed = summary.actualTotal + summary.plannedTotal;
+        final progress = trip.totalBudget.minorUnits == 0
+            ? 0.0
+            : committed.minorUnits / trip.totalBudget.minorUnits;
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: InkWell(
@@ -117,7 +125,8 @@ class _TripCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('${l10n.spentTotal} ${formatMoney(spent)}'),
+                      Text('${l10n.spentTotal} ${formatMoney(summary.actualTotal)}'),
+                      Text('${l10n.plannedTotal} ${formatMoney(summary.plannedTotal)}'),
                       Text(formatMoney(trip.totalBudget)),
                     ],
                   ),
