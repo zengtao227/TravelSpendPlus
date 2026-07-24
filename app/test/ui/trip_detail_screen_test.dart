@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
+import 'package:travelspendplus/domain/exchange_rate.dart';
 import 'package:travelspendplus/domain/expense.dart';
 import 'package:travelspendplus/domain/money.dart';
 import 'package:travelspendplus/domain/participant.dart';
@@ -291,5 +292,46 @@ void main() {
     final expenses = await repo.getExpenses('t1');
     expect(expenses.length, 1);
     expect(expenses.first.amount, Money.fromMajor(3000, 'CNY'));
+  });
+
+  testWidgets('the category legend follows the currency switcher, not just the summary card',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime.now().subtract(const Duration(days: 2)),
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+    // 1 JPY = 0.05 CNY, so 1 CNY = 20 JPY.
+    await repo.setExchangeRate('t1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'CNY', rate: 0.05));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(100, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(100, 'CNY'),
+      description: 'Dinner',
+      date: DateTime.now(),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('CNY 100.00'), findsWidgets, reason: 'legend defaults to home currency');
+
+    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('JPY').last);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('JPY 2,000.00'), findsWidgets,
+        reason: 'legend must follow the same view-currency switch as the summary card '
+            '(100 CNY * 20 = 2000 JPY), not stay stuck showing home-currency amounts');
   });
 }

@@ -281,7 +281,14 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                                     child: Text(categoryLabel(context, breakdown[i].category),
                                         style: const TextStyle(fontSize: 12)),
                                   ),
-                                  Text(formatMoney(breakdown[i].total),
+                                  // breakdown[i].total is always in the trip's home
+                                  // currency (CategoryBreakdownCalculator sums each
+                                  // expense's amountInHomeCurrency) — run it through
+                                  // display() so the legend follows the same
+                                  // view-currency switcher as the summary card above,
+                                  // instead of always showing the home currency
+                                  // regardless of what's selected.
+                                  Text(formatMoney(display(breakdown[i].total)),
                                       style: const TextStyle(
                                           fontSize: 12, fontWeight: FontWeight.w600)),
                                 ],
