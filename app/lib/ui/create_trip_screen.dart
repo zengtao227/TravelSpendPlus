@@ -132,6 +132,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
             const SizedBox(height: 12),
             if (!_isEditing)
               TextFormField(
+                key: const Key('tripCurrencyField'),
                 controller: _currencyController,
                 decoration: InputDecoration(labelText: l10n.homeCurrency),
                 textCapitalization: TextCapitalization.characters,

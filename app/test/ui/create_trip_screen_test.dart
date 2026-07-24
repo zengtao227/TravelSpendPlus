@@ -66,6 +66,11 @@ void main() {
     await tester.pumpWidget(wrap(CreateTripScreen(repository: repo, existingTrip: trip)));
     expect(find.text('Japan Trip'), findsOneWidget);
 
+    // Structural guard: the currency field must not exist in the widget tree while
+    // editing, so there is no way for the user to change the home currency here —
+    // currency changes go through ExchangeRateSettingsScreen only.
+    expect(find.byKey(const Key('tripCurrencyField')), findsNothing);
+
     await tester.enterText(find.byKey(const Key('tripNameField')), 'Japan Trip (updated)');
     await tester.tap(find.byKey(const Key('saveTripButton')));
     await tester.pumpAndSettle();
