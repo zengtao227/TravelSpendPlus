@@ -697,10 +697,14 @@ Add to `app/test/persistence/trip_repository_test.dart` (reuse the existing `ali
     expect(rates.first.rate, 0.0065);
   });
 
-  test('changeHomeCurrency rescales the budget, every expense, and the rate table', () async {
+  test('changeHomeCurrency rescales the budget, every expense, and an unrelated rate', () async {
     await repo.createTrip(makeTrip()); // EUR home currency, 1000 EUR budget
+    // USD is unrelated to the currency change below (EUR -> JPY) — its rate
+    // must be rescaled (still meaningful: "1 USD = ? JPY" after the change),
+    // not deleted. The self-referential case (a rate entry for the currency
+    // you're changing *to*) is covered by the next test.
     await repo.setExchangeRate(
-        't1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'EUR', rate: 0.0062));
+        't1', const ExchangeRate(fromCurrency: 'USD', toCurrency: 'EUR', rate: 0.92));
     await repo.addExpense(Expense(
       id: 'e1',
       tripId: 't1',
@@ -727,8 +731,26 @@ Add to `app/test/persistence/trip_repository_test.dart` (reuse the existing `ali
     expect(expenses.first.amountInHomeCurrency.major, closeTo(30 * 155, 0.01));
 
     final rates = await repo.getExchangeRates('t1');
+    expect(rates.length, 1);
+    expect(rates.first.fromCurrency, 'USD');
     expect(rates.first.toCurrency, 'JPY');
-    expect(rates.first.rate, closeTo(0.0062 * 155, 0.0001));
+    expect(rates.first.rate, closeTo(0.92 * 155, 0.0001));
+  });
+
+  test('changeHomeCurrency deletes (not rescales) a rate entry for the currency being switched to',
+      () async {
+    await repo.createTrip(makeTrip()); // EUR home currency
+    // A pre-existing "1 JPY = 0.0062 EUR" rate becomes meaningless the
+    // moment JPY itself becomes the home currency — rescaling it would
+    // produce a self-referential "1 JPY = X JPY" row that can never be
+    // cleaned up later (this app has no delete-a-single-rate flow).
+    await repo.setExchangeRate(
+        't1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'EUR', rate: 0.0062));
+
+    await repo.changeHomeCurrency(tripId: 't1', newCurrency: 'JPY', oldToNewRate: 155);
+
+    final rates = await repo.getExchangeRates('t1');
+    expect(rates, isEmpty);
   });
 ```
 
@@ -862,8 +884,16 @@ Add to the same class (uses Drift's `transaction()` so the budget/expenses/rates
             ..where((r) => r.tripId.equals(tripId)))
           .get();
       for (final row in rateRows) {
-        await (_db.update(_db.tripExchangeRates)..where((r) => r.id.equals(row.id)))
-            .write(TripExchangeRatesCompanion(rate: Value(row.rate * oldToNewRate)));
+        if (row.fromCurrency == newCurrency) {
+          // This currency IS the new home currency now — a rescaled "1 X =
+          // Y X" row would be self-referential nonsense, and this app has
+          // no delete-a-single-rate flow to ever clean it up later, so it
+          // must be deleted here rather than rescaled.
+          await (_db.delete(_db.tripExchangeRates)..where((r) => r.id.equals(row.id))).go();
+        } else {
+          await (_db.update(_db.tripExchangeRates)..where((r) => r.id.equals(row.id)))
+              .write(TripExchangeRatesCompanion(rate: Value(row.rate * oldToNewRate)));
+        }
       }
     });
   }
@@ -2338,7 +2368,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     return _TripDetailData(trip!, expenses, rates);
   }
 
-  void _refresh() => setState(() => _future = _load());
+  // Resets _viewCurrency too, not just _future: if the trip's home currency
+  // was changed (via ExchangeRateSettingsScreen) while a non-default
+  // _viewCurrency was selected, that currency may no longer have a rate
+  // entry relative to the *new* home currency, and CurrencyConverter.convert
+  // throws in that case. Matches the design spec's own rule that the
+  // currency switch is view-only and resets on navigating away.
+  void _refresh() => setState(() {
+        _future = _load();
+        _viewCurrency = null;
+      });
 
   Future<void> _markAsSpent(Expense expense) async {
     final l10n = AppLocalizations.of(context)!;
