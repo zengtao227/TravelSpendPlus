@@ -106,4 +106,37 @@ class AppLocalizationsDe extends AppLocalizations {
   String exchangeRatePrompt(String currency, String homeCurrency) {
     return '1 $currency = ? $homeCurrency';
   }
+
+  @override
+  String get exchangeRates => 'Wechselkurse';
+
+  @override
+  String get addRate => 'Kurs hinzufügen';
+
+  @override
+  String get newCurrency => 'Währung (3-stelliger Code)';
+
+  @override
+  String get rateValue => 'Kurs';
+
+  @override
+  String get saveRate => 'Kurs speichern';
+
+  @override
+  String get changeHomeCurrency => 'Heimatwährung ändern';
+
+  @override
+  String get newHomeCurrency => 'Neue Heimatwährung';
+
+  @override
+  String oldToNewRateLabel(String oldCurrency, String newCurrency) {
+    return '1 $oldCurrency = ? $newCurrency';
+  }
+
+  @override
+  String get confirmChangeCurrency => 'Änderung bestätigen';
+
+  @override
+  String get changeCurrencyWarning =>
+      'Das Gesamtbudget und alle Ausgaben werden mit dem angegebenen Kurs neu berechnet.';
 }

@@ -31,5 +31,15 @@
   "saveExpense": "Ausgabe speichern",
   "errorSelectCategory": "Kategorie auswählen",
   "errorPositiveRate": "Positiven Wechselkurs eingeben",
-  "exchangeRatePrompt": "1 {currency} = ? {homeCurrency}"
+  "exchangeRatePrompt": "1 {currency} = ? {homeCurrency}",
+  "exchangeRates": "Wechselkurse",
+  "addRate": "Kurs hinzufügen",
+  "newCurrency": "Währung (3-stelliger Code)",
+  "rateValue": "Kurs",
+  "saveRate": "Kurs speichern",
+  "changeHomeCurrency": "Heimatwährung ändern",
+  "newHomeCurrency": "Neue Heimatwährung",
+  "oldToNewRateLabel": "1 {oldCurrency} = ? {newCurrency}",
+  "confirmChangeCurrency": "Änderung bestätigen",
+  "changeCurrencyWarning": "Das Gesamtbudget und alle Ausgaben werden mit dem angegebenen Kurs neu berechnet."
 }

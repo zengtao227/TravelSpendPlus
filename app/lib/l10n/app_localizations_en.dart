@@ -106,4 +106,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String exchangeRatePrompt(String currency, String homeCurrency) {
     return '1 $currency = ? $homeCurrency';
   }
+
+  @override
+  String get exchangeRates => 'Exchange Rates';
+
+  @override
+  String get addRate => 'Add rate';
+
+  @override
+  String get newCurrency => 'Currency (3-letter code)';
+
+  @override
+  String get rateValue => 'Rate';
+
+  @override
+  String get saveRate => 'Save rate';
+
+  @override
+  String get changeHomeCurrency => 'Change home currency';
+
+  @override
+  String get newHomeCurrency => 'New home currency';
+
+  @override
+  String oldToNewRateLabel(String oldCurrency, String newCurrency) {
+    return '1 $oldCurrency = ? $newCurrency';
+  }
+
+  @override
+  String get confirmChangeCurrency => 'Confirm change';
+
+  @override
+  String get changeCurrencyWarning =>
+      'This will rescale the total budget and every expense using the rate you provide.';
 }

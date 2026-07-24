@@ -35,5 +35,18 @@
   "exchangeRatePrompt": "1 {currency} = ? {homeCurrency}",
   "@exchangeRatePrompt": {
     "placeholders": {"currency": {"type": "String"}, "homeCurrency": {"type": "String"}}
-  }
+  },
+  "exchangeRates": "Exchange Rates",
+  "addRate": "Add rate",
+  "newCurrency": "Currency (3-letter code)",
+  "rateValue": "Rate",
+  "saveRate": "Save rate",
+  "changeHomeCurrency": "Change home currency",
+  "newHomeCurrency": "New home currency",
+  "oldToNewRateLabel": "1 {oldCurrency} = ? {newCurrency}",
+  "@oldToNewRateLabel": {
+    "placeholders": {"oldCurrency": {"type": "String"}, "newCurrency": {"type": "String"}}
+  },
+  "confirmChangeCurrency": "Confirm change",
+  "changeCurrencyWarning": "This will rescale the total budget and every expense using the rate you provide."
 }

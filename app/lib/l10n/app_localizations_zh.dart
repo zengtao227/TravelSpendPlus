@@ -105,4 +105,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String exchangeRatePrompt(String currency, String homeCurrency) {
     return '1 $currency = ? $homeCurrency';
   }
+
+  @override
+  String get exchangeRates => '汇率设置';
+
+  @override
+  String get addRate => '添加汇率';
+
+  @override
+  String get newCurrency => '币种(3位代码)';
+
+  @override
+  String get rateValue => '汇率';
+
+  @override
+  String get saveRate => '保存汇率';
+
+  @override
+  String get changeHomeCurrency => '修改本位币';
+
+  @override
+  String get newHomeCurrency => '新本位币';
+
+  @override
+  String oldToNewRateLabel(String oldCurrency, String newCurrency) {
+    return '1 $oldCurrency = ? $newCurrency';
+  }
+
+  @override
+  String get confirmChangeCurrency => '确认修改';
+
+  @override
+  String get changeCurrencyWarning => '会按你填的换算率，重新计算总预算和所有支出的金额。';
 }

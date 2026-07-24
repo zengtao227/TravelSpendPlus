@@ -31,5 +31,15 @@
   "saveExpense": "保存",
   "errorSelectCategory": "请选择类别",
   "errorPositiveRate": "请输入大于0的汇率",
-  "exchangeRatePrompt": "1 {currency} = ? {homeCurrency}"
+  "exchangeRatePrompt": "1 {currency} = ? {homeCurrency}",
+  "exchangeRates": "汇率设置",
+  "addRate": "添加汇率",
+  "newCurrency": "币种(3位代码)",
+  "rateValue": "汇率",
+  "saveRate": "保存汇率",
+  "changeHomeCurrency": "修改本位币",
+  "newHomeCurrency": "新本位币",
+  "oldToNewRateLabel": "1 {oldCurrency} = ? {newCurrency}",
+  "confirmChangeCurrency": "确认修改",
+  "changeCurrencyWarning": "会按你填的换算率，重新计算总预算和所有支出的金额。"
 }

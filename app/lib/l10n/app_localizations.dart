@@ -291,6 +291,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'1 {currency} = ? {homeCurrency}'**
   String exchangeRatePrompt(String currency, String homeCurrency);
+
+  /// No description provided for @exchangeRates.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange Rates'**
+  String get exchangeRates;
+
+  /// No description provided for @addRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add rate'**
+  String get addRate;
+
+  /// No description provided for @newCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency (3-letter code)'**
+  String get newCurrency;
+
+  /// No description provided for @rateValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get rateValue;
+
+  /// No description provided for @saveRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Save rate'**
+  String get saveRate;
+
+  /// No description provided for @changeHomeCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Change home currency'**
+  String get changeHomeCurrency;
+
+  /// No description provided for @newHomeCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'New home currency'**
+  String get newHomeCurrency;
+
+  /// No description provided for @oldToNewRateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'1 {oldCurrency} = ? {newCurrency}'**
+  String oldToNewRateLabel(String oldCurrency, String newCurrency);
+
+  /// No description provided for @confirmChangeCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm change'**
+  String get confirmChangeCurrency;
+
+  /// No description provided for @changeCurrencyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This will rescale the total budget and every expense using the rate you provide.'**
+  String get changeCurrencyWarning;
 }
 
 class _AppLocalizationsDelegate
