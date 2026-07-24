@@ -142,6 +142,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get changeCurrencyWarning => '会按你填的换算率，重新计算总预算和所有支出的金额。';
 
   @override
+  String get errorSameCurrency => '这已经是当前的本位币了，请换一个币种';
+
+  @override
   String daysUntilDeparture(int days) {
     return '距出发还有 $days 天';
   }

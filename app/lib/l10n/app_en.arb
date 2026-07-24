@@ -50,6 +50,7 @@
   },
   "confirmChangeCurrency": "Confirm change",
   "changeCurrencyWarning": "This will rescale the total budget and every expense using the rate you provide.",
+  "errorSameCurrency": "This is already the trip's home currency — pick a different one",
   "daysUntilDeparture": "{days, plural, =1{1 day until departure} other{{days} days until departure}}",
   "@daysUntilDeparture": {"placeholders": {"days": {"type": "int"}}},
   "tripFinished": "Trip finished",

@@ -22,6 +22,7 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
   bool _showChangeCurrencyForm = false;
   final _newHomeCurrency = TextEditingController();
   final _oldToNewRate = TextEditingController();
+  String? _changeCurrencyError;
 
   @override
   void initState() {
@@ -59,12 +60,21 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
     final newCurrency = _newHomeCurrency.text.trim().toUpperCase();
     final rate = double.tryParse(_oldToNewRate.text);
     if (newCurrency.length != 3 || rate == null || rate <= 0) return;
+    if (newCurrency == widget.trip.homeCurrency) {
+      // Catch this here with a plain, visible error rather than only
+      // relying on TripRepository.changeHomeCurrency's ArgumentError —
+      // that guard exists too, but a thrown exception with no on-screen
+      // message would look like the button silently did nothing.
+      setState(() => _changeCurrencyError = AppLocalizations.of(context)!.errorSameCurrency);
+      return;
+    }
+    setState(() => _changeCurrencyError = null);
     await widget.repository.changeHomeCurrency(
       tripId: widget.trip.id,
       newCurrency: newCurrency,
       oldToNewRate: rate,
     );
-    if (context.mounted) Navigator.pop(context, true);
+    if (mounted) Navigator.pop(context, true);
   }
 
   @override
@@ -135,6 +145,12 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),
+            if (_changeCurrencyError != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(_changeCurrencyError!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              ),
             ElevatedButton(
               key: const Key('confirmChangeCurrencyButton'),
               onPressed: _confirmChangeCurrency,

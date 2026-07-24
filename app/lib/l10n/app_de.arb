@@ -43,6 +43,7 @@
   "oldToNewRateLabel": "1 {oldCurrency} = ? {newCurrency}",
   "confirmChangeCurrency": "Änderung bestätigen",
   "changeCurrencyWarning": "Das Gesamtbudget und alle Ausgaben werden mit dem angegebenen Kurs neu berechnet.",
+  "errorSameCurrency": "Das ist bereits die Heimatwährung der Reise — bitte eine andere wählen",
   "daysUntilDeparture": "{days, plural, =1{1 Tag bis zur Abreise} other{{days} Tage bis zur Abreise}}",
   "@daysUntilDeparture": {"placeholders": {"days": {"type": "int"}}},
   "tripFinished": "Reise beendet",

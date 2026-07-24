@@ -217,6 +217,14 @@ class TripRepository {
     await _db.transaction(() async {
       final tripRow =
           await (_db.select(_db.trips)..where((t) => t.id.equals(tripId))).getSingle();
+      final oldCurrency = tripRow.homeCurrency;
+      if (newCurrency == oldCurrency) {
+        // A no-op rename would still rescale the budget/every expense by
+        // whatever rate was typed in, silently corrupting every total for
+        // no reason — reject it outright rather than let a same-currency
+        // "change" through with an arbitrary multiplier.
+        throw ArgumentError('New home currency ($newCurrency) is the same as the current one');
+      }
       final newBudgetMinorUnits =
           (tripRow.totalBudgetMinorUnits * oldToNewRate).round();
       await (_db.update(_db.trips)..where((t) => t.id.equals(tripId))).write(
@@ -251,6 +259,18 @@ class TripRepository {
               .write(TripExchangeRatesCompanion(rate: Value(row.rate * oldToNewRate)));
         }
       }
+
+      // Preserve the ability to still record/view amounts in the *old* home
+      // currency going forward — without this, the old home currency drops
+      // out of the trip entirely (it was never itself a row in its own rate
+      // table), and the next expense in that currency, or a switch back to
+      // viewing it, would need the rate re-entered from scratch even though
+      // it's exactly oldToNewRate ("1 oldCurrency = oldToNewRate newCurrency",
+      // the same number just supplied for this operation).
+      await setExchangeRate(
+        tripId,
+        ExchangeRate(fromCurrency: oldCurrency, toCurrency: newCurrency, rate: oldToNewRate),
+      );
     });
   }
 }

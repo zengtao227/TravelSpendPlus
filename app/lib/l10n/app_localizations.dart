@@ -358,6 +358,12 @@ abstract class AppLocalizations {
   /// **'This will rescale the total budget and every expense using the rate you provide.'**
   String get changeCurrencyWarning;
 
+  /// No description provided for @errorSameCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'This is already the trip\'s home currency — pick a different one'**
+  String get errorSameCurrency;
+
   /// No description provided for @daysUntilDeparture.
   ///
   /// In en, this message translates to:

@@ -66,4 +66,22 @@ void main() {
     expect(reloaded!.homeCurrency, 'JPY');
     expect(reloaded.totalBudget.major, closeTo(20000 * 20, 0.01));
   });
+
+  testWidgets('entering the trip\'s own current currency as the "new" one shows an error and changes nothing',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('changeCurrencyButton')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('newHomeCurrencyField')), 'CNY'); // trip's own home currency
+    await tester.enterText(find.byKey(const Key('oldToNewRateField')), '2');
+    await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('already the trip\'s home currency'), findsOneWidget);
+
+    final reloaded = await repo.getTrip('t1');
+    expect(reloaded!.homeCurrency, 'CNY');
+    expect(reloaded.totalBudget, Money.fromMajor(20000, 'CNY'), reason: 'budget must be untouched, not doubled');
+  });
 }

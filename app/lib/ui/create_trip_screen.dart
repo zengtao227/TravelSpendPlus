@@ -92,7 +92,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         participants: [defaultParticipant],
       ));
     }
-    if (context.mounted) Navigator.pop(context, true);
+    if (mounted) Navigator.pop(context, true);
   }
 
   @override

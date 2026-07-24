@@ -144,6 +144,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Das Gesamtbudget und alle Ausgaben werden mit dem angegebenen Kurs neu berechnet.';
 
   @override
+  String get errorSameCurrency =>
+      'Das ist bereits die Heimatwährung der Reise — bitte eine andere wählen';
+
+  @override
   String daysUntilDeparture(int days) {
     String _temp0 = intl.Intl.pluralLogic(
       days,

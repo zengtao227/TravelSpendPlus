@@ -43,6 +43,7 @@
   "oldToNewRateLabel": "1 {oldCurrency} = ? {newCurrency}",
   "confirmChangeCurrency": "确认修改",
   "changeCurrencyWarning": "会按你填的换算率，重新计算总预算和所有支出的金额。",
+  "errorSameCurrency": "这已经是当前的本位币了，请换一个币种",
   "daysUntilDeparture": "距出发还有 {days} 天",
   "tripFinished": "行程已结束",
   "dailyBudgetRemaining": "每日剩余预算：{amount}/天",

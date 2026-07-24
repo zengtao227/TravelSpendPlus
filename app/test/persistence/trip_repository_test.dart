@@ -231,14 +231,20 @@ void main() {
     expect(expenses.first.amountInHomeCurrency.major, closeTo(30 * 155, 0.01));
 
     final rates = await repo.getExchangeRates('t1');
-    expect(rates.length, 1);
-    expect(rates.first.fromCurrency, 'USD');
-    expect(rates.first.toCurrency, 'JPY');
-    expect(rates.first.rate, closeTo(0.92 * 155, 0.0001));
+    // 2 rows now: the rescaled unrelated USD rate, plus a fresh EUR->JPY
+    // reverse rate preserving the old home currency (see the dedicated
+    // reverse-rate test below).
+    expect(rates.length, 2);
+    final usd = rates.firstWhere((r) => r.fromCurrency == 'USD');
+    expect(usd.toCurrency, 'JPY');
+    expect(usd.rate, closeTo(0.92 * 155, 0.0001));
+    final eur = rates.firstWhere((r) => r.fromCurrency == 'EUR');
+    expect(eur.toCurrency, 'JPY');
+    expect(eur.rate, 155);
   });
 
-  test('changeHomeCurrency deletes (not rescales) a rate entry for the currency being switched to',
-      () async {
+  test('changeHomeCurrency deletes (not rescales) a rate entry for the currency being switched to, '
+      'but keeps a reverse rate for the old home currency', () async {
     await repo.createTrip(makeTrip()); // EUR home currency
     // A pre-existing "1 JPY = 0.0062 EUR" rate becomes meaningless the
     // moment JPY itself becomes the home currency — rescaling it would
@@ -250,6 +256,41 @@ void main() {
     await repo.changeHomeCurrency(tripId: 't1', newCurrency: 'JPY', oldToNewRate: 155);
 
     final rates = await repo.getExchangeRates('t1');
-    expect(rates, isEmpty);
+    // The stale JPY row is gone, but a fresh "1 EUR = 155 JPY" row must
+    // exist — otherwise the old home currency (EUR) becomes unusable for
+    // any future expense or view-currency switch without manually
+    // re-entering a rate the app already knows.
+    expect(rates.length, 1);
+    expect(rates.first.fromCurrency, 'EUR');
+    expect(rates.first.toCurrency, 'JPY');
+    expect(rates.first.rate, 155);
+  });
+
+  test('changeHomeCurrency rejects a "change" to the currency the trip already uses', () async {
+    await repo.createTrip(makeTrip()); // EUR home currency
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(30, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
+      description: 'Dinner',
+      date: DateTime(2026, 10, 6),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+
+    await expectLater(
+      repo.changeHomeCurrency(tripId: 't1', newCurrency: 'EUR', oldToNewRate: 2.0),
+      throwsArgumentError,
+    );
+
+    // Nothing should have been touched — not the budget, not the expense.
+    final trip = await repo.getTrip('t1');
+    expect(trip!.totalBudget, Money.fromMajor(1000, 'EUR'));
+    final expenses = await repo.getExpenses('t1');
+    expect(expenses.first.amountInHomeCurrency, Money.fromMajor(30, 'EUR'));
   });
 }

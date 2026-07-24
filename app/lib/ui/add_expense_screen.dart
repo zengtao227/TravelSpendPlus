@@ -148,7 +148,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     } else {
       await widget.repository.addExpense(expense);
     }
-    if (context.mounted) Navigator.pop(context, true);
+    if (mounted) Navigator.pop(context, true);
   }
 
   @override

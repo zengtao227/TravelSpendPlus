@@ -144,6 +144,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'This will rescale the total budget and every expense using the rate you provide.';
 
   @override
+  String get errorSameCurrency =>
+      'This is already the trip\'s home currency — pick a different one';
+
+  @override
   String daysUntilDeparture(int days) {
     String _temp0 = intl.Intl.pluralLogic(
       days,
