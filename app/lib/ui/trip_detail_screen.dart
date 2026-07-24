@@ -164,11 +164,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 );
 
           final now = DateTime.now();
+          final startOfToday = DateTime(now.year, now.month, now.day);
           Widget budgetTimingWidget;
           if (now.isBefore(trip.startDate)) {
-            final days = trip.startDate.difference(DateTime(now.year, now.month, now.day)).inDays;
+            final days = trip.startDate.difference(startOfToday).inDays;
             budgetTimingWidget = Chip(label: Text(l10n.daysUntilDeparture(days)));
-          } else if (now.isAfter(trip.endDate)) {
+          } else if (startOfToday.isAfter(trip.endDate)) {
+            // Compare the start of *today* (not the current instant) against
+            // endDate: endDate is stored at midnight, so comparing `now`
+            // directly would flip to "finished" at 00:00:01 on the trip's own
+            // last day, cutting it a full day short.
             budgetTimingWidget = Chip(label: Text(l10n.tripFinished));
           } else {
             final daily = BudgetCalculator.remainingDailyBudget(
@@ -192,6 +197,8 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(l10n.totalBudget,
+                          style: TextStyle(fontSize: 11, color: AppColors.mutedText)),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -224,20 +231,66 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               const SizedBox(height: 16),
               if (breakdown.isNotEmpty) ...[
                 Text(l10n.spendingByCategory, style: Theme.of(context).textTheme.titleMedium),
-                SizedBox(
-                  height: 180,
-                  child: PieChart(PieChartData(sections: [
-                    for (var i = 0; i < breakdown.length; i++)
-                      PieChartSectionData(
-                        value: breakdown[i].total.major,
-                        title: '${categoryLabel(context, breakdown[i].category)}\n'
-                            '${breakdown[i].percentage.toStringAsFixed(0)}%',
-                        radius: 70,
-                        color: AppColors.categoryChartColors[
-                            kExpenseCategoryKeys.indexOf(breakdown[i].category) %
-                                AppColors.categoryChartColors.length],
+                const SizedBox(height: 8),
+                // Slices carry only the percentage — category name and exact
+                // amount live in the legend list beside the chart instead, so
+                // small slices never have to cram both a label and a number
+                // into a sliver of pie.
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 120,
+                      height: 120,
+                      child: PieChart(PieChartData(sections: [
+                        for (var i = 0; i < breakdown.length; i++)
+                          PieChartSectionData(
+                            value: breakdown[i].total.major,
+                            title: '${breakdown[i].percentage.toStringAsFixed(0)}%',
+                            radius: 50,
+                            titleStyle: const TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                            color: AppColors.categoryChartColors[
+                                kExpenseCategoryKeys.indexOf(breakdown[i].category) %
+                                    AppColors.categoryChartColors.length],
+                          ),
+                      ])),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (var i = 0; i < breakdown.length; i++)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 3),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: AppColors.categoryChartColors[
+                                          kExpenseCategoryKeys.indexOf(breakdown[i].category) %
+                                              AppColors.categoryChartColors.length],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(categoryLabel(context, breakdown[i].category),
+                                        style: const TextStyle(fontSize: 12)),
+                                  ),
+                                  Text(formatMoney(breakdown[i].total),
+                                      style: const TextStyle(
+                                          fontSize: 12, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
-                  ])),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
               ] else

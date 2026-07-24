@@ -88,6 +88,79 @@ void main() {
     expect(find.textContaining('/天'), findsNothing);
   });
 
+  testWidgets('a trip on its own last calendar day still shows the daily budget, not finished',
+      (tester) async {
+    // Regression test: comparing `DateTime.now()` (a specific instant)
+    // directly against `endDate` (stored at midnight) used to flip to
+    // "finished" the moment any time passed on the trip's own last day,
+    // cutting it a day short. endDate = today (midnight) must still count
+    // as in-progress for the whole day.
+    final today = DateTime.now();
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: today.subtract(const Duration(days: 6)),
+      endDate: DateTime(today.year, today.month, today.day),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    expect(find.text('行程已结束'), findsNothing);
+    expect(find.textContaining('/天'), findsOneWidget);
+  });
+
+  testWidgets('the category legend shows each category name and its exact amount, not just percentages in the pie',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime.now().subtract(const Duration(days: 2)),
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(300, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+      description: 'Dinner',
+      date: DateTime.now(),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e2',
+      tripId: 't1',
+      category: 'transport',
+      amount: Money.fromMajor(3200, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(3200, 'CNY'),
+      description: 'Taxi',
+      date: DateTime.now(),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    // '餐饮'/'交通' also appear as each expense list row's subtitle, so the
+    // legend contributes at least one more occurrence of each, not exactly
+    // one overall.
+    expect(find.text('餐饮'), findsWidgets);
+    expect(find.text('交通'), findsWidgets);
+    expect(find.textContaining('300.00'), findsWidgets);
+    expect(find.textContaining('3,200.00'), findsWidgets);
+  });
+
   testWidgets('an actual expense is reflected in totals and the category chart', (tester) async {
     await repo.createTrip(Trip(
       id: 't1',
