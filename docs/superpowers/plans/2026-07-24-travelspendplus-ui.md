@@ -645,7 +645,7 @@ Add to `app/test/persistence/trip_repository_test.dart` (reuse the existing `ali
   });
 
   test('getAllTrips returns every trip with its participants', () async {
-    await repo.createTrip(makeTrip());
+    await repo.createTrip(makeTrip()); // uses participant 'p1' (alice)
     final secondTrip = Trip(
       id: 't2',
       name: 'Italy',
@@ -653,7 +653,10 @@ Add to `app/test/persistence/trip_repository_test.dart` (reuse the existing `ali
       endDate: DateTime(2026, 3, 5),
       homeCurrency: 'EUR',
       totalBudget: Money.fromMajor(500, 'EUR'),
-      participants: [alice],
+      // Participants.id is a global primary key, not scoped per trip — must
+      // be a fresh id, not alice's 'p1' again, or this insert throws a
+      // UNIQUE-constraint error (caught during Task 5's own implementation).
+      participants: [const Participant(id: 'p3', name: 'Carol')],
     );
     await repo.createTrip(secondTrip);
 
