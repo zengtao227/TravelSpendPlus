@@ -1,12 +1,14 @@
 # TravelSpendPlus 界面设计方案（Plan B）
 
 日期：2026-07-24
-状态：已与用户逐块确认，待写实施计划
+状态：已实施完成 11/13 个任务（界面基础设施 + 6 个页面 + 主程序接入），细节见 `docs/superpowers/plans/2026-07-24-travelspendplus-ui.md` 的进度记录；剩真机集成测试 + 最终代码审查
 仓库：`TravelSpendPlus`
 
 ## 〇、背景与前置状态
 
-Plan A（领域逻辑 + 本地持久化，无界面）已于 2026-07-23 完成并测试通过——`Money`、`Trip`、`Participant`、`Expense`、`BudgetCalculator`、`BalanceCalculator`、`CategoryBreakdownCalculator`、Drift 持久化 + `TripRepository`，全部在 `app/lib/domain/` 和 `app/lib/persistence/` 下，49 个测试通过。`app/lib/main.dart` 目前仍是 Flutter 新建项目自带的默认计数器模板，`app/lib/` 下没有任何界面代码，`pubspec.yaml` 也未引入图表库——本文档规划的界面部分（Plan B）是完全从零开始的下一步。
+Plan A（领域逻辑 + 本地持久化，无界面）已于 2026-07-23 完成并测试通过——`Money`、`Trip`、`Participant`、`Expense`、`BudgetCalculator`、`BalanceCalculator`、`CategoryBreakdownCalculator`、Drift 持久化 + `TripRepository`，全部在 `app/lib/domain/` 和 `app/lib/persistence/` 下。
+
+**2026-07-24 更新**：本文档规划的界面部分（Plan B）已经按下面的实施计划做完了大部分——`app/lib/main.dart` 现在是真实的应用入口（接入真机数据库、行程列表首页），`app/lib/ui/` 下有完整的6个页面（新建/编辑行程、记账、汇率设置、行程详情、行程列表 + 格式化/主题工具），中英德三语言、图表、汇率修改都已实现并测试通过。仅剩真机集成测试和最终整体代码审查未完成。之前"完全从零开始"的表述已经过时，保留原文只是为了留存背景，不代表当前状态。
 
 **重要澄清（2026-07-24）**：仓库里存在一份 2026-07-23 深夜写好但从未提交、从未实现的界面实施计划（`docs/superpowers/plans/2026-07-23-travelspendplus-ui.md`），范围包含完整的多人分摊/净余额界面(`BalancesScreen`)、英文硬编码文案、默认 Material 配色。经用户确认，这份计划与本文档的范围**不一致**（用户明确不需要分摊功能），已被删除，不作为参考。本文档是唯一有效的界面设计依据。
 
