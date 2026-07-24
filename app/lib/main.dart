@@ -14,11 +14,19 @@ void main() async {
 
 class TravelSpendPlusApp extends StatelessWidget {
   final TripRepository repository;
-  const TravelSpendPlusApp({super.key, required this.repository});
+  // Test-only override: leave null in production so the app follows the
+  // device's own system locale. Exists because integration tests need to
+  // assert against a specific language's strings regardless of whatever
+  // locale the test device/emulator happens to be set to (previously the
+  // golden-path test only passed by accident, because the dev emulator's
+  // system locale was already zh-CN).
+  final Locale? locale;
+  const TravelSpendPlusApp({super.key, required this.repository, this.locale});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: locale,
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

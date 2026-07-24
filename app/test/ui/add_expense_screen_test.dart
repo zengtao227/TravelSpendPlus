@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
+import 'package:travelspendplus/domain/exchange_rate.dart';
 import 'package:travelspendplus/domain/money.dart';
 import 'package:travelspendplus/domain/participant.dart';
 import 'package:travelspendplus/domain/trip.dart';
@@ -172,5 +173,81 @@ void main() {
     expect(expenses.first.description, 'Kyoto guesthouse (extra night)');
     expect(expenses.first.category, 'lodging', reason: 'untouched fields must be preserved');
     expect(expenses.first.status, ExpenseStatus.planned, reason: 'untouched fields must be preserved');
+  });
+
+  testWidgets(
+      'editing an unrelated field on a foreign-currency expense preserves the exchange rate locked in at recording time',
+      (tester) async {
+    final me = trip.participants.first;
+    // Recorded at 1 JPY = 0.05 CNY: 10000 JPY -> 500 CNY.
+    await repo.setExchangeRate('t1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'CNY', rate: 0.05));
+    final existing = Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'transport',
+      amount: Money.fromMajor(10000, 'JPY'),
+      amountInHomeCurrency: Money.fromMajor(500, 'CNY'),
+      description: 'Flight',
+      date: DateTime(2026, 10, 6),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    );
+    await repo.addExpense(existing);
+
+    // The trip's JPY rate changes later (e.g. a different expense recorded
+    // afterwards at a new rate) — this must NOT retroactively change what
+    // the 10000 JPY flight above is worth in CNY.
+    await repo.setExchangeRate('t1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'CNY', rate: 0.04));
+
+    await tester.pumpWidget(wrap(existingExpense: existing));
+    await tester.pumpAndSettle();
+    // Only touch an unrelated field — amount and currency stay as they were.
+    await tester.enterText(find.byKey(const Key('expenseDescriptionField')), 'Flight (updated note)');
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    final expenses = await repo.getExpenses('t1');
+    expect(expenses.first.amount, Money.fromMajor(10000, 'JPY'));
+    expect(expenses.first.amountInHomeCurrency.major, closeTo(500, 0.01),
+        reason: 'must stay locked to the 0.05 rate in effect when this expense was recorded, '
+            'not silently jump to 400 (10000 * the now-current 0.04 rate)');
+  });
+
+  testWidgets('editing the amount of a foreign-currency expense rescales proportionally from its own locked rate',
+      (tester) async {
+    final me = trip.participants.first;
+    await repo.setExchangeRate('t1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'CNY', rate: 0.05));
+    final existing = Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'transport',
+      amount: Money.fromMajor(10000, 'JPY'),
+      amountInHomeCurrency: Money.fromMajor(500, 'CNY'),
+      description: 'Flight',
+      date: DateTime(2026, 10, 6),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    );
+    await repo.addExpense(existing);
+    // Rate table moves on; the edit below must still use the *original*
+    // 500/10000 = 0.05 ratio implied by this expense's own recorded values.
+    await repo.setExchangeRate('t1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'CNY', rate: 0.04));
+
+    await tester.pumpWidget(wrap(existingExpense: existing));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '20000'); // double the JPY amount
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    final expenses = await repo.getExpenses('t1');
+    expect(expenses.first.amount, Money.fromMajor(20000, 'JPY'));
+    expect(expenses.first.amountInHomeCurrency.major, closeTo(1000, 0.01),
+        reason: 'doubling the JPY amount should double the CNY total using the rate this '
+            'expense was originally recorded at (500*2=1000), not the current 0.04 rate (which '
+            'would give 800)');
   });
 }

@@ -14,7 +14,11 @@ void main() {
       (tester) async {
     final db = await AppDatabase.openOnDevice();
     final repo = TripRepository(db);
-    await tester.pumpWidget(TravelSpendPlusApp(repository: repo));
+    // Pin the locale explicitly — this test asserts hardcoded Chinese
+    // strings, and must not depend on the test device/emulator's own
+    // system locale happening to already be zh (it previously only passed
+    // because the dev emulator was set to zh-CN).
+    await tester.pumpWidget(TravelSpendPlusApp(repository: repo, locale: const Locale('zh')));
     await tester.pumpAndSettle();
 
     // Create a trip.

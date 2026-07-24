@@ -91,10 +91,32 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
     final currency = _currencyController.text.trim().toUpperCase();
     final amount = Money.fromMajor(double.parse(_amountController.text), currency);
+    final existing = widget.existingExpense;
 
-    ExchangeRate? rateToUse;
-    if (currency != widget.trip.homeCurrency) {
-      rateToUse = _existingRates.firstWhere(
+    Money amountInHomeCurrency;
+    if (_isEditing && currency == existing!.amount.currencyCode) {
+      // Editing without changing the currency: preserve the exchange rate
+      // that was locked in when this expense was first recorded, only
+      // rescaling for a changed amount — never re-derive it from the trip's
+      // *current* rate table. Otherwise editing an old foreign-currency
+      // expense (even just its description) would silently restate its
+      // home-currency total using today's rate instead of the rate that
+      // actually applied at the time, contradicting this app's own
+      // "exchange rate is locked at recording time" rule (the same rule
+      // TripDetailScreen._markAsSpent already follows for the same reason).
+      final ratio = existing.amount.minorUnits == 0
+          ? 1.0
+          : amount.minorUnits / existing.amount.minorUnits;
+      amountInHomeCurrency = Money(
+        minorUnits: (existing.amountInHomeCurrency.minorUnits * ratio).round(),
+        currencyCode: existing.amountInHomeCurrency.currencyCode,
+      );
+    } else if (currency == widget.trip.homeCurrency) {
+      amountInHomeCurrency = Money(minorUnits: amount.minorUnits, currencyCode: widget.trip.homeCurrency);
+    } else {
+      // Create mode, or the currency was changed during an edit: use the
+      // trip's current rate for this currency (or the newly-entered one).
+      final rateToUse = _existingRates.firstWhere(
         (r) => r.fromCurrency == currency,
         orElse: () => ExchangeRate(
           fromCurrency: currency,
@@ -105,12 +127,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       if (_needsNewExchangeRate) {
         await widget.repository.setExchangeRate(widget.trip.id, rateToUse);
       }
+      amountInHomeCurrency = rateToUse.convert(amount);
     }
-    final amountInHomeCurrency = currency == widget.trip.homeCurrency
-        ? Money(minorUnits: amount.minorUnits, currencyCode: widget.trip.homeCurrency)
-        : rateToUse!.convert(amount);
-
-    final existing = widget.existingExpense;
     final participant = widget.trip.participants.first;
     final expense = Expense(
       id: existing?.id ?? const Uuid().v4(),
