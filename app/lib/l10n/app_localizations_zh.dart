@@ -183,4 +183,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cancel => '取消';
+
+  @override
+  String get myTrips => '我的行程';
+
+  @override
+  String get noTripsYet => '还没有行程，点右下角开始规划你的第一趟旅行';
+
+  @override
+  String get plannedTotal => '已计划';
+
+  @override
+  String get spentTotal => '已花费';
 }

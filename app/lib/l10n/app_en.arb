@@ -64,5 +64,9 @@
   "markAsSpent": "Mark as spent",
   "markAsSpentPrompt": "Update the amount if it differs from the estimate, or leave it as is.",
   "confirm": "Confirm",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "myTrips": "My Trips",
+  "noTripsYet": "No trips yet — tap + to plan your first one",
+  "plannedTotal": "Planned",
+  "spentTotal": "Spent"
 }

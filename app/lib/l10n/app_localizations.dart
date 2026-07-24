@@ -435,6 +435,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get cancel;
+
+  /// No description provided for @myTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'My Trips'**
+  String get myTrips;
+
+  /// No description provided for @noTripsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No trips yet — tap + to plan your first one'**
+  String get noTripsYet;
+
+  /// No description provided for @plannedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned'**
+  String get plannedTotal;
+
+  /// No description provided for @spentTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Spent'**
+  String get spentTotal;
 }
 
 class _AppLocalizationsDelegate

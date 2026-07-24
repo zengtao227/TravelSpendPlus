@@ -55,5 +55,9 @@
   "markAsSpent": "标记为已发生",
   "markAsSpentPrompt": "如果实际金额和预估不一样可以在这里改，不改也可以。",
   "confirm": "确认",
-  "cancel": "取消"
+  "cancel": "取消",
+  "myTrips": "我的行程",
+  "noTripsYet": "还没有行程，点右下角开始规划你的第一趟旅行",
+  "plannedTotal": "已计划",
+  "spentTotal": "已花费"
 }

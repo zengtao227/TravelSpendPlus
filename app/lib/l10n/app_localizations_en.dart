@@ -192,4 +192,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancel => 'Cancel';
+
+  @override
+  String get myTrips => 'My Trips';
+
+  @override
+  String get noTripsYet => 'No trips yet — tap + to plan your first one';
+
+  @override
+  String get plannedTotal => 'Planned';
+
+  @override
+  String get spentTotal => 'Spent';
 }

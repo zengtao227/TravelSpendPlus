@@ -46,6 +46,7 @@
   "@daysUntilDeparture": {"placeholders": {"days": {"type": "int"}}},
   "tripFinished": "Reise beendet",
   "dailyBudgetRemaining": "Verbleibendes Tagesbudget: {amount}/Tag",
+  "@dailyBudgetRemaining": {"placeholders": {"amount": {"type": "String"}}},
   "plannedLabel": "Geplant",
   "actualLabel": "Tatsächlich",
   "remainingLabel": "Verbleibend",
@@ -56,5 +57,9 @@
   "markAsSpent": "Als ausgegeben markieren",
   "markAsSpentPrompt": "Betrag anpassen, falls er vom Schätzwert abweicht, sonst unverändert lassen.",
   "confirm": "Bestätigen",
-  "cancel": "Abbrechen"
+  "cancel": "Abbrechen",
+  "myTrips": "Meine Reisen",
+  "noTripsYet": "Noch keine Reisen — tippe auf +, um deine erste zu planen",
+  "plannedTotal": "Geplant",
+  "spentTotal": "Ausgegeben"
 }
