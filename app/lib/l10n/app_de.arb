@@ -6,5 +6,18 @@
   "categoryLodging": "Unterkunft",
   "categoryShopping": "Einkaufen",
   "categoryEntertainment": "Unterhaltung",
-  "categoryOther": "Sonstiges"
+  "categoryOther": "Sonstiges",
+  "newTrip": "Neue Reise",
+  "editTrip": "Reise bearbeiten",
+  "tripName": "Reisename",
+  "startDate": "Startdatum",
+  "endDate": "Enddatum",
+  "totalBudget": "Gesamtbudget",
+  "homeCurrency": "Heimatwährung",
+  "createTrip": "Reise erstellen",
+  "saveChanges": "Änderungen speichern",
+  "errorEnterTripName": "Reisenamen eingeben",
+  "errorPositiveAmount": "Positiven Betrag eingeben",
+  "errorEndDateBeforeStart": "Enddatum darf nicht vor dem Startdatum liegen",
+  "errorCurrencyCode": "3-stelligen Währungscode eingeben"
 }

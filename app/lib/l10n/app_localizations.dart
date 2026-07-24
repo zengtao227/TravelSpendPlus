@@ -141,6 +141,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Other'**
   String get categoryOther;
+
+  /// No description provided for @newTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'New Trip'**
+  String get newTrip;
+
+  /// No description provided for @editTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Trip'**
+  String get editTrip;
+
+  /// No description provided for @tripName.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip name'**
+  String get tripName;
+
+  /// No description provided for @startDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get startDate;
+
+  /// No description provided for @endDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get endDate;
+
+  /// No description provided for @totalBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Total budget'**
+  String get totalBudget;
+
+  /// No description provided for @homeCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Home currency'**
+  String get homeCurrency;
+
+  /// No description provided for @createTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Trip'**
+  String get createTrip;
+
+  /// No description provided for @saveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get saveChanges;
+
+  /// No description provided for @errorEnterTripName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a trip name'**
+  String get errorEnterTripName;
+
+  /// No description provided for @errorPositiveAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive amount'**
+  String get errorPositiveAmount;
+
+  /// No description provided for @errorEndDateBeforeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'End date must be on or after the start date'**
+  String get errorEndDateBeforeStart;
+
+  /// No description provided for @errorCurrencyCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a 3-letter currency code'**
+  String get errorCurrencyCode;
 }
 
 class _AppLocalizationsDelegate

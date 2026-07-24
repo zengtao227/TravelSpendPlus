@@ -28,4 +28,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get categoryOther => 'Other';
+
+  @override
+  String get newTrip => 'New Trip';
+
+  @override
+  String get editTrip => 'Edit Trip';
+
+  @override
+  String get tripName => 'Trip name';
+
+  @override
+  String get startDate => 'Start date';
+
+  @override
+  String get endDate => 'End date';
+
+  @override
+  String get totalBudget => 'Total budget';
+
+  @override
+  String get homeCurrency => 'Home currency';
+
+  @override
+  String get createTrip => 'Create Trip';
+
+  @override
+  String get saveChanges => 'Save Changes';
+
+  @override
+  String get errorEnterTripName => 'Enter a trip name';
+
+  @override
+  String get errorPositiveAmount => 'Enter a positive amount';
+
+  @override
+  String get errorEndDateBeforeStart =>
+      'End date must be on or after the start date';
+
+  @override
+  String get errorCurrencyCode => 'Enter a 3-letter currency code';
 }

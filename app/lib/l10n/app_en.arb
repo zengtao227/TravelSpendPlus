@@ -7,5 +7,18 @@
   "categoryLodging": "Lodging",
   "categoryShopping": "Shopping",
   "categoryEntertainment": "Entertainment",
-  "categoryOther": "Other"
+  "categoryOther": "Other",
+  "newTrip": "New Trip",
+  "editTrip": "Edit Trip",
+  "tripName": "Trip name",
+  "startDate": "Start date",
+  "endDate": "End date",
+  "totalBudget": "Total budget",
+  "homeCurrency": "Home currency",
+  "createTrip": "Create Trip",
+  "saveChanges": "Save Changes",
+  "errorEnterTripName": "Enter a trip name",
+  "errorPositiveAmount": "Enter a positive amount",
+  "errorEndDateBeforeStart": "End date must be on or after the start date",
+  "errorCurrencyCode": "Enter a 3-letter currency code"
 }

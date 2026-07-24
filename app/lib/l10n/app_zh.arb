@@ -6,5 +6,18 @@
   "categoryLodging": "住宿",
   "categoryShopping": "购物",
   "categoryEntertainment": "娱乐",
-  "categoryOther": "其他"
+  "categoryOther": "其他",
+  "newTrip": "新建行程",
+  "editTrip": "编辑行程",
+  "tripName": "行程名称",
+  "startDate": "开始日期",
+  "endDate": "结束日期",
+  "totalBudget": "总预算",
+  "homeCurrency": "本位币",
+  "createTrip": "创建行程",
+  "saveChanges": "保存修改",
+  "errorEnterTripName": "请输入行程名称",
+  "errorPositiveAmount": "请输入大于0的金额",
+  "errorEndDateBeforeStart": "结束日期不能早于开始日期",
+  "errorCurrencyCode": "请输入3位货币代码"
 }
