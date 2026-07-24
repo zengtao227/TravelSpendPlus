@@ -13,7 +13,13 @@ import 'formatting.dart';
 class AddExpenseScreen extends StatefulWidget {
   final Trip trip;
   final TripRepository repository;
-  const AddExpenseScreen({super.key, required this.trip, required this.repository});
+  final Expense? existingExpense;
+  const AddExpenseScreen({
+    super.key,
+    required this.trip,
+    required this.repository,
+    this.existingExpense,
+  });
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -22,18 +28,28 @@ class AddExpenseScreen extends StatefulWidget {
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _formKey = GlobalKey<FormState>();
   String? _category;
-  final _amountController = TextEditingController();
+  late final TextEditingController _amountController;
   late final TextEditingController _currencyController;
-  final _descriptionController = TextEditingController();
+  late final TextEditingController _descriptionController;
   final _exchangeRateController = TextEditingController();
-  DateTime _date = DateTime.now();
-  ExpenseStatus _status = ExpenseStatus.actual;
+  late DateTime _date;
+  late ExpenseStatus _status;
   List<ExchangeRate> _existingRates = [];
+
+  bool get _isEditing => widget.existingExpense != null;
 
   @override
   void initState() {
     super.initState();
-    _currencyController = TextEditingController(text: widget.trip.homeCurrency);
+    final existing = widget.existingExpense;
+    _category = existing?.category;
+    _amountController =
+        TextEditingController(text: existing != null ? existing.amount.major.toString() : '');
+    _currencyController =
+        TextEditingController(text: existing?.amount.currencyCode ?? widget.trip.homeCurrency);
+    _descriptionController = TextEditingController(text: existing?.description ?? '');
+    _date = existing?.date ?? DateTime.now();
+    _status = existing?.status ?? ExpenseStatus.actual;
     _currencyController.addListener(() => setState(() {}));
     _loadRates();
   }
@@ -94,9 +110,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         ? Money(minorUnits: amount.minorUnits, currencyCode: widget.trip.homeCurrency)
         : rateToUse!.convert(amount);
 
+    final existing = widget.existingExpense;
     final participant = widget.trip.participants.first;
-    await widget.repository.addExpense(Expense(
-      id: const Uuid().v4(),
+    final expense = Expense(
+      id: existing?.id ?? const Uuid().v4(),
       tripId: widget.trip.id,
       category: _category!,
       amount: amount,
@@ -105,9 +122,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       date: _date,
       status: _status,
       includeInSplit: true,
-      paidBy: participant,
-      paidFor: [participant],
-    ));
+      paidBy: existing?.paidBy ?? participant,
+      paidFor: existing?.paidFor ?? [participant],
+    );
+    if (_isEditing) {
+      await widget.repository.updateExpense(expense);
+    } else {
+      await widget.repository.addExpense(expense);
+    }
     if (context.mounted) Navigator.pop(context, true);
   }
 
@@ -115,7 +137,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.addExpense)),
+      appBar: AppBar(title: Text(_isEditing ? l10n.editExpense : l10n.addExpense)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -193,7 +215,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ElevatedButton(
               key: const Key('saveExpenseButton'),
               onPressed: _save,
-              child: Text(l10n.saveExpense),
+              child: Text(_isEditing ? l10n.saveChanges : l10n.saveExpense),
             ),
           ],
         ),

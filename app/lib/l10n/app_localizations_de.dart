@@ -73,6 +73,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get addExpense => 'Ausgabe hinzufügen';
 
   @override
+  String get editExpense => 'Ausgabe bearbeiten';
+
+  @override
   String get category => 'Kategorie';
 
   @override

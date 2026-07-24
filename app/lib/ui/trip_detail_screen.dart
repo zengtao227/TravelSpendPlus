@@ -207,10 +207,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                           DropdownButton<String>(
                             value: displayCurrency,
                             underline: const SizedBox.shrink(),
-                            items: [
+                            items: {
                               trip.homeCurrency,
                               ...data.rates.map((r) => r.fromCurrency),
-                            ].toSet().map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                            }.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                             onChanged: (value) => setState(() => _viewCurrency = value),
                           ),
                         ],
@@ -301,6 +301,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               Text(l10n.expenses, style: Theme.of(context).textTheme.titleMedium),
               for (final expense in expenses)
                 ListTile(
+                  onTap: () async {
+                    await Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => AddExpenseScreen(
+                        trip: trip,
+                        repository: widget.repository,
+                        existingExpense: expense,
+                      ),
+                    ));
+                    _refresh();
+                  },
                   title: Text(expense.description.isEmpty
                       ? categoryLabel(context, expense.category)
                       : expense.description),

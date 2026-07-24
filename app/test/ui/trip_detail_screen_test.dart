@@ -251,4 +251,45 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(AddExpenseScreen), findsOneWidget);
   });
+
+  testWidgets('tapping an expense row opens it for editing, and saving there updates it in place',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime.now().subtract(const Duration(days: 2)),
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'lodging',
+      amount: Money.fromMajor(2800, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(2800, 'CNY'),
+      description: 'Kyoto guesthouse',
+      date: DateTime.now(),
+      status: ExpenseStatus.planned,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kyoto guesthouse'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AddExpenseScreen), findsOneWidget);
+    expect(find.text('编辑支出'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '3000');
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    final expenses = await repo.getExpenses('t1');
+    expect(expenses.length, 1);
+    expect(expenses.first.amount, Money.fromMajor(3000, 'CNY'));
+  });
 }

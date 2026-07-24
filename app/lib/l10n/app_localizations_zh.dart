@@ -72,6 +72,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addExpense => '记一笔';
 
   @override
+  String get editExpense => '编辑支出';
+
+  @override
   String get category => '类别';
 
   @override

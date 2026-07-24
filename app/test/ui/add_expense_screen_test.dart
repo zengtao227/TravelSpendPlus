@@ -31,11 +31,11 @@ void main() {
 
   tearDown(() async => db.close());
 
-  Widget wrap() => MaterialApp(
+  Widget wrap({Expense? existingExpense}) => MaterialApp(
         locale: const Locale('zh'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: AddExpenseScreen(trip: trip, repository: repo),
+        home: AddExpenseScreen(trip: trip, repository: repo, existingExpense: existingExpense),
       );
 
   testWidgets('filling a valid home-currency expense saves it as actual by default',
@@ -110,5 +110,67 @@ void main() {
 
     expect(find.text('请选择类别'), findsOneWidget);
     expect(await repo.getExpenses('t1'), isEmpty);
+  });
+
+  testWidgets('edit mode pre-fills every field from the existing expense', (tester) async {
+    final me = trip.participants.first;
+    final existing = Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'lodging',
+      amount: Money.fromMajor(2800, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(2800, 'CNY'),
+      description: 'Kyoto guesthouse',
+      date: DateTime(2026, 10, 6),
+      status: ExpenseStatus.planned,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    );
+    await repo.addExpense(existing);
+
+    await tester.pumpWidget(wrap(existingExpense: existing));
+    await tester.pumpAndSettle();
+
+    expect(find.text('编辑支出'), findsOneWidget); // AppBar title, not "记一笔"
+    expect(find.text('住宿'), findsOneWidget); // pre-selected category label
+    expect(find.text('2800.0'), findsOneWidget); // amount field
+    expect(find.text('Kyoto guesthouse'), findsOneWidget);
+    expect(find.text('保存修改'), findsOneWidget); // save button says "save changes", not "记一笔的保存"
+  });
+
+  testWidgets('edit mode saves via updateExpense, keeping the same id and not creating a second row',
+      (tester) async {
+    final me = trip.participants.first;
+    final existing = Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'lodging',
+      amount: Money.fromMajor(2800, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(2800, 'CNY'),
+      description: 'Kyoto guesthouse',
+      date: DateTime(2026, 10, 6),
+      status: ExpenseStatus.planned,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    );
+    await repo.addExpense(existing);
+
+    await tester.pumpWidget(wrap(existingExpense: existing));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '3100');
+    await tester.enterText(
+        find.byKey(const Key('expenseDescriptionField')), 'Kyoto guesthouse (extra night)');
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    final expenses = await repo.getExpenses('t1');
+    expect(expenses.length, 1, reason: 'editing must update the row, not add a second one');
+    expect(expenses.first.id, 'e1');
+    expect(expenses.first.amount, Money.fromMajor(3100, 'CNY'));
+    expect(expenses.first.description, 'Kyoto guesthouse (extra night)');
+    expect(expenses.first.category, 'lodging', reason: 'untouched fields must be preserved');
+    expect(expenses.first.status, ExpenseStatus.planned, reason: 'untouched fields must be preserved');
   });
 }
