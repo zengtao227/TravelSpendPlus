@@ -1,4 +1,10 @@
 {
   "@@locale": "de",
-  "appTitle": "TravelSpendPlus"
+  "appTitle": "TravelSpendPlus",
+  "categoryFood": "Essen",
+  "categoryTransport": "Transport",
+  "categoryLodging": "Unterkunft",
+  "categoryShopping": "Einkaufen",
+  "categoryEntertainment": "Unterhaltung",
+  "categoryOther": "Sonstiges"
 }

@@ -10,4 +10,22 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get appTitle => 'TravelSpendPlus';
+
+  @override
+  String get categoryFood => 'Essen';
+
+  @override
+  String get categoryTransport => 'Transport';
+
+  @override
+  String get categoryLodging => 'Unterkunft';
+
+  @override
+  String get categoryShopping => 'Einkaufen';
+
+  @override
+  String get categoryEntertainment => 'Unterhaltung';
+
+  @override
+  String get categoryOther => 'Sonstiges';
 }

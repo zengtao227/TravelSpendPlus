@@ -1,5 +1,11 @@
 {
   "@@locale": "en",
   "appTitle": "TravelSpendPlus",
-  "@appTitle": {"description": "The application title"}
+  "@appTitle": {"description": "The application title"},
+  "categoryFood": "Food",
+  "categoryTransport": "Transport",
+  "categoryLodging": "Lodging",
+  "categoryShopping": "Shopping",
+  "categoryEntertainment": "Entertainment",
+  "categoryOther": "Other"
 }

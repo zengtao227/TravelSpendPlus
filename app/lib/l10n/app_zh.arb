@@ -1,4 +1,10 @@
 {
   "@@locale": "zh",
-  "appTitle": "TravelSpendPlus"
+  "appTitle": "TravelSpendPlus",
+  "categoryFood": "餐饮",
+  "categoryTransport": "交通",
+  "categoryLodging": "住宿",
+  "categoryShopping": "购物",
+  "categoryEntertainment": "娱乐",
+  "categoryOther": "其他"
 }
