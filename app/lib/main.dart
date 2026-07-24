@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
 
-void main() {
-  runApp(const TravelSpendPlusApp());
+import 'persistence/database.dart';
+import 'persistence/trip_repository.dart';
+import 'ui/theme.dart';
+import 'ui/trip_list_screen.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final db = await AppDatabase.openOnDevice();
+  runApp(TravelSpendPlusApp(repository: TripRepository(db)));
 }
 
 class TravelSpendPlusApp extends StatelessWidget {
-  const TravelSpendPlusApp({super.key});
+  final TripRepository repository;
+  const TravelSpendPlusApp({super.key, required this.repository});
 
   @override
   Widget build(BuildContext context) {
@@ -14,8 +23,8 @@ class TravelSpendPlusApp extends StatelessWidget {
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      theme: ThemeData(useMaterial3: true),
-      home: const Scaffold(body: Center(child: Text('TravelSpendPlus'))),
+      theme: buildAppTheme(),
+      home: TripListScreen(repository: repository),
     );
   }
 }
