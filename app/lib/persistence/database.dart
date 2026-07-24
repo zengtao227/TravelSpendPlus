@@ -57,6 +57,16 @@ class TripExchangeRates extends Table {
   TextColumn get tripId => text().references(Trips, #id)();
   TextColumn get fromCurrency => text()();
   RealColumn get rate => real()();
+
+  // Enforced at the schema level, not just by TripRepository.setExchangeRate's
+  // check-then-write logic: a trip must never have two rate rows for the
+  // same currency. That repository method already prevents duplicates on
+  // its own write path, but a schema-level unique constraint is the actual
+  // guarantee against any other path ever creating one.
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {tripId, fromCurrency},
+      ];
 }
 
 @DriftDatabase(tables: [Trips, Participants, Expenses, TripExchangeRates])
@@ -72,7 +82,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -80,6 +90,16 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.createTable(tripExchangeRates);
+          }
+          if (from < 3) {
+            // v2's tripExchangeRates table had no unique constraint on
+            // (tripId, fromCurrency) — add it directly via SQL, since Drift's
+            // MigrationStrategy has no "add a unique index to an existing
+            // table" helper beyond raw statements.
+            await m.database.customStatement(
+              'CREATE UNIQUE INDEX IF NOT EXISTS trip_exchange_rates_trip_currency_unique '
+              'ON trip_exchange_rates (trip_id, from_currency)',
+            );
           }
         },
       );

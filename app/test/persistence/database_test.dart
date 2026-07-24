@@ -105,4 +105,31 @@ void main() {
     expect(rows.first.rate, 0.05);
     await db.close();
   });
+
+  test('a trip cannot have two exchange rate rows for the same currency', () async {
+    await db.into(db.trips).insert(TripsCompanion.insert(
+          id: 't1',
+          name: 'Japan',
+          startDate: DateTime(2026, 10, 5),
+          endDate: DateTime(2026, 10, 12),
+          homeCurrency: 'CNY',
+          totalBudgetMinorUnits: 2000000,
+        ));
+    await db.into(db.tripExchangeRates).insert(TripExchangeRatesCompanion.insert(
+          tripId: 't1',
+          fromCurrency: 'JPY',
+          rate: 0.05,
+        ));
+    // A second row for the same (tripId, fromCurrency) pair, bypassing
+    // TripRepository.setExchangeRate's own application-level check, must
+    // still be rejected by the schema's unique constraint.
+    await expectLater(
+      db.into(db.tripExchangeRates).insert(TripExchangeRatesCompanion.insert(
+            tripId: 't1',
+            fromCurrency: 'JPY',
+            rate: 0.06,
+          )),
+      throwsA(isA<Exception>()),
+    );
+  });
 }
