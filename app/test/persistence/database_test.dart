@@ -81,4 +81,28 @@ void main() {
     expect(rows.first.amountMinorUnits, 3000);
     expect(rows.first.status, 'actual');
   });
+
+  test('schema v2 has a queryable tripExchangeRates table', () async {
+    final db = AppDatabase.memory();
+    await db.into(db.trips).insert(TripsCompanion.insert(
+          id: 't1',
+          name: 'Japan',
+          startDate: DateTime(2026, 10, 5),
+          endDate: DateTime(2026, 10, 12),
+          homeCurrency: 'CNY',
+          totalBudgetMinorUnits: 2000000,
+        ));
+    await db.into(db.tripExchangeRates).insert(TripExchangeRatesCompanion.insert(
+          tripId: 't1',
+          fromCurrency: 'JPY',
+          rate: 0.05,
+        ));
+    final rows = await (db.select(db.tripExchangeRates)
+          ..where((r) => r.tripId.equals('t1')))
+        .get();
+    expect(rows.length, 1);
+    expect(rows.first.fromCurrency, 'JPY');
+    expect(rows.first.rate, 0.05);
+    await db.close();
+  });
 }

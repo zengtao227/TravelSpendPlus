@@ -1444,12 +1444,319 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
   }
 }
 
+class $TripExchangeRatesTable extends TripExchangeRates
+    with TableInfo<$TripExchangeRatesTable, TripExchangeRate> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TripExchangeRatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _tripIdMeta = const VerificationMeta('tripId');
+  @override
+  late final GeneratedColumn<String> tripId = GeneratedColumn<String>(
+    'trip_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES trips (id)',
+    ),
+  );
+  static const VerificationMeta _fromCurrencyMeta = const VerificationMeta(
+    'fromCurrency',
+  );
+  @override
+  late final GeneratedColumn<String> fromCurrency = GeneratedColumn<String>(
+    'from_currency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rateMeta = const VerificationMeta('rate');
+  @override
+  late final GeneratedColumn<double> rate = GeneratedColumn<double>(
+    'rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, tripId, fromCurrency, rate];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'trip_exchange_rates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TripExchangeRate> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('trip_id')) {
+      context.handle(
+        _tripIdMeta,
+        tripId.isAcceptableOrUnknown(data['trip_id']!, _tripIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tripIdMeta);
+    }
+    if (data.containsKey('from_currency')) {
+      context.handle(
+        _fromCurrencyMeta,
+        fromCurrency.isAcceptableOrUnknown(
+          data['from_currency']!,
+          _fromCurrencyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fromCurrencyMeta);
+    }
+    if (data.containsKey('rate')) {
+      context.handle(
+        _rateMeta,
+        rate.isAcceptableOrUnknown(data['rate']!, _rateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rateMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TripExchangeRate map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TripExchangeRate(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      tripId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}trip_id'],
+      )!,
+      fromCurrency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}from_currency'],
+      )!,
+      rate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}rate'],
+      )!,
+    );
+  }
+
+  @override
+  $TripExchangeRatesTable createAlias(String alias) {
+    return $TripExchangeRatesTable(attachedDatabase, alias);
+  }
+}
+
+class TripExchangeRate extends DataClass
+    implements Insertable<TripExchangeRate> {
+  final int id;
+  final String tripId;
+  final String fromCurrency;
+  final double rate;
+  const TripExchangeRate({
+    required this.id,
+    required this.tripId,
+    required this.fromCurrency,
+    required this.rate,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['trip_id'] = Variable<String>(tripId);
+    map['from_currency'] = Variable<String>(fromCurrency);
+    map['rate'] = Variable<double>(rate);
+    return map;
+  }
+
+  TripExchangeRatesCompanion toCompanion(bool nullToAbsent) {
+    return TripExchangeRatesCompanion(
+      id: Value(id),
+      tripId: Value(tripId),
+      fromCurrency: Value(fromCurrency),
+      rate: Value(rate),
+    );
+  }
+
+  factory TripExchangeRate.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TripExchangeRate(
+      id: serializer.fromJson<int>(json['id']),
+      tripId: serializer.fromJson<String>(json['tripId']),
+      fromCurrency: serializer.fromJson<String>(json['fromCurrency']),
+      rate: serializer.fromJson<double>(json['rate']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'tripId': serializer.toJson<String>(tripId),
+      'fromCurrency': serializer.toJson<String>(fromCurrency),
+      'rate': serializer.toJson<double>(rate),
+    };
+  }
+
+  TripExchangeRate copyWith({
+    int? id,
+    String? tripId,
+    String? fromCurrency,
+    double? rate,
+  }) => TripExchangeRate(
+    id: id ?? this.id,
+    tripId: tripId ?? this.tripId,
+    fromCurrency: fromCurrency ?? this.fromCurrency,
+    rate: rate ?? this.rate,
+  );
+  TripExchangeRate copyWithCompanion(TripExchangeRatesCompanion data) {
+    return TripExchangeRate(
+      id: data.id.present ? data.id.value : this.id,
+      tripId: data.tripId.present ? data.tripId.value : this.tripId,
+      fromCurrency: data.fromCurrency.present
+          ? data.fromCurrency.value
+          : this.fromCurrency,
+      rate: data.rate.present ? data.rate.value : this.rate,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TripExchangeRate(')
+          ..write('id: $id, ')
+          ..write('tripId: $tripId, ')
+          ..write('fromCurrency: $fromCurrency, ')
+          ..write('rate: $rate')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, tripId, fromCurrency, rate);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TripExchangeRate &&
+          other.id == this.id &&
+          other.tripId == this.tripId &&
+          other.fromCurrency == this.fromCurrency &&
+          other.rate == this.rate);
+}
+
+class TripExchangeRatesCompanion extends UpdateCompanion<TripExchangeRate> {
+  final Value<int> id;
+  final Value<String> tripId;
+  final Value<String> fromCurrency;
+  final Value<double> rate;
+  const TripExchangeRatesCompanion({
+    this.id = const Value.absent(),
+    this.tripId = const Value.absent(),
+    this.fromCurrency = const Value.absent(),
+    this.rate = const Value.absent(),
+  });
+  TripExchangeRatesCompanion.insert({
+    this.id = const Value.absent(),
+    required String tripId,
+    required String fromCurrency,
+    required double rate,
+  }) : tripId = Value(tripId),
+       fromCurrency = Value(fromCurrency),
+       rate = Value(rate);
+  static Insertable<TripExchangeRate> custom({
+    Expression<int>? id,
+    Expression<String>? tripId,
+    Expression<String>? fromCurrency,
+    Expression<double>? rate,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tripId != null) 'trip_id': tripId,
+      if (fromCurrency != null) 'from_currency': fromCurrency,
+      if (rate != null) 'rate': rate,
+    });
+  }
+
+  TripExchangeRatesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? tripId,
+    Value<String>? fromCurrency,
+    Value<double>? rate,
+  }) {
+    return TripExchangeRatesCompanion(
+      id: id ?? this.id,
+      tripId: tripId ?? this.tripId,
+      fromCurrency: fromCurrency ?? this.fromCurrency,
+      rate: rate ?? this.rate,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (tripId.present) {
+      map['trip_id'] = Variable<String>(tripId.value);
+    }
+    if (fromCurrency.present) {
+      map['from_currency'] = Variable<String>(fromCurrency.value);
+    }
+    if (rate.present) {
+      map['rate'] = Variable<double>(rate.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TripExchangeRatesCompanion(')
+          ..write('id: $id, ')
+          ..write('tripId: $tripId, ')
+          ..write('fromCurrency: $fromCurrency, ')
+          ..write('rate: $rate')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $TripsTable trips = $TripsTable(this);
   late final $ParticipantsTable participants = $ParticipantsTable(this);
   late final $ExpensesTable expenses = $ExpensesTable(this);
+  late final $TripExchangeRatesTable tripExchangeRates =
+      $TripExchangeRatesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1458,6 +1765,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     trips,
     participants,
     expenses,
+    tripExchangeRates,
   ];
 }
 
@@ -1518,6 +1826,27 @@ final class $$TripsTableReferences
     ).filter((f) => f.tripId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_expensesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TripExchangeRatesTable, List<TripExchangeRate>>
+  _tripExchangeRatesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.tripExchangeRates,
+        aliasName: 'trips__id__trip_exchange_rates__trip_id',
+      );
+
+  $$TripExchangeRatesTableProcessedTableManager get tripExchangeRatesRefs {
+    final manager = $$TripExchangeRatesTableTableManager(
+      $_db,
+      $_db.tripExchangeRates,
+    ).filter((f) => f.tripId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _tripExchangeRatesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -1603,6 +1932,31 @@ class $$TripsTableFilterComposer extends Composer<_$AppDatabase, $TripsTable> {
           }) => $$ExpensesTableFilterComposer(
             $db: $db,
             $table: $db.expenses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> tripExchangeRatesRefs(
+    Expression<bool> Function($$TripExchangeRatesTableFilterComposer f) f,
+  ) {
+    final $$TripExchangeRatesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tripExchangeRates,
+      getReferencedColumn: (t) => t.tripId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TripExchangeRatesTableFilterComposer(
+            $db: $db,
+            $table: $db.tripExchangeRates,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -1733,6 +2087,32 @@ class $$TripsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> tripExchangeRatesRefs<T extends Object>(
+    Expression<T> Function($$TripExchangeRatesTableAnnotationComposer a) f,
+  ) {
+    final $$TripExchangeRatesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.tripExchangeRates,
+          getReferencedColumn: (t) => t.tripId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TripExchangeRatesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.tripExchangeRates,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$TripsTableTableManager
@@ -1748,7 +2128,11 @@ class $$TripsTableTableManager
           $$TripsTableUpdateCompanionBuilder,
           (Trip, $$TripsTableReferences),
           Trip,
-          PrefetchHooks Function({bool participantsRefs, bool expensesRefs})
+          PrefetchHooks Function({
+            bool participantsRefs,
+            bool expensesRefs,
+            bool tripExchangeRatesRefs,
+          })
         > {
   $$TripsTableTableManager(_$AppDatabase db, $TripsTable table)
     : super(
@@ -1804,12 +2188,17 @@ class $$TripsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({participantsRefs = false, expensesRefs = false}) {
+              ({
+                participantsRefs = false,
+                expensesRefs = false,
+                tripExchangeRatesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (participantsRefs) db.participants,
                     if (expensesRefs) db.expenses,
+                    if (tripExchangeRatesRefs) db.tripExchangeRates,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -1852,6 +2241,27 @@ class $$TripsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (tripExchangeRatesRefs)
+                        await $_getPrefetchedData<
+                          Trip,
+                          $TripsTable,
+                          TripExchangeRate
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TripsTableReferences
+                              ._tripExchangeRatesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TripsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).tripExchangeRatesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.tripId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -1872,7 +2282,11 @@ typedef $$TripsTableProcessedTableManager =
       $$TripsTableUpdateCompanionBuilder,
       (Trip, $$TripsTableReferences),
       Trip,
-      PrefetchHooks Function({bool participantsRefs, bool expensesRefs})
+      PrefetchHooks Function({
+        bool participantsRefs,
+        bool expensesRefs,
+        bool tripExchangeRatesRefs,
+      })
     >;
 typedef $$ParticipantsTableCreateCompanionBuilder =
     ParticipantsCompanion Function({
@@ -2791,6 +3205,316 @@ typedef $$ExpensesTableProcessedTableManager =
       Expense,
       PrefetchHooks Function({bool tripId, bool paidById})
     >;
+typedef $$TripExchangeRatesTableCreateCompanionBuilder =
+    TripExchangeRatesCompanion Function({
+      Value<int> id,
+      required String tripId,
+      required String fromCurrency,
+      required double rate,
+    });
+typedef $$TripExchangeRatesTableUpdateCompanionBuilder =
+    TripExchangeRatesCompanion Function({
+      Value<int> id,
+      Value<String> tripId,
+      Value<String> fromCurrency,
+      Value<double> rate,
+    });
+
+final class $$TripExchangeRatesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $TripExchangeRatesTable,
+          TripExchangeRate
+        > {
+  $$TripExchangeRatesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TripsTable _tripIdTable(_$AppDatabase db) =>
+      db.trips.createAlias('trip_exchange_rates__trip_id__trips__id');
+
+  $$TripsTableProcessedTableManager get tripId {
+    final $_column = $_itemColumn<String>('trip_id')!;
+
+    final manager = $$TripsTableTableManager(
+      $_db,
+      $_db.trips,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_tripIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TripExchangeRatesTableFilterComposer
+    extends Composer<_$AppDatabase, $TripExchangeRatesTable> {
+  $$TripExchangeRatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fromCurrency => $composableBuilder(
+    column: $table.fromCurrency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get rate => $composableBuilder(
+    column: $table.rate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TripsTableFilterComposer get tripId {
+    final $$TripsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tripId,
+      referencedTable: $db.trips,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TripsTableFilterComposer(
+            $db: $db,
+            $table: $db.trips,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TripExchangeRatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $TripExchangeRatesTable> {
+  $$TripExchangeRatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fromCurrency => $composableBuilder(
+    column: $table.fromCurrency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get rate => $composableBuilder(
+    column: $table.rate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TripsTableOrderingComposer get tripId {
+    final $$TripsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tripId,
+      referencedTable: $db.trips,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TripsTableOrderingComposer(
+            $db: $db,
+            $table: $db.trips,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TripExchangeRatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TripExchangeRatesTable> {
+  $$TripExchangeRatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get fromCurrency => $composableBuilder(
+    column: $table.fromCurrency,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get rate =>
+      $composableBuilder(column: $table.rate, builder: (column) => column);
+
+  $$TripsTableAnnotationComposer get tripId {
+    final $$TripsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tripId,
+      referencedTable: $db.trips,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TripsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.trips,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TripExchangeRatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TripExchangeRatesTable,
+          TripExchangeRate,
+          $$TripExchangeRatesTableFilterComposer,
+          $$TripExchangeRatesTableOrderingComposer,
+          $$TripExchangeRatesTableAnnotationComposer,
+          $$TripExchangeRatesTableCreateCompanionBuilder,
+          $$TripExchangeRatesTableUpdateCompanionBuilder,
+          (TripExchangeRate, $$TripExchangeRatesTableReferences),
+          TripExchangeRate,
+          PrefetchHooks Function({bool tripId})
+        > {
+  $$TripExchangeRatesTableTableManager(
+    _$AppDatabase db,
+    $TripExchangeRatesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TripExchangeRatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TripExchangeRatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TripExchangeRatesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> tripId = const Value.absent(),
+                Value<String> fromCurrency = const Value.absent(),
+                Value<double> rate = const Value.absent(),
+              }) => TripExchangeRatesCompanion(
+                id: id,
+                tripId: tripId,
+                fromCurrency: fromCurrency,
+                rate: rate,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String tripId,
+                required String fromCurrency,
+                required double rate,
+              }) => TripExchangeRatesCompanion.insert(
+                id: id,
+                tripId: tripId,
+                fromCurrency: fromCurrency,
+                rate: rate,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TripExchangeRatesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({tripId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (tripId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.tripId,
+                                referencedTable:
+                                    $$TripExchangeRatesTableReferences
+                                        ._tripIdTable(db),
+                                referencedColumn:
+                                    $$TripExchangeRatesTableReferences
+                                        ._tripIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TripExchangeRatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TripExchangeRatesTable,
+      TripExchangeRate,
+      $$TripExchangeRatesTableFilterComposer,
+      $$TripExchangeRatesTableOrderingComposer,
+      $$TripExchangeRatesTableAnnotationComposer,
+      $$TripExchangeRatesTableCreateCompanionBuilder,
+      $$TripExchangeRatesTableUpdateCompanionBuilder,
+      (TripExchangeRate, $$TripExchangeRatesTableReferences),
+      TripExchangeRate,
+      PrefetchHooks Function({bool tripId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2801,4 +3525,6 @@ class $AppDatabaseManager {
       $$ParticipantsTableTableManager(_db, _db.participants);
   $$ExpensesTableTableManager get expenses =>
       $$ExpensesTableTableManager(_db, _db.expenses);
+  $$TripExchangeRatesTableTableManager get tripExchangeRates =>
+      $$TripExchangeRatesTableTableManager(_db, _db.tripExchangeRates);
 }

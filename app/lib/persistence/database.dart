@@ -49,7 +49,17 @@ class Expenses extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Trips, Participants, Expenses])
+/// A trip's manually maintained "1 fromCurrency = rate homeCurrency" list
+/// (see `CurrencyConverter`). `toCurrency` isn't stored — it's always the
+/// owning trip's current `homeCurrency`, looked up via `tripId` when read.
+class TripExchangeRates extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get tripId => text().references(Trips, #id)();
+  TextColumn get fromCurrency => text()();
+  RealColumn get rate => real()();
+}
+
+@DriftDatabase(tables: [Trips, Participants, Expenses, TripExchangeRates])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
@@ -62,5 +72,15 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(tripExchangeRates);
+          }
+        },
+      );
 }
