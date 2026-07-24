@@ -1949,7 +1949,22 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
     _ratesFuture = widget.repository.getExchangeRates(widget.trip.id);
   }
 
-  void _refresh() => setState(() => _ratesFuture = widget.repository.getExchangeRates(widget.trip.id));
+  @override
+  void dispose() {
+    _newRateCurrency.dispose();
+    _newRateValue.dispose();
+    _newHomeCurrency.dispose();
+    _oldToNewRate.dispose();
+    super.dispose();
+  }
+
+  // A block body, not `=> setState(...)` — an arrow body's implicit return
+  // would be the assignment expression's value (a Future, from the async
+  // repository call), and Flutter's setState asserts its callback returns
+  // void. Caught only by running the widget test, not by reading the code.
+  void _refresh() => setState(() {
+        _ratesFuture = widget.repository.getExchangeRates(widget.trip.id);
+      });
 
   Future<void> _saveRate() async {
     final currency = _newRateCurrency.text.trim().toUpperCase();
