@@ -2702,6 +2702,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
 import 'package:travelspendplus/domain/money.dart';
+import 'package:travelspendplus/domain/expense.dart';
 import 'package:travelspendplus/domain/participant.dart';
 import 'package:travelspendplus/domain/trip.dart';
 import 'package:travelspendplus/persistence/database.dart' hide Trip, Participant, Expense;
@@ -2747,6 +2748,54 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Japan Trip'), findsOneWidget);
     expect(find.textContaining('CNY 20,000.00'), findsWidgets);
+  });
+
+  testWidgets('shows actual and planned totals separately, not combined into one figure',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't2',
+      name: 'Italy Trip',
+      startDate: DateTime(2026, 10, 5),
+      endDate: DateTime(2026, 10, 12),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [Participant(id: 'p2', name: 'Me')],
+    ));
+    final me = Participant(id: 'p2', name: 'Me');
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't2',
+      category: 'food',
+      amount: Money.fromMajor(300, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+      description: 'Dinner',
+      date: DateTime(2026, 10, 6),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e2',
+      tripId: 't2',
+      category: 'transport',
+      amount: Money.fromMajor(5000, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(5000, 'CNY'),
+      description: 'Flight',
+      date: DateTime(2026, 10, 7),
+      status: ExpenseStatus.planned,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    // Distinct actual/planned amounts (300 vs 5000) so a bug that combined
+    // them into one "Spent: 5,300" figure would fail both assertions below.
+    expect(find.textContaining('300.00'), findsWidgets);
+    expect(find.textContaining('5,000.00'), findsWidgets);
+    expect(find.textContaining('5,300.00'), findsNothing);
   });
 
   testWidgets('the FAB navigates to CreateTripScreen', (tester) async {
@@ -2854,9 +2903,15 @@ class _TripCard extends StatelessWidget {
       builder: (context, snapshot) {
         final expenses = snapshot.data ?? [];
         final summary = BudgetCalculator.summarize(trip: trip, expenses: expenses);
-        final spent = summary.plannedTotal + summary.actualTotal;
-        final progress =
-            trip.totalBudget.minorUnits == 0 ? 0.0 : spent.minorUnits / trip.totalBudget.minorUnits;
+        // Progress bar reflects total committed spend (actual+planned) against
+        // the budget, but actual and planned must be *displayed* separately
+        // below — combining them into one "Spent" figure would show unspent,
+        // merely-planned money as if it had already been paid (design.md's
+        // budget overview explicitly requires showing these two totals apart).
+        final committed = summary.actualTotal + summary.plannedTotal;
+        final progress = trip.totalBudget.minorUnits == 0
+            ? 0.0
+            : committed.minorUnits / trip.totalBudget.minorUnits;
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: InkWell(
@@ -2887,7 +2942,8 @@ class _TripCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('${l10n.spentTotal} ${formatMoney(spent)}'),
+                      Text('${l10n.spentTotal} ${formatMoney(summary.actualTotal)}'),
+                      Text('${l10n.plannedTotal} ${formatMoney(summary.plannedTotal)}'),
                       Text(formatMoney(trip.totalBudget)),
                     ],
                   ),
