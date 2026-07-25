@@ -13,8 +13,9 @@ class AppColors {
   static const mutedText = Color(0xFF8A7F70); // secondary text
   static const border = Color(0xFFEFE4D5);
 
-  /// Fixed order, matches `kExpenseCategoryKeys` — food, transport, flight,
-  /// lodging, shopping, entertainment, other.
+  /// Cycled by each category's position in the trip's own spending
+  /// breakdown (not by `kExpenseCategoryKeys`'s order), so any category —
+  /// built-in or custom — gets a distinct color.
   static const categoryChartColors = [
     coral,
     teal,

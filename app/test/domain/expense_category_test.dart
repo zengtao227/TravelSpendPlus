@@ -4,6 +4,6 @@ import 'package:travelspendplus/domain/expense_category.dart';
 void main() {
   test('exactly the seven fixed category keys, in a stable order', () {
     expect(kExpenseCategoryKeys,
-        ['food', 'transport', 'flight', 'lodging', 'shopping', 'entertainment', 'other']);
+        ['flight', 'lodging', 'food', 'transport', 'shopping', 'entertainment', 'other']);
   });
 }

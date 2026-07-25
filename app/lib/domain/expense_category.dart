@@ -5,10 +5,10 @@
 /// (`lib/ui/formatting.dart`) so category statistics don't fragment across
 /// languages; custom categories have no translation and display as typed.
 const List<String> kExpenseCategoryKeys = [
-  'food',
-  'transport',
   'flight',
   'lodging',
+  'food',
+  'transport',
   'shopping',
   'entertainment',
   'other',

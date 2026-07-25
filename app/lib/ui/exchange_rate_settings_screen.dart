@@ -91,6 +91,18 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
     _refresh();
   }
 
+  // Also shown as a SnackBar, not just the inline text near the confirm
+  // button — with one direct-rate field per currency in use, that button
+  // (and the error beside it) can end up scrolled out of view, and an
+  // inline-only error there could look like the button silently did
+  // nothing at all.
+  void _showChangeCurrencyError(String message) {
+    setState(() => _changeCurrencyError = message);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Future<void> _confirmChangeCurrency(Set<String> requiredCurrencies) async {
     final l10n = AppLocalizations.of(context)!;
     final newCurrency = _newHomeCurrency;
@@ -99,7 +111,7 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
       // relying on TripRepository.changeHomeCurrency's ArgumentError —
       // that guard exists too, but a thrown exception with no on-screen
       // message would look like the button silently did nothing.
-      setState(() => _changeCurrencyError = l10n.errorSameCurrency);
+      _showChangeCurrencyError(l10n.errorSameCurrency);
       return;
     }
     // One direct "1 currency = ? newCurrency" rate per currency actually in
@@ -110,7 +122,7 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
     for (final currency in requiredCurrencies) {
       final rate = double.tryParse(_directRateControllerFor(currency).text);
       if (rate == null || rate <= 0) {
-        setState(() => _changeCurrencyError = l10n.errorPositiveRate);
+        _showChangeCurrencyError(l10n.errorPositiveRate);
         return;
       }
       rates[currency] = rate;

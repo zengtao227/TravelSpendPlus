@@ -11,6 +11,7 @@ import 'package:travelspendplus/domain/trip.dart';
 import 'package:travelspendplus/persistence/database.dart' hide Trip, Participant, Expense;
 import 'package:travelspendplus/persistence/trip_repository.dart';
 import 'package:travelspendplus/ui/add_expense_screen.dart';
+import 'package:travelspendplus/ui/exchange_rate_settings_screen.dart';
 import 'package:travelspendplus/ui/trip_detail_screen.dart';
 
 void main() {
@@ -377,6 +378,75 @@ void main() {
     final expenses = await repo.getExpenses('t1');
     expect(expenses.length, 1);
     expect(expenses.first.amount, Money.fromMajor(3000, 'CNY'));
+  });
+
+  testWidgets(
+      'changing home currency via the exchange-rate icon is reflected on the trip page after '
+      'navigating back', (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime.now().subtract(const Duration(days: 2)),
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      homeCurrency: 'EUR',
+      totalBudget: Money.fromMajor(1000, 'EUR'),
+      participants: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(30, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
+      description: 'Dinner',
+      date: DateTime.now(),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('EUR'), findsWidgets);
+
+    await tester.tap(find.byIcon(Icons.currency_exchange));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('changeCurrencyButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('newHomeCurrencyField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('CHF').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('directRateField_EUR')), '0.95');
+    await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
+    await tester.pumpAndSettle();
+
+    // Back on the trip page: both the in-memory widget and a fresh DB read
+    // must agree the home currency actually changed and stuck. The expense
+    // itself (recorded in EUR) correctly keeps showing "EUR 30.00" in its
+    // own row — only the trip's home currency changed, not each expense's
+    // own recorded currency — so check the *summary card* specifically,
+    // not "no EUR text anywhere on the page."
+    expect(find.byType(ExchangeRateSettingsScreen), findsNothing);
+    expect(find.text('CHF 950.00'), findsOneWidget); // 1000 EUR * 0.95
+    var reloaded = await repo.getTrip('t1');
+    expect(reloaded!.homeCurrency, 'CHF');
+
+    // Then edit the existing expense (still EUR-denominated, unaffected by
+    // the home-currency change) and save it without touching its currency
+    // — this alone must not revert the trip's home currency back to EUR.
+    await tester.tap(find.text('Dinner'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '35');
+    await tester.ensureVisible(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('CHF 950.00'), findsOneWidget, reason: 'budget must still read in CHF');
+    reloaded = await repo.getTrip('t1');
+    expect(reloaded!.homeCurrency, 'CHF', reason: 'editing an unrelated expense field must not revert the home currency');
   });
 
   testWidgets('the category legend follows the currency switcher, not just the summary card',

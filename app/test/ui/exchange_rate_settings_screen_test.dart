@@ -127,7 +127,8 @@ void main() {
     await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('already the trip\'s home currency'), findsOneWidget);
+    // Shown both inline and as a SnackBar (see _showChangeCurrencyError).
+    expect(find.textContaining('already the trip\'s home currency'), findsWidgets);
 
     final reloaded = await repo.getTrip('t1');
     expect(reloaded!.homeCurrency, 'CNY');
@@ -205,5 +206,39 @@ void main() {
 
     expect(find.text('Enter a positive exchange rate'), findsOneWidget);
     expect(await repo.getExchangeRates('t1'), isEmpty);
+  });
+
+  testWidgets(
+      'confirming a currency change with one of several required rates left blank shows a '
+      "SnackBar (not just an inline error that could be scrolled out of view) and doesn't change "
+      'anything', (tester) async {
+    // JPY already has a rate to the trip's CNY home currency, so changing
+    // home currency now requires two direct-rate fields (CNY and JPY).
+    await repo.setExchangeRate(
+        't1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'CNY', rate: 0.05));
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('changeCurrencyButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('newHomeCurrencyField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('CHF').last);
+    await tester.pumpAndSettle();
+
+    // Only fill in CNY's rate, leaving JPY's blank.
+    await tester.enterText(find.byKey(const Key('directRateField_CNY')), '0.13');
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('confirmChangeCurrencyButton')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
+    await tester.pump(); // SnackBar animates in
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text('Enter a positive exchange rate'), findsWidgets);
+    final reloaded = await repo.getTrip('t1');
+    expect(reloaded!.homeCurrency, 'CNY', reason: 'an incomplete change must not partially apply');
   });
 }
