@@ -35,7 +35,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     super.initState();
     final trip = widget.existingTrip;
     _nameController = TextEditingController(text: trip?.name ?? '');
-    _currency = trip?.homeCurrency ?? 'CNY';
+    _currency = trip?.homeCurrency ?? 'EUR';
     _budgetController =
         TextEditingController(text: trip != null ? trip.totalBudget.major.toString() : '');
     _startDate = civilDate(trip?.startDate ?? DateTime.now());

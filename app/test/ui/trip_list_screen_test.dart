@@ -12,6 +12,7 @@ import 'package:travelspendplus/persistence/database.dart' hide Trip, Participan
 import 'package:travelspendplus/persistence/trip_repository.dart';
 import 'package:travelspendplus/ui/create_trip_screen.dart';
 import 'package:travelspendplus/ui/trip_list_screen.dart';
+import 'package:travelspendplus/version.dart';
 
 void main() {
   late AppDatabase db;
@@ -108,6 +109,15 @@ void main() {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();
     expect(find.text('No trips yet — tap + to plan your first one'), findsOneWidget);
+  });
+
+  testWidgets(
+      'shows the app version as a small footer, so a screenshot can settle which build is '
+      'actually running', (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('appVersionLabel')), findsOneWidget);
+    expect(find.text('v$kAppVersion'), findsOneWidget);
   });
 
   testWidgets('shows a card per trip with name and budget total', (tester) async {

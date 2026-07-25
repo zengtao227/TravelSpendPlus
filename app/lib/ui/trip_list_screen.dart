@@ -7,9 +7,11 @@ import '../domain/backup.dart';
 import '../domain/budget_calculator.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
+import '../version.dart';
 import 'create_trip_screen.dart';
 import 'file_io.dart' as file_io;
 import 'formatting.dart';
+import 'theme.dart';
 import 'trip_detail_screen.dart';
 
 class TripListScreen extends StatefulWidget {
@@ -151,51 +153,67 @@ class _TripListScreenState extends State<TripListScreen> {
           ),
         ],
       ),
-      body: FutureBuilder<List<Trip>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final trips = snapshot.data ?? [];
-          if (trips.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(l10n.noTripsYet, textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    TextButton.icon(
-                      key: const Key('restoreFromBackupButton'),
-                      icon: const Icon(Icons.restore),
-                      label: Text(l10n.restoreFromBackup),
-                      onPressed: _importAll,
-                    ),
-                    if (_importError != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(_importError!,
-                            style: TextStyle(color: Theme.of(context).colorScheme.error)),
+      body: Column(
+        children: [
+          Expanded(
+            child: FutureBuilder<List<Trip>>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final trips = snapshot.data ?? [];
+                if (trips.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(l10n.noTripsYet, textAlign: TextAlign.center),
+                          const SizedBox(height: 16),
+                          TextButton.icon(
+                            key: const Key('restoreFromBackupButton'),
+                            icon: const Icon(Icons.restore),
+                            label: Text(l10n.restoreFromBackup),
+                            onPressed: _importAll,
+                          ),
+                          if (_importError != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(_importError!,
+                                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                            ),
+                        ],
                       ),
-                  ],
-                ),
-              ),
-            );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: trips.length,
-            itemBuilder: (context, index) {
-              return _TripCard(
-                trip: trips[index],
-                repository: widget.repository,
-                onReturned: _refresh,
-              );
-            },
-          );
-        },
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: trips.length,
+                  itemBuilder: (context, index) {
+                    return _TripCard(
+                      trip: trips[index],
+                      repository: widget.repository,
+                      onReturned: _refresh,
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          // Lets a screenshot settle "which build is this" arguments
+          // instantly, instead of guessing from behavior.
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'v$kAppVersion',
+              key: const Key('appVersionLabel'),
+              style: const TextStyle(fontSize: 10, color: AppColors.mutedText),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {

@@ -37,6 +37,7 @@ void main() {
     expect(trips.length, 1);
     expect(trips.first.name, 'Japan Trip');
     expect(trips.first.participants.length, 1);
+    expect(trips.first.homeCurrency, 'EUR', reason: 'EUR is the default home currency for a new trip');
   });
 
   testWidgets('picking a currency from the dropdown saves the trip with that home currency',
