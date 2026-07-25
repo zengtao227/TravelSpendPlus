@@ -453,6 +453,19 @@ Add to `app/test/persistence/trip_repository_test.dart`. First, add this import 
 import 'package:travelspendplus/services/expense_photo_store.dart';
 ```
 
+**Also add `ExpensePhotoStore.resetForTesting();` to this file's `setUp()`, right after the existing `TripPhotoStore.resetForTesting();` call (around line 28).** `ExpensePhotoStore` memoizes its resolved documents directory in a static field exactly like `TripPhotoStore` does — without resetting it per test, the second test in this file that saves an expense photo will resolve to the *first* test's already-deleted `photoTempDir` and throw `FileSystemException` on `writeAsBytes`. The `setUp()` block should read:
+
+```dart
+  setUp(() async {
+    db = AppDatabase.memory();
+    repo = TripRepository(db);
+    photoTempDir = await Directory.systemTemp.createTemp('trip_repository_test');
+    FakePathProviderPlatform.install(photoTempDir.path);
+    TripPhotoStore.resetForTesting();
+    ExpensePhotoStore.resetForTesting();
+  });
+```
+
 Then add these tests. Place the first two right after the existing `'deleteTrip removes the trip and every child row...'` test (around line 619), and the photo-round-trip one inside the `group('export/import', () { ... })` block, right after the existing `'exportAllTripsToJson then importAllTripsFromJson round-trips a trip\'s photo'` test:
 
 ```dart
@@ -590,18 +603,21 @@ Update `deleteExpense`:
   }
 ```
 
-Update `deleteTrip` to also clean up every child expense's photo:
+Update `deleteTrip` to also clean up every child expense's photo. The id snapshot must be taken **inside** the same transaction as the delete, immediately before it — not before `_db.transaction()` starts — otherwise an expense added to this trip in the gap between an outside snapshot and the transaction's `DELETE ... WHERE tripId=...` would be deleted from the DB but never appear in the snapshot, leaving its photo file orphaned:
 
 ```dart
   Future<void> deleteTrip(String tripId) async {
-    // Captured before the transaction deletes the rows — needed afterward
-    // to clean up each expense's photo file, which isn't part of the DB
-    // transaction below (it's not a DB operation).
-    final expenseIds = (await (_db.select(_db.expenses)..where((e) => e.tripId.equals(tripId)))
-            .get())
-        .map((row) => row.id)
-        .toList();
+    late List<String> expenseIds;
     await _db.transaction(() async {
+      // Captured in the same transaction, immediately before the DELETE
+      // below — needed afterward to clean up each expense's photo file
+      // (not itself a DB operation, so it can't be part of this
+      // transaction), and must not be snapshotted outside the transaction
+      // or a concurrent insert could be deleted here without its id ever
+      // having been captured.
+      expenseIds = (await (_db.select(_db.expenses)..where((e) => e.tripId.equals(tripId))).get())
+          .map((row) => row.id)
+          .toList();
       await (_db.delete(_db.expenses)..where((e) => e.tripId.equals(tripId))).go();
       await (_db.delete(_db.tripExchangeRates)..where((r) => r.tripId.equals(tripId))).go();
       await (_db.delete(_db.tripCategories)..where((c) => c.tripId.equals(tripId))).go();
@@ -906,7 +922,9 @@ cd "/Users/zengtao/Doc/My code/TravelSpendPlus" && git add app/lib/ui/add_expens
 
 - [ ] **Step 1: Write the failing test**
 
-Add to `app/test/ui/trip_detail_screen_test.dart`, near the other expense-list tests (after the `'the category legend shows each category name...'` test is a reasonable spot):
+First, add `ExpensePhotoStore.resetForTesting();` to this file's `setUp()`, right after the existing `TripPhotoStore.resetForTesting();` call (around line 37), and the import `import 'package:travelspendplus/services/expense_photo_store.dart';` near the existing `trip_photo_store.dart` import. This file's tests don't exercise expense photos directly yet, but `ExpensePhotoStore` memoizes its resolved documents directory the same way `TripPhotoStore` does (see Task 3's Step 1 note) — resetting it per test now avoids a latent stale-directory bug for whichever future test first stores an expense photo here.
+
+Then add to `app/test/ui/trip_detail_screen_test.dart`, near the other expense-list tests (after the `'the category legend shows each category name...'` test is a reasonable spot):
 
 ```dart
   testWidgets('an expense with no stored photo shows its category icon in the list row',
