@@ -1,0 +1,149 @@
+import 'civil_date.dart';
+import 'exchange_rate.dart';
+import 'expense.dart';
+import 'money.dart';
+import 'participant.dart';
+import 'trip.dart';
+
+/// Bumped whenever `tripBundleToJson`'s output shape changes in a way an
+/// older app version couldn't parse. `backupFromJson` refuses to read a
+/// backup with a higher version than this app understands (see
+/// [UnsupportedBackupVersionException]) rather than guessing.
+const int kBackupSchemaVersion = 1;
+
+class UnsupportedBackupVersionException implements Exception {
+  final int foundVersion;
+  const UnsupportedBackupVersionException(this.foundVersion);
+
+  @override
+  String toString() =>
+      'This backup was made with a newer app version (schemaVersion $foundVersion); '
+      'this app only understands up to $kBackupSchemaVersion.';
+}
+
+/// Everything needed to fully restore one trip: the trip itself (which
+/// already carries its own `participants`), its expenses, and its manual
+/// exchange-rate table — exactly what `TripRepository` needs three separate
+/// queries to assemble (see `TripRepository.exportAllTripsToJson`).
+class TripBundle {
+  final Trip trip;
+  final List<Expense> expenses;
+  final List<ExchangeRate> exchangeRates;
+  const TripBundle({required this.trip, required this.expenses, required this.exchangeRates});
+}
+
+/// Formats as `"YYYY-MM-DD"` — a plain civil date, no time, no timezone.
+/// Matches `civil_date.dart`'s convention deliberately: this is the same
+/// "calendar day, not an instant" representation the rest of the app uses,
+/// so a backup file can't reintroduce the timezone-drift bug that file was
+/// written to eliminate.
+String dateToBackupString(DateTime date) {
+  final c = civilDate(date);
+  final y = c.year.toString().padLeft(4, '0');
+  final m = c.month.toString().padLeft(2, '0');
+  final d = c.day.toString().padLeft(2, '0');
+  return '$y-$m-$d';
+}
+
+DateTime dateFromBackupString(String s) {
+  final parts = s.split('-');
+  return DateTime.utc(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+}
+
+Map<String, dynamic> tripBundleToJson(TripBundle bundle) {
+  final trip = bundle.trip;
+  return {
+    'id': trip.id,
+    'name': trip.name,
+    'startDate': dateToBackupString(trip.startDate),
+    'endDate': dateToBackupString(trip.endDate),
+    'homeCurrency': trip.homeCurrency,
+    'totalBudgetMinorUnits': trip.totalBudget.minorUnits,
+    'participants': trip.participants.map((p) => {'id': p.id, 'name': p.name}).toList(),
+    'expenses': bundle.expenses
+        .map((e) => {
+              'id': e.id,
+              'category': e.category,
+              'amountMinorUnits': e.amount.minorUnits,
+              'amountCurrency': e.amount.currencyCode,
+              'amountInHomeCurrencyMinorUnits': e.amountInHomeCurrency.minorUnits,
+              'description': e.description,
+              'date': dateToBackupString(e.date),
+              'status': e.status == ExpenseStatus.actual ? 'actual' : 'planned',
+              'includeInSplit': e.includeInSplit,
+              'paidById': e.paidBy.id,
+              'paidForIds': e.paidFor.map((p) => p.id).toList(),
+            })
+        .toList(),
+    'exchangeRates':
+        bundle.exchangeRates.map((r) => {'fromCurrency': r.fromCurrency, 'rate': r.rate}).toList(),
+  };
+}
+
+TripBundle tripBundleFromJson(Map<String, dynamic> json) {
+  final participantsById = <String, Participant>{
+    for (final raw in (json['participants'] as List).cast<Map<String, dynamic>>())
+      raw['id'] as String: Participant(id: raw['id'] as String, name: raw['name'] as String),
+  };
+  final homeCurrency = json['homeCurrency'] as String;
+
+  final trip = Trip(
+    id: json['id'] as String,
+    name: json['name'] as String,
+    startDate: dateFromBackupString(json['startDate'] as String),
+    endDate: dateFromBackupString(json['endDate'] as String),
+    homeCurrency: homeCurrency,
+    totalBudget:
+        Money(minorUnits: json['totalBudgetMinorUnits'] as int, currencyCode: homeCurrency),
+    participants: participantsById.values.toList(),
+  );
+
+  final expenses = (json['expenses'] as List).cast<Map<String, dynamic>>().map((raw) {
+    final paidForIds = (raw['paidForIds'] as List).cast<String>();
+    return Expense(
+      id: raw['id'] as String,
+      tripId: trip.id,
+      category: raw['category'] as String,
+      amount: Money(
+        minorUnits: raw['amountMinorUnits'] as int,
+        currencyCode: raw['amountCurrency'] as String,
+      ),
+      amountInHomeCurrency: Money(
+        minorUnits: raw['amountInHomeCurrencyMinorUnits'] as int,
+        currencyCode: homeCurrency,
+      ),
+      description: raw['description'] as String,
+      date: dateFromBackupString(raw['date'] as String),
+      status: raw['status'] == 'actual' ? ExpenseStatus.actual : ExpenseStatus.planned,
+      includeInSplit: raw['includeInSplit'] as bool,
+      paidBy: participantsById[raw['paidById'] as String]!,
+      paidFor: paidForIds.map((id) => participantsById[id]!).toList(),
+    );
+  }).toList();
+
+  final exchangeRates = (json['exchangeRates'] as List).cast<Map<String, dynamic>>().map((raw) {
+    // JSON decodes a whole-number rate (e.g. `7`) as int, not double —
+    // `num.toDouble()` handles both.
+    return ExchangeRate(
+      fromCurrency: raw['fromCurrency'] as String,
+      toCurrency: homeCurrency,
+      rate: (raw['rate'] as num).toDouble(),
+    );
+  }).toList();
+
+  return TripBundle(trip: trip, expenses: expenses, exchangeRates: exchangeRates);
+}
+
+Map<String, dynamic> backupToJson(List<TripBundle> bundles) => {
+      'schemaVersion': kBackupSchemaVersion,
+      'exportedAt': DateTime.now().toUtc().toIso8601String(),
+      'trips': bundles.map(tripBundleToJson).toList(),
+    };
+
+List<TripBundle> backupFromJson(Map<String, dynamic> json) {
+  final version = json['schemaVersion'] as int?;
+  if (version == null || version > kBackupSchemaVersion) {
+    throw UnsupportedBackupVersionException(version ?? 0);
+  }
+  return (json['trips'] as List).cast<Map<String, dynamic>>().map(tripBundleFromJson).toList();
+}
