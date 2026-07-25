@@ -347,4 +347,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locationHint => 'e.g. a city';
+
+  @override
+  String get spendingByLocation => 'Spending by location';
+
+  @override
+  String get groupByCategory => 'Category';
+
+  @override
+  String get groupByLocation => 'Location';
+
+  @override
+  String get noLocation => 'No location';
+
+  @override
+  String get excludeFromChart => 'Exclude from chart';
 }

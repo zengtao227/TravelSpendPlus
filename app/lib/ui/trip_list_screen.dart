@@ -286,7 +286,11 @@ class _TripCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('${l10n.spentTotal} ${formatMoney(summary.actualTotal)}'),
-                      Text('${l10n.plannedTotal} ${formatMoney(summary.plannedTotal)}'),
+                      // No planned expenses at all for this trip — showing
+                      // "Planned EUR 0.00" here would just be noise, not a
+                      // real zero the user set.
+                      if (summary.plannedTotal.minorUnits != 0)
+                        Text('${l10n.plannedTotal} ${formatMoney(summary.plannedTotal)}'),
                       Text(formatMoney(trip.totalBudget)),
                     ],
                   ),

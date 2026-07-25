@@ -64,6 +64,7 @@ void main() {
     expect(e.date, DateTime.utc(2026, 10, 6));
     expect(e.endDate, DateTime.utc(2026, 10, 8));
     expect(e.location, 'Kyoto');
+    expect(e.excludeFromBreakdown, isFalse);
     expect(e.status, ExpenseStatus.actual);
     expect(e.paidBy.id, 'p1');
     expect(e.paidFor.map((p) => p.id).toSet(), {'p1', 'p2'});
@@ -108,6 +109,28 @@ void main() {
     final e = restored.expenses.single;
     expect(e.endDate, e.date);
     expect(e.location, '');
+  });
+
+  test('excludeFromBreakdown=true round-trips through tripBundleToJson/tripBundleFromJson', () {
+    final bundle = TripBundle(
+      trip: makeTrip(),
+      expenses: [makeExpense().copyWith(excludeFromBreakdown: true)],
+      exchangeRates: const [],
+    );
+    final restored = tripBundleFromJson(tripBundleToJson(bundle));
+    expect(restored.expenses.single.excludeFromBreakdown, isTrue);
+  });
+
+  test('tripBundleFromJson defaults excludeFromBreakdown to false when the key is absent '
+      '(a pre-v4 backup, made before this field existed)', () {
+    final json = tripBundleToJson(
+      TripBundle(trip: makeTrip(), expenses: [makeExpense()], exchangeRates: const []),
+    );
+    final expenseJson = (json['expenses'] as List).single as Map<String, dynamic>;
+    expenseJson.remove('excludeFromBreakdown');
+
+    final restored = tripBundleFromJson(json);
+    expect(restored.expenses.single.excludeFromBreakdown, isFalse);
   });
 
   test('a planned expense and a whole-number exchange rate round-trip correctly '

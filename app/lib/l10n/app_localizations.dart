@@ -687,6 +687,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'e.g. a city'**
   String get locationHint;
+
+  /// No description provided for @spendingByLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Spending by location'**
+  String get spendingByLocation;
+
+  /// No description provided for @groupByCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get groupByCategory;
+
+  /// No description provided for @groupByLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get groupByLocation;
+
+  /// No description provided for @noLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'No location'**
+  String get noLocation;
+
+  /// No description provided for @excludeFromChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude from chart'**
+  String get excludeFromChart;
 }
 
 class _AppLocalizationsDelegate

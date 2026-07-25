@@ -28,6 +28,11 @@ class Expense {
   // trip spanning several cities be broken down by where money was spent,
   // not just when.
   final String location;
+  // When true, this expense is skipped by CategoryBreakdownCalculator (the
+  // pie chart on the trip detail screen) — e.g. a one-off big-ticket item
+  // (a car, a laptop) the user doesn't want skewing the category/location
+  // split. It still counts toward every other total (budget, split ledger).
+  final bool excludeFromBreakdown;
   final ExpenseStatus status;
   final bool includeInSplit;
   final Participant paidBy;
@@ -43,6 +48,7 @@ class Expense {
     required this.date,
     required this.endDate,
     required this.location,
+    this.excludeFromBreakdown = false,
     required this.status,
     required this.includeInSplit,
     required this.paidBy,
@@ -76,6 +82,7 @@ class Expense {
     DateTime? date,
     DateTime? endDate,
     String? location,
+    bool? excludeFromBreakdown,
     ExpenseStatus? status,
     bool? includeInSplit,
     Participant? paidBy,
@@ -91,6 +98,7 @@ class Expense {
       date: date ?? this.date,
       endDate: endDate ?? this.endDate,
       location: location ?? this.location,
+      excludeFromBreakdown: excludeFromBreakdown ?? this.excludeFromBreakdown,
       status: status ?? this.status,
       includeInSplit: includeInSplit ?? this.includeInSplit,
       paidBy: paidBy ?? this.paidBy,

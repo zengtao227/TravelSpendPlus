@@ -48,6 +48,7 @@ class _TripDetailData {
 class _TripDetailScreenState extends State<TripDetailScreen> {
   late Future<_TripDetailData> _future;
   String? _viewCurrency; // null = show in home currency
+  BreakdownDimension _breakdownDimension = BreakdownDimension.category;
 
   @override
   void initState() {
@@ -259,8 +260,19 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           final trip = data.trip;
           final expenses = data.expenses;
           final summary = BudgetCalculator.summarize(trip: trip, expenses: expenses);
-          final breakdown =
-              CategoryBreakdownCalculator.breakdown(expenses: expenses, homeCurrency: trip.homeCurrency);
+          final breakdown = CategoryBreakdownCalculator.breakdown(
+            expenses: expenses,
+            homeCurrency: trip.homeCurrency,
+            dimension: _breakdownDimension,
+          );
+          // category_breakdown.dart has no l10n dependency, so the empty
+          // "no location set" bucket key ('') is labeled here instead.
+          String sliceLabel(String key) {
+            if (_breakdownDimension == BreakdownDimension.location) {
+              return key.isEmpty ? l10n.noLocation : key;
+            }
+            return categoryLabel(context, key);
+          }
           final displayCurrency = _viewCurrency ?? trip.homeCurrency;
 
           Money display(Money amount) => displayCurrency == amount.currencyCode
@@ -372,7 +384,33 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               }),
               const SizedBox(height: 16),
               if (breakdown.isNotEmpty) ...[
-                Text(l10n.spendingByCategory, style: Theme.of(context).textTheme.titleMedium),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _breakdownDimension == BreakdownDimension.category
+                          ? l10n.spendingByCategory
+                          : l10n.spendingByLocation,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SegmentedButton<BreakdownDimension>(
+                      key: const Key('breakdownDimensionSwitch'),
+                      showSelectedIcon: false,
+                      style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                      segments: [
+                        ButtonSegment(
+                            value: BreakdownDimension.category,
+                            label: Text(l10n.groupByCategory)),
+                        ButtonSegment(
+                            value: BreakdownDimension.location,
+                            label: Text(l10n.groupByLocation)),
+                      ],
+                      selected: {_breakdownDimension},
+                      onSelectionChanged: (selection) =>
+                          setState(() => _breakdownDimension = selection.first),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 // Slices carry only the percentage — category name and exact
                 // amount live in the legend list beside the chart instead, so
@@ -424,7 +462,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                                   ),
                                   const SizedBox(width: 6),
                                   Expanded(
-                                    child: Text(categoryLabel(context, breakdown[i].category),
+                                    child: Text(sliceLabel(breakdown[i].category),
                                         style: const TextStyle(fontSize: 12)),
                                   ),
                                   // breakdown[i].total is always in the trip's home
@@ -498,6 +536,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       ));
                       _refresh();
                     },
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.mutedText.withValues(alpha: 0.15),
+                      child: Icon(categoryIcon(expense.category), color: AppColors.mutedText),
+                    ),
                     title: Text(expense.description.isEmpty
                         ? categoryLabel(context, expense.category)
                         : expense.description),

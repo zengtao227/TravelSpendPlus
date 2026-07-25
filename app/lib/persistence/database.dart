@@ -46,6 +46,7 @@ class Expenses extends Table {
   // falls back to [date] when this is null.
   DateTimeColumn get endDate => dateTime().nullable()();
   TextColumn get location => text().withDefault(const Constant(''))();
+  BoolColumn get excludeFromBreakdown => boolean().withDefault(const Constant(false))();
   TextColumn get status => text()(); // 'planned' | 'actual'
   BoolColumn get includeInSplit => boolean()();
   TextColumn get paidById => text().references(Participants, #id)();
@@ -102,7 +103,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -127,6 +128,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 5) {
             await m.addColumn(expenses, expenses.endDate);
             await m.addColumn(expenses, expenses.location);
+          }
+          if (from < 6) {
+            await m.addColumn(expenses, expenses.excludeFromBreakdown);
           }
         },
       );

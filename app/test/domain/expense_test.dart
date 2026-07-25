@@ -145,4 +145,16 @@ void main() {
     expect(updated.location, 'Tokyo');
     expect(updated.date, e.date, reason: 'date itself must stay untouched');
   });
+
+  test('excludeFromBreakdown defaults to false when not specified', () {
+    final e = makeExpense();
+    expect(e.excludeFromBreakdown, isFalse);
+  });
+
+  test('copyWith can override excludeFromBreakdown', () {
+    final e = makeExpense();
+    final updated = e.copyWith(excludeFromBreakdown: true);
+    expect(updated.excludeFromBreakdown, isTrue);
+    expect(e.excludeFromBreakdown, isFalse, reason: 'original must stay untouched');
+  });
 }

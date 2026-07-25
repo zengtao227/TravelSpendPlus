@@ -38,3 +38,26 @@ String categoryLabel(BuildContext context, String key) {
       return key;
   }
 }
+
+/// Icon for one of the fixed built-in category keys; a custom category has
+/// no dedicated icon, so it falls back to a generic label icon.
+IconData categoryIcon(String key) {
+  switch (key) {
+    case 'food':
+      return Icons.restaurant;
+    case 'transport':
+      return Icons.directions_bus;
+    case 'flight':
+      return Icons.flight;
+    case 'lodging':
+      return Icons.hotel;
+    case 'shopping':
+      return Icons.shopping_bag;
+    case 'entertainment':
+      return Icons.local_activity;
+    case 'other':
+      return Icons.category;
+    default:
+      return Icons.label;
+  }
+}

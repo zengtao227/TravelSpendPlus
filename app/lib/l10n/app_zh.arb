@@ -97,5 +97,10 @@
   "csvHeaderCurrency": "币种",
   "csvHeaderAmountInHomeCurrency": "折合本位币金额",
   "location": "地点",
-  "locationHint": "比如城市"
+  "locationHint": "比如城市",
+  "spendingByLocation": "按地点统计支出",
+  "groupByCategory": "分类",
+  "groupByLocation": "地点",
+  "noLocation": "未填写地点",
+  "excludeFromChart": "从图表中排除"
 }

@@ -195,6 +195,40 @@ void main() {
     expect(find.textContaining('5,300.00'), findsNothing);
   });
 
+  testWidgets('hides the "Planned" figure entirely when a trip has no planned expenses at all',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan Trip',
+      startDate: DateTime(2026, 10, 5),
+      endDate: DateTime(2026, 10, 12),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(300, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+      description: 'Dinner',
+      date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Spent CNY 300.00'), findsOneWidget);
+    expect(find.textContaining('Planned'), findsNothing);
+  });
+
   testWidgets('the FAB navigates to CreateTripScreen', (tester) async {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();

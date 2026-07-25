@@ -103,5 +103,10 @@
   "csvHeaderCurrency": "Währung",
   "csvHeaderAmountInHomeCurrency": "Betrag (Heimatwährung)",
   "location": "Ort",
-  "locationHint": "z. B. eine Stadt"
+  "locationHint": "z. B. eine Stadt",
+  "spendingByLocation": "Ausgaben nach Ort",
+  "groupByCategory": "Kategorie",
+  "groupByLocation": "Ort",
+  "noLocation": "Kein Ort",
+  "excludeFromChart": "Vom Diagramm ausschließen"
 }

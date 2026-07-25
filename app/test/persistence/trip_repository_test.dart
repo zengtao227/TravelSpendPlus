@@ -132,6 +132,30 @@ void main() {
     final loaded = (await repo.getExpenses('t1')).single;
     expect(loaded.endDate, loaded.date);
     expect(loaded.location, '');
+    expect(loaded.excludeFromBreakdown, isFalse);
+  });
+
+  test('addExpense then getExpenses round-trips excludeFromBreakdown', () async {
+    await repo.createTrip(makeTrip());
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'Shopping',
+      amount: Money.fromMajor(900.00, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(900.00, 'EUR'),
+      description: 'Laptop',
+      date: DateTime(2026, 1, 2),
+      endDate: DateTime(2026, 1, 2),
+      location: '',
+      excludeFromBreakdown: true,
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+
+    final loaded = (await repo.getExpenses('t1')).single;
+    expect(loaded.excludeFromBreakdown, isTrue);
   });
 
   test('a stored row with an empty paidForIds (e.g. legacy data predating '

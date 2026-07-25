@@ -118,6 +118,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   late final TextEditingController _locationController;
   late DateTime _date;
   late DateTime _endDate;
+  late bool _excludeFromBreakdown;
   late ExpenseStatus _status;
   List<ExchangeRate> _existingRates = [];
   List<String> _customCategories = [];
@@ -142,6 +143,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     // more than one, and the picker only needs to be touched for the ones
     // that do (e.g. a multi-night hotel stay).
     _endDate = civilDate(existing?.endDate ?? _date);
+    _excludeFromBreakdown = existing?.excludeFromBreakdown ?? false;
     _status = existing?.status ?? ExpenseStatus.actual;
     _loadRates();
     _loadCategories();
@@ -284,6 +286,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       date: _date,
       endDate: _endDate,
       location: _locationController.text.trim(),
+      excludeFromBreakdown: _excludeFromBreakdown,
       status: _status,
       includeInSplit: true,
       paidBy: existing?.paidBy ?? participant,
@@ -325,9 +328,23 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   isExpanded: true,
                   items: [
                     for (final key in kExpenseCategoryKeys)
-                      DropdownMenuItem(value: key, child: Text(categoryLabel(context, key))),
+                      DropdownMenuItem(
+                        value: key,
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(categoryIcon(key), size: 18),
+                          const SizedBox(width: 8),
+                          Text(categoryLabel(context, key)),
+                        ]),
+                      ),
                     for (final name in _customCategories)
-                      DropdownMenuItem(value: name, child: Text(name)),
+                      DropdownMenuItem(
+                        value: name,
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(categoryIcon(name), size: 18),
+                          const SizedBox(width: 8),
+                          Text(name),
+                        ]),
+                      ),
                     // Defensive: an existing expense's category might not be
                     // in either list above yet (e.g. edit mode, first build,
                     // before _loadCategories's Future resolves) — without
@@ -437,7 +454,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               selected: {_status},
               onSelectionChanged: (selection) => setState(() => _status = selection.first),
             ),
-            const SizedBox(height: 20),
+            CheckboxListTile(
+              key: const Key('excludeFromBreakdownCheckbox'),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: Text(l10n.excludeFromChart),
+              value: _excludeFromBreakdown,
+              onChanged: (value) => setState(() => _excludeFromBreakdown = value ?? false),
+            ),
+            const SizedBox(height: 8),
             ElevatedButton(
               key: const Key('saveExpenseButton'),
               onPressed: _save,

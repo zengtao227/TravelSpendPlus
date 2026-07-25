@@ -321,4 +321,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get locationHint => '比如城市';
+
+  @override
+  String get spendingByLocation => '按地点统计支出';
+
+  @override
+  String get groupByCategory => '分类';
+
+  @override
+  String get groupByLocation => '地点';
+
+  @override
+  String get noLocation => '未填写地点';
+
+  @override
+  String get excludeFromChart => '从图表中排除';
 }

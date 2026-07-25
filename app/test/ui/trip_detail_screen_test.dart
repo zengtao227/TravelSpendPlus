@@ -264,6 +264,102 @@ void main() {
     expect(find.textContaining('3,200.00'), findsWidgets);
   });
 
+  testWidgets(
+      'tapping the "Location" segment switches the breakdown chart from category to location',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime.now().subtract(const Duration(days: 2)),
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(300, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+      description: 'Dinner',
+      date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: 'Kyoto',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    // Category dimension is the default — the legend shows the category
+    // label, not the location.
+    expect(find.text('餐饮'), findsWidgets);
+    expect(find.text('Kyoto'), findsNothing);
+
+    await tester.tap(find.text('地点')); // "Location" segment label, this harness's locale is zh
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kyoto'), findsOneWidget);
+  });
+
+  testWidgets('an expense marked "exclude from chart" is skipped by the pie chart legend '
+      'but still counted in the Actual total', (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime.now().subtract(const Duration(days: 2)),
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(300, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+      description: 'Dinner',
+      date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e2',
+      tripId: 't1',
+      category: 'shopping',
+      amount: Money.fromMajor(9000, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(9000, 'CNY'),
+      description: 'Laptop',
+      date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
+      excludeFromBreakdown: true,
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+
+    // Food appears both in the legend and its own expense row (2+), while
+    // Shopping — excluded from the chart — appears only once, in its own
+    // expense row subtitle, never in the legend.
+    expect(find.text('餐饮'), findsWidgets);
+    expect(find.text('购物'), findsOneWidget);
+    // But the Actual total still includes both expenses (300 + 9000).
+    expect(find.textContaining('9,300.00'), findsWidgets);
+  });
+
   testWidgets('an actual expense is reflected in totals and the category chart', (tester) async {
     await repo.createTrip(Trip(
       id: 't1',

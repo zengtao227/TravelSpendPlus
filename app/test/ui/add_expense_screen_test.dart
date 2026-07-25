@@ -100,6 +100,23 @@ void main() {
     expect(expenses.single.location, 'Paris');
   });
 
+  testWidgets('excludeFromBreakdown defaults to false, and checking the box persists true',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('购物').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '900');
+    await tester.tap(find.byKey(const Key('excludeFromBreakdownCheckbox')));
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    final expenses = await repo.getExpenses('t1');
+    expect(expenses.single.excludeFromBreakdown, isTrue);
+  });
+
   testWidgets('choosing Planned status saves a planned expense', (tester) async {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();
@@ -327,6 +344,7 @@ void main() {
       date: DateTime(2026, 10, 6),
       endDate: DateTime(2026, 10, 9),
       location: 'Kyoto',
+      excludeFromBreakdown: true,
       status: ExpenseStatus.planned,
       includeInSplit: true,
       paidBy: me,
@@ -342,6 +360,9 @@ void main() {
     expect(find.text('2800.0'), findsOneWidget); // amount field
     expect(find.text('Kyoto guesthouse'), findsOneWidget);
     expect(find.text('Kyoto'), findsOneWidget); // pre-filled location field
+    final checkbox =
+        tester.widget<CheckboxListTile>(find.byKey(const Key('excludeFromBreakdownCheckbox')));
+    expect(checkbox.value, isTrue);
     expect(find.text('保存修改'), findsOneWidget); // save button says "save changes", not "记一笔的保存"
   });
 

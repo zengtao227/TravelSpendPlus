@@ -804,6 +804,20 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _excludeFromBreakdownMeta =
+      const VerificationMeta('excludeFromBreakdown');
+  @override
+  late final GeneratedColumn<bool> excludeFromBreakdown = GeneratedColumn<bool>(
+    'exclude_from_breakdown',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("exclude_from_breakdown" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -864,6 +878,7 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     date,
     endDate,
     location,
+    excludeFromBreakdown,
     status,
     includeInSplit,
     paidById,
@@ -966,6 +981,15 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
         location.isAcceptableOrUnknown(data['location']!, _locationMeta),
       );
     }
+    if (data.containsKey('exclude_from_breakdown')) {
+      context.handle(
+        _excludeFromBreakdownMeta,
+        excludeFromBreakdown.isAcceptableOrUnknown(
+          data['exclude_from_breakdown']!,
+          _excludeFromBreakdownMeta,
+        ),
+      );
+    }
     if (data.containsKey('status')) {
       context.handle(
         _statusMeta,
@@ -1053,6 +1077,10 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
         DriftSqlType.string,
         data['${effectivePrefix}location'],
       )!,
+      excludeFromBreakdown: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}exclude_from_breakdown'],
+      )!,
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -1089,6 +1117,7 @@ class Expense extends DataClass implements Insertable<Expense> {
   final DateTime date;
   final DateTime? endDate;
   final String location;
+  final bool excludeFromBreakdown;
   final String status;
   final bool includeInSplit;
   final String paidById;
@@ -1104,6 +1133,7 @@ class Expense extends DataClass implements Insertable<Expense> {
     required this.date,
     this.endDate,
     required this.location,
+    required this.excludeFromBreakdown,
     required this.status,
     required this.includeInSplit,
     required this.paidById,
@@ -1126,6 +1156,7 @@ class Expense extends DataClass implements Insertable<Expense> {
       map['end_date'] = Variable<DateTime>(endDate);
     }
     map['location'] = Variable<String>(location);
+    map['exclude_from_breakdown'] = Variable<bool>(excludeFromBreakdown);
     map['status'] = Variable<String>(status);
     map['include_in_split'] = Variable<bool>(includeInSplit);
     map['paid_by_id'] = Variable<String>(paidById);
@@ -1147,6 +1178,7 @@ class Expense extends DataClass implements Insertable<Expense> {
           ? const Value.absent()
           : Value(endDate),
       location: Value(location),
+      excludeFromBreakdown: Value(excludeFromBreakdown),
       status: Value(status),
       includeInSplit: Value(includeInSplit),
       paidById: Value(paidById),
@@ -1172,6 +1204,9 @@ class Expense extends DataClass implements Insertable<Expense> {
       date: serializer.fromJson<DateTime>(json['date']),
       endDate: serializer.fromJson<DateTime?>(json['endDate']),
       location: serializer.fromJson<String>(json['location']),
+      excludeFromBreakdown: serializer.fromJson<bool>(
+        json['excludeFromBreakdown'],
+      ),
       status: serializer.fromJson<String>(json['status']),
       includeInSplit: serializer.fromJson<bool>(json['includeInSplit']),
       paidById: serializer.fromJson<String>(json['paidById']),
@@ -1194,6 +1229,7 @@ class Expense extends DataClass implements Insertable<Expense> {
       'date': serializer.toJson<DateTime>(date),
       'endDate': serializer.toJson<DateTime?>(endDate),
       'location': serializer.toJson<String>(location),
+      'excludeFromBreakdown': serializer.toJson<bool>(excludeFromBreakdown),
       'status': serializer.toJson<String>(status),
       'includeInSplit': serializer.toJson<bool>(includeInSplit),
       'paidById': serializer.toJson<String>(paidById),
@@ -1212,6 +1248,7 @@ class Expense extends DataClass implements Insertable<Expense> {
     DateTime? date,
     Value<DateTime?> endDate = const Value.absent(),
     String? location,
+    bool? excludeFromBreakdown,
     String? status,
     bool? includeInSplit,
     String? paidById,
@@ -1228,6 +1265,7 @@ class Expense extends DataClass implements Insertable<Expense> {
     date: date ?? this.date,
     endDate: endDate.present ? endDate.value : this.endDate,
     location: location ?? this.location,
+    excludeFromBreakdown: excludeFromBreakdown ?? this.excludeFromBreakdown,
     status: status ?? this.status,
     includeInSplit: includeInSplit ?? this.includeInSplit,
     paidById: paidById ?? this.paidById,
@@ -1254,6 +1292,9 @@ class Expense extends DataClass implements Insertable<Expense> {
       date: data.date.present ? data.date.value : this.date,
       endDate: data.endDate.present ? data.endDate.value : this.endDate,
       location: data.location.present ? data.location.value : this.location,
+      excludeFromBreakdown: data.excludeFromBreakdown.present
+          ? data.excludeFromBreakdown.value
+          : this.excludeFromBreakdown,
       status: data.status.present ? data.status.value : this.status,
       includeInSplit: data.includeInSplit.present
           ? data.includeInSplit.value
@@ -1280,6 +1321,7 @@ class Expense extends DataClass implements Insertable<Expense> {
           ..write('date: $date, ')
           ..write('endDate: $endDate, ')
           ..write('location: $location, ')
+          ..write('excludeFromBreakdown: $excludeFromBreakdown, ')
           ..write('status: $status, ')
           ..write('includeInSplit: $includeInSplit, ')
           ..write('paidById: $paidById, ')
@@ -1300,6 +1342,7 @@ class Expense extends DataClass implements Insertable<Expense> {
     date,
     endDate,
     location,
+    excludeFromBreakdown,
     status,
     includeInSplit,
     paidById,
@@ -1320,6 +1363,7 @@ class Expense extends DataClass implements Insertable<Expense> {
           other.date == this.date &&
           other.endDate == this.endDate &&
           other.location == this.location &&
+          other.excludeFromBreakdown == this.excludeFromBreakdown &&
           other.status == this.status &&
           other.includeInSplit == this.includeInSplit &&
           other.paidById == this.paidById &&
@@ -1337,6 +1381,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
   final Value<DateTime> date;
   final Value<DateTime?> endDate;
   final Value<String> location;
+  final Value<bool> excludeFromBreakdown;
   final Value<String> status;
   final Value<bool> includeInSplit;
   final Value<String> paidById;
@@ -1353,6 +1398,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     this.date = const Value.absent(),
     this.endDate = const Value.absent(),
     this.location = const Value.absent(),
+    this.excludeFromBreakdown = const Value.absent(),
     this.status = const Value.absent(),
     this.includeInSplit = const Value.absent(),
     this.paidById = const Value.absent(),
@@ -1370,6 +1416,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     required DateTime date,
     this.endDate = const Value.absent(),
     this.location = const Value.absent(),
+    this.excludeFromBreakdown = const Value.absent(),
     required String status,
     required bool includeInSplit,
     required String paidById,
@@ -1398,6 +1445,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Expression<DateTime>? date,
     Expression<DateTime>? endDate,
     Expression<String>? location,
+    Expression<bool>? excludeFromBreakdown,
     Expression<String>? status,
     Expression<bool>? includeInSplit,
     Expression<String>? paidById,
@@ -1416,6 +1464,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
       if (date != null) 'date': date,
       if (endDate != null) 'end_date': endDate,
       if (location != null) 'location': location,
+      if (excludeFromBreakdown != null)
+        'exclude_from_breakdown': excludeFromBreakdown,
       if (status != null) 'status': status,
       if (includeInSplit != null) 'include_in_split': includeInSplit,
       if (paidById != null) 'paid_by_id': paidById,
@@ -1435,6 +1485,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Value<DateTime>? date,
     Value<DateTime?>? endDate,
     Value<String>? location,
+    Value<bool>? excludeFromBreakdown,
     Value<String>? status,
     Value<bool>? includeInSplit,
     Value<String>? paidById,
@@ -1453,6 +1504,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
       date: date ?? this.date,
       endDate: endDate ?? this.endDate,
       location: location ?? this.location,
+      excludeFromBreakdown: excludeFromBreakdown ?? this.excludeFromBreakdown,
       status: status ?? this.status,
       includeInSplit: includeInSplit ?? this.includeInSplit,
       paidById: paidById ?? this.paidById,
@@ -1496,6 +1548,11 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     if (location.present) {
       map['location'] = Variable<String>(location.value);
     }
+    if (excludeFromBreakdown.present) {
+      map['exclude_from_breakdown'] = Variable<bool>(
+        excludeFromBreakdown.value,
+      );
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -1529,6 +1586,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
           ..write('date: $date, ')
           ..write('endDate: $endDate, ')
           ..write('location: $location, ')
+          ..write('excludeFromBreakdown: $excludeFromBreakdown, ')
           ..write('status: $status, ')
           ..write('includeInSplit: $includeInSplit, ')
           ..write('paidById: $paidById, ')
@@ -3116,6 +3174,7 @@ typedef $$ExpensesTableCreateCompanionBuilder =
       required DateTime date,
       Value<DateTime?> endDate,
       Value<String> location,
+      Value<bool> excludeFromBreakdown,
       required String status,
       required bool includeInSplit,
       required String paidById,
@@ -3134,6 +3193,7 @@ typedef $$ExpensesTableUpdateCompanionBuilder =
       Value<DateTime> date,
       Value<DateTime?> endDate,
       Value<String> location,
+      Value<bool> excludeFromBreakdown,
       Value<String> status,
       Value<bool> includeInSplit,
       Value<String> paidById,
@@ -3231,6 +3291,11 @@ class $$ExpensesTableFilterComposer
 
   ColumnFilters<String> get location => $composableBuilder(
     column: $table.location,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get excludeFromBreakdown => $composableBuilder(
+    column: $table.excludeFromBreakdown,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3350,6 +3415,11 @@ class $$ExpensesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get excludeFromBreakdown => $composableBuilder(
+    column: $table.excludeFromBreakdown,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -3456,6 +3526,11 @@ class $$ExpensesTableAnnotationComposer
   GeneratedColumn<String> get location =>
       $composableBuilder(column: $table.location, builder: (column) => column);
 
+  GeneratedColumn<bool> get excludeFromBreakdown => $composableBuilder(
+    column: $table.excludeFromBreakdown,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
@@ -3555,6 +3630,7 @@ class $$ExpensesTableTableManager
                 Value<DateTime> date = const Value.absent(),
                 Value<DateTime?> endDate = const Value.absent(),
                 Value<String> location = const Value.absent(),
+                Value<bool> excludeFromBreakdown = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> includeInSplit = const Value.absent(),
                 Value<String> paidById = const Value.absent(),
@@ -3571,6 +3647,7 @@ class $$ExpensesTableTableManager
                 date: date,
                 endDate: endDate,
                 location: location,
+                excludeFromBreakdown: excludeFromBreakdown,
                 status: status,
                 includeInSplit: includeInSplit,
                 paidById: paidById,
@@ -3589,6 +3666,7 @@ class $$ExpensesTableTableManager
                 required DateTime date,
                 Value<DateTime?> endDate = const Value.absent(),
                 Value<String> location = const Value.absent(),
+                Value<bool> excludeFromBreakdown = const Value.absent(),
                 required String status,
                 required bool includeInSplit,
                 required String paidById,
@@ -3605,6 +3683,7 @@ class $$ExpensesTableTableManager
                 date: date,
                 endDate: endDate,
                 location: location,
+                excludeFromBreakdown: excludeFromBreakdown,
                 status: status,
                 includeInSplit: includeInSplit,
                 paidById: paidById,

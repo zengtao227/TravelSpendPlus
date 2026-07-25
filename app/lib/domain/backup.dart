@@ -20,7 +20,10 @@ import 'trip.dart';
 /// v3 added `endDate` and `location` to each expense. An older backup
 /// missing either key still imports fine — `endDate` defaults to the
 /// expense's own `date`, `location` defaults to `''`.
-const int kBackupSchemaVersion = 3;
+///
+/// v4 added `excludeFromBreakdown` to each expense. An older backup missing
+/// this key still imports fine — it defaults to `false`.
+const int kBackupSchemaVersion = 4;
 
 class UnsupportedBackupVersionException implements Exception {
   final int foundVersion;
@@ -88,6 +91,7 @@ Map<String, dynamic> tripBundleToJson(TripBundle bundle) {
               'date': dateToBackupString(e.date),
               'endDate': dateToBackupString(e.endDate),
               'location': e.location,
+              'excludeFromBreakdown': e.excludeFromBreakdown,
               'status': e.status == ExpenseStatus.actual ? 'actual' : 'planned',
               'includeInSplit': e.includeInSplit,
               'paidById': e.paidBy.id,
@@ -140,6 +144,9 @@ TripBundle tripBundleFromJson(Map<String, dynamic> json) {
           ? dateFromBackupString(raw['endDate'] as String)
           : dateFromBackupString(raw['date'] as String),
       location: raw['location'] as String? ?? '',
+      // Absent in a pre-v4 backup — default to false, matching how a
+      // pre-migration DB row reads too.
+      excludeFromBreakdown: raw['excludeFromBreakdown'] as bool? ?? false,
       status: raw['status'] == 'actual' ? ExpenseStatus.actual : ExpenseStatus.planned,
       includeInSplit: raw['includeInSplit'] as bool,
       paidBy: participantsById[raw['paidById'] as String]!,
