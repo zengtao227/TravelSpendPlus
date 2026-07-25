@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
 import 'package:travelspendplus/domain/exchange_rate.dart';
 import 'package:travelspendplus/domain/money.dart';
@@ -8,6 +10,7 @@ import 'package:travelspendplus/domain/trip.dart';
 import 'package:travelspendplus/domain/expense.dart';
 import 'package:travelspendplus/persistence/database.dart' hide Trip, Participant, Expense;
 import 'package:travelspendplus/persistence/trip_repository.dart';
+import 'package:travelspendplus/services/live_rate_service.dart';
 import 'package:travelspendplus/ui/add_expense_screen.dart';
 
 void main() {
@@ -32,11 +35,16 @@ void main() {
 
   tearDown(() async => db.close());
 
-  Widget wrap({Expense? existingExpense}) => MaterialApp(
+  Widget wrap({Expense? existingExpense, LiveRateService? liveRateService}) => MaterialApp(
         locale: const Locale('zh'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: AddExpenseScreen(trip: trip, repository: repo, existingExpense: existingExpense),
+        home: AddExpenseScreen(
+          trip: trip,
+          repository: repo,
+          existingExpense: existingExpense,
+          liveRateService: liveRateService,
+        ),
       );
 
   testWidgets('filling a valid home-currency expense saves it as actual by default',
@@ -97,9 +105,17 @@ void main() {
     // old "1 JPY = 0.05 CNY" direction (10000 JPY / 20 = 500 CNY).
     await tester.enterText(find.byKey(const Key('expenseExchangeRateField')), '20');
     // With every field visible (category, amount, currency, exchange rate,
-    // description, date, status), the form is taller than the default test
-    // viewport — scroll the save button into view before tapping it.
-    await tester.ensureVisible(find.byKey(const Key('saveExpenseButton')));
+    // market-rate helper, description, date, status), the form is now tall
+    // enough that the save button sits beyond the ListView sliver's layout
+    // cache extent — it has no geometry yet, so a plain ensureVisible can't
+    // locate it to scroll to it. scrollUntilVisible instead drags the list
+    // in increments, re-checking after each one, which works even when the
+    // target isn't laid out at all until scrolled near.
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('saveExpenseButton')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('saveExpenseButton')));
     await tester.pumpAndSettle();
@@ -110,6 +126,41 @@ void main() {
     final rates = await repo.getExchangeRates('t1');
     expect(rates.length, 1);
     expect(rates.first.fromCurrency, 'JPY');
+  });
+
+  testWidgets('checking and accepting the market rate fills in the exchange rate field',
+      (tester) async {
+    final liveRateService = LiveRateService(
+      client: MockClient((request) async =>
+          http.Response('{"amount":1,"base":"CNY","date":"2026-07-25","rates":{"JPY":20.3}}', 200)),
+    );
+    await tester.pumpWidget(wrap(liveRateService: liveRateService));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('住宿').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '10000');
+    await tester.tap(find.byKey(const Key('expenseCurrencyField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('JPY').last);
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('checkMarketRateButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('checkMarketRateButton')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('expenseExchangeRateField')), findsOneWidget);
+    expect(
+        tester.widget<TextFormField>(find.byKey(const Key('expenseExchangeRateField'))).controller?.text,
+        isEmpty,
+        reason: 'checking the market rate must not auto-fill before it is accepted');
+
+    await tester.tap(find.byKey(const Key('acceptMarketRateButton')));
+    await tester.pumpAndSettle();
+    expect(
+        tester.widget<TextFormField>(find.byKey(const Key('expenseExchangeRateField'))).controller?.text,
+        '20.3');
   });
 
   testWidgets('adding a new category via "+ Add category" selects and persists it',

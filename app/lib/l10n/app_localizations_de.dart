@@ -126,6 +126,21 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get checkMarketRate => 'Marktkurs abrufen';
+
+  @override
+  String marketRateFound(String from, String rate, String to) {
+    return 'Marktkurs: 1 $from = $rate $to';
+  }
+
+  @override
+  String get useThisRate => 'Übernehmen';
+
+  @override
+  String get marketRateUnavailable =>
+      'Kurs konnte nicht abgerufen werden – bitte manuell eingeben';
+
+  @override
   String get exchangeRates => 'Wechselkurse';
 
   @override

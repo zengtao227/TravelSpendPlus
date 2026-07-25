@@ -9,18 +9,22 @@ import '../domain/expense_category.dart';
 import '../domain/money.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
+import '../services/live_rate_service.dart';
 import 'currency_field.dart';
 import 'formatting.dart';
+import 'market_rate_helper.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final Trip trip;
   final TripRepository repository;
   final Expense? existingExpense;
+  final LiveRateService? liveRateService;
   const AddExpenseScreen({
     super.key,
     required this.trip,
     required this.repository,
     this.existingExpense,
+    this.liveRateService,
   });
 
   @override
@@ -116,12 +120,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   List<ExchangeRate> _existingRates = [];
   List<String> _customCategories = [];
   String? _categoryError;
+  late final LiveRateService _liveRateService;
 
   bool get _isEditing => widget.existingExpense != null;
 
   @override
   void initState() {
     super.initState();
+    _liveRateService = widget.liveRateService ?? LiveRateService();
     final existing = widget.existingExpense;
     _category = existing?.category;
     _amountController =
@@ -356,6 +362,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   final parsed = double.tryParse(value ?? '');
                   return (parsed != null && parsed > 0) ? null : l10n.errorPositiveRate;
                 },
+              ),
+              MarketRateHelper(
+                // Rekeyed per currency pair so a stale fetched rate from a
+                // previously-selected currency can't linger after the user
+                // changes it.
+                key: ValueKey('market-rate-${widget.trip.homeCurrency}-$_currency'),
+                fromCurrency: widget.trip.homeCurrency,
+                toCurrency: _currency,
+                targetController: _exchangeRateController,
+                liveRateService: _liveRateService,
               ),
             ],
             const SizedBox(height: 12),

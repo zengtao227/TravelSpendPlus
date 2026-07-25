@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Used only to offer a live market exchange rate as an optional
+         convenience when entering a rate manually (see LiveRateService) —
+         the app otherwise runs fully offline. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="travelspendplus"
         android:name="${applicationName}"

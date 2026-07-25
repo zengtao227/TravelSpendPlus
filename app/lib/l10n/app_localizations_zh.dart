@@ -125,6 +125,20 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get checkMarketRate => '查市场价';
+
+  @override
+  String marketRateFound(String from, String rate, String to) {
+    return '市场价：1 $from = $rate $to';
+  }
+
+  @override
+  String get useThisRate => '使用';
+
+  @override
+  String get marketRateUnavailable => '查询失败，请手动输入';
+
+  @override
   String get exchangeRates => '汇率设置';
 
   @override

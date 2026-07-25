@@ -6,12 +6,20 @@ import '../domain/currency_list.dart';
 import '../domain/exchange_rate.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
+import '../services/live_rate_service.dart';
 import 'currency_field.dart';
+import 'market_rate_helper.dart';
 
 class ExchangeRateSettingsScreen extends StatefulWidget {
   final Trip trip;
   final TripRepository repository;
-  const ExchangeRateSettingsScreen({super.key, required this.trip, required this.repository});
+  final LiveRateService? liveRateService;
+  const ExchangeRateSettingsScreen({
+    super.key,
+    required this.trip,
+    required this.repository,
+    this.liveRateService,
+  });
 
   @override
   State<ExchangeRateSettingsScreen> createState() => _ExchangeRateSettingsScreenState();
@@ -26,6 +34,7 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
   final Map<String, TextEditingController> _directRateControllers = {};
   String? _changeCurrencyError;
   String? _addRateError;
+  late final LiveRateService _liveRateService;
 
   // A currency dropdown always needs a starting value; default to the first
   // curated currency that isn't already the trip's home currency (picking
@@ -36,6 +45,7 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
   @override
   void initState() {
     super.initState();
+    _liveRateService = widget.liveRateService ?? LiveRateService();
     _ratesFuture = widget.repository.getExchangeRates(widget.trip.id);
     _newRateCurrency = _defaultOtherCurrency(widget.trip.homeCurrency);
     _newHomeCurrency = _defaultOtherCurrency(widget.trip.homeCurrency);
@@ -163,6 +173,13 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
                 ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
+              MarketRateHelper(
+                key: ValueKey('market-rate-${widget.trip.homeCurrency}-$_newRateCurrency'),
+                fromCurrency: widget.trip.homeCurrency,
+                toCurrency: _newRateCurrency,
+                targetController: _newRateValue,
+                liveRateService: _liveRateService,
+              ),
               if (_addRateError != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -193,13 +210,25 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
                 for (final currency in requiredCurrencies)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: TextField(
-                      key: Key('directRateField_$currency'),
-                      controller: _directRateControllerFor(currency),
-                      decoration: InputDecoration(
-                        labelText: l10n.oldToNewRateLabel(currency, _newHomeCurrency),
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          key: Key('directRateField_$currency'),
+                          controller: _directRateControllerFor(currency),
+                          decoration: InputDecoration(
+                            labelText: l10n.oldToNewRateLabel(currency, _newHomeCurrency),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        ),
+                        MarketRateHelper(
+                          key: ValueKey('market-rate-$currency-$_newHomeCurrency'),
+                          fromCurrency: currency,
+                          toCurrency: _newHomeCurrency,
+                          targetController: _directRateControllerFor(currency),
+                          liveRateService: _liveRateService,
+                        ),
+                      ],
                     ),
                   ),
                 if (_changeCurrencyError != null)

@@ -42,6 +42,13 @@
   "@exchangeRatePrompt": {
     "placeholders": {"currency": {"type": "String"}, "homeCurrency": {"type": "String"}}
   },
+  "checkMarketRate": "Check market rate",
+  "marketRateFound": "Market rate: 1 {from} = {rate} {to}",
+  "@marketRateFound": {
+    "placeholders": {"from": {"type": "String"}, "rate": {"type": "String"}, "to": {"type": "String"}}
+  },
+  "useThisRate": "Use this",
+  "marketRateUnavailable": "Couldn't fetch a rate — enter one manually",
   "exchangeRates": "Exchange Rates",
   "addRate": "Add rate",
   "newCurrency": "Currency (3-letter code)",

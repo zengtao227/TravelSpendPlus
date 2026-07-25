@@ -126,6 +126,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get checkMarketRate => 'Check market rate';
+
+  @override
+  String marketRateFound(String from, String rate, String to) {
+    return 'Market rate: 1 $from = $rate $to';
+  }
+
+  @override
+  String get useThisRate => 'Use this';
+
+  @override
+  String get marketRateUnavailable =>
+      'Couldn\'t fetch a rate — enter one manually';
+
+  @override
   String get exchangeRates => 'Exchange Rates';
 
   @override

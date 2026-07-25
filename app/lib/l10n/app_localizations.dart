@@ -328,6 +328,30 @@ abstract class AppLocalizations {
   /// **'1 {currency} = ? {homeCurrency}'**
   String exchangeRatePrompt(String currency, String homeCurrency);
 
+  /// No description provided for @checkMarketRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Check market rate'**
+  String get checkMarketRate;
+
+  /// No description provided for @marketRateFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Market rate: 1 {from} = {rate} {to}'**
+  String marketRateFound(String from, String rate, String to);
+
+  /// No description provided for @useThisRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this'**
+  String get useThisRate;
+
+  /// No description provided for @marketRateUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t fetch a rate — enter one manually'**
+  String get marketRateUnavailable;
+
   /// No description provided for @exchangeRates.
   ///
   /// In en, this message translates to:
