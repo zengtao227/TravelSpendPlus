@@ -199,6 +199,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cancel => '取消';
 
   @override
+  String get language => '语言';
+
+  @override
+  String get systemLanguage => '跟随系统';
+
+  @override
   String get myTrips => '我的行程';
 
   @override

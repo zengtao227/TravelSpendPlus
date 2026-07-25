@@ -209,6 +209,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get language => 'Language';
+
+  @override
+  String get systemLanguage => 'System default';
+
+  @override
   String get myTrips => 'My Trips';
 
   @override

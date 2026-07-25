@@ -70,6 +70,8 @@
   "markAsSpentPrompt": "Update the amount if it differs from the estimate, or leave it as is.",
   "confirm": "Confirm",
   "cancel": "Cancel",
+  "language": "Language",
+  "systemLanguage": "System default",
   "myTrips": "My Trips",
   "noTripsYet": "No trips yet — tap + to plan your first one",
   "plannedTotal": "Planned",

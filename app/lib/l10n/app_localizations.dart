@@ -460,6 +460,18 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @systemLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'System default'**
+  String get systemLanguage;
+
   /// No description provided for @myTrips.
   ///
   /// In en, this message translates to:

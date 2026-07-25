@@ -63,6 +63,8 @@
   "markAsSpentPrompt": "Betrag anpassen, falls er vom Schätzwert abweicht, sonst unverändert lassen.",
   "confirm": "Bestätigen",
   "cancel": "Abbrechen",
+  "language": "Sprache",
+  "systemLanguage": "Systemsprache",
   "myTrips": "Meine Reisen",
   "noTripsYet": "Noch keine Reisen — tippe auf +, um deine erste zu planen",
   "plannedTotal": "Geplant",

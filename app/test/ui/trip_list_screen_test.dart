@@ -29,6 +29,7 @@ void main() {
     Future<String> Function(String, String)? writeTempFile,
     Future<void> Function(String, {String? subject})? shareFile,
     Future<String?> Function()? pickJsonFile,
+    Future<void> Function(Locale?)? onLocaleChanged,
   }) =>
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -38,8 +39,70 @@ void main() {
           writeTempFile: writeTempFile ?? (name, content) async => '/tmp/$name',
           shareFile: shareFile ?? (path, {subject}) async {},
           pickJsonFile: pickJsonFile ?? () async => null,
+          onLocaleChanged: onLocaleChanged,
         ),
       );
+
+  testWidgets('the language button is hidden when onLocaleChanged is not provided',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('languageButton')), findsNothing);
+  });
+
+  testWidgets('picking a specific language from the dialog invokes onLocaleChanged with it',
+      (tester) async {
+    Locale? received;
+    var receivedCalled = false;
+    await tester.pumpWidget(wrap(onLocaleChanged: (locale) async {
+      received = locale;
+      receivedCalled = true;
+    }));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('languageButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('languageOption_zh')));
+    await tester.pumpAndSettle();
+
+    expect(receivedCalled, isTrue);
+    expect(received, const Locale('zh'));
+  });
+
+  testWidgets('picking "System default" invokes onLocaleChanged with null', (tester) async {
+    Locale? received = const Locale('zh');
+    var receivedCalled = false;
+    await tester.pumpWidget(wrap(onLocaleChanged: (locale) async {
+      received = locale;
+      receivedCalled = true;
+    }));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('languageButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('languageOptionSystem')));
+    await tester.pumpAndSettle();
+
+    expect(receivedCalled, isTrue);
+    expect(received, isNull);
+  });
+
+  testWidgets('dismissing the language dialog without a choice does not call onLocaleChanged',
+      (tester) async {
+    var receivedCalled = false;
+    await tester.pumpWidget(wrap(onLocaleChanged: (locale) async {
+      receivedCalled = true;
+    }));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('languageButton')));
+    await tester.pumpAndSettle();
+    // Tap the barrier (outside the dialog) to dismiss without choosing.
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+
+    expect(receivedCalled, isFalse);
+  });
 
   testWidgets('shows an empty-state message when there are no trips', (tester) async {
     await tester.pumpWidget(wrap());

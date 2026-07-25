@@ -17,6 +17,12 @@ class TripListScreen extends StatefulWidget {
   final Future<String> Function(String filename, String content) writeTempFile;
   final Future<void> Function(String path, {String? subject}) shareFile;
   final Future<String?> Function() pickJsonFile;
+  // The language button only appears when this is non-null — main.dart
+  // leaves it null while a test-pinned locale is active (see
+  // TravelSpendPlusApp.locale), since there's nothing for the switcher to
+  // change in that case.
+  final Locale? currentLocale;
+  final Future<void> Function(Locale?)? onLocaleChanged;
 
   const TripListScreen({
     super.key,
@@ -24,10 +30,17 @@ class TripListScreen extends StatefulWidget {
     this.writeTempFile = file_io.writeTempFile,
     this.shareFile = file_io.shareFile,
     this.pickJsonFile = file_io.pickJsonFile,
+    this.currentLocale,
+    this.onLocaleChanged,
   });
 
   @override
   State<TripListScreen> createState() => _TripListScreenState();
+}
+
+class _LanguageChoice {
+  final Locale? locale; // null = system default
+  const _LanguageChoice(this.locale);
 }
 
 class _TripListScreenState extends State<TripListScreen> {
@@ -60,6 +73,41 @@ class _TripListScreenState extends State<TripListScreen> {
     }
   }
 
+  // Each language's own name, in its own script — the standard convention
+  // for language pickers (so a user who can't read the current UI language
+  // can still recognize their own), not translated per current locale.
+  static const _languageNames = {'en': 'English', 'zh': '中文', 'de': 'Deutsch'};
+
+  Future<void> _pickLanguage() async {
+    final l10n = AppLocalizations.of(context)!;
+    // Wrapped in _LanguageChoice (rather than returning Locale? directly)
+    // so a real "System default" pick (choice.locale == null) can be told
+    // apart from the dialog being dismissed without any choice (choice ==
+    // null) — otherwise dismissing the dialog would silently reset the
+    // locale to system default.
+    final choice = await showDialog<_LanguageChoice>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(l10n.language),
+        children: [
+          SimpleDialogOption(
+            key: const Key('languageOptionSystem'),
+            onPressed: () => Navigator.pop(context, const _LanguageChoice(null)),
+            child: Text(l10n.systemLanguage),
+          ),
+          for (final locale in AppLocalizations.supportedLocales)
+            SimpleDialogOption(
+              key: Key('languageOption_${locale.languageCode}'),
+              onPressed: () => Navigator.pop(context, _LanguageChoice(locale)),
+              child: Text(_languageNames[locale.languageCode] ?? locale.languageCode),
+            ),
+        ],
+      ),
+    );
+    if (choice == null) return; // dismissed without picking anything
+    await widget.onLocaleChanged?.call(choice.locale);
+  }
+
   Future<void> _importAll() async {
     final l10n = AppLocalizations.of(context)!;
     setState(() => _importError = null);
@@ -88,6 +136,13 @@ class _TripListScreenState extends State<TripListScreen> {
       appBar: AppBar(
         title: Text(l10n.myTrips),
         actions: [
+          if (widget.onLocaleChanged != null)
+            IconButton(
+              key: const Key('languageButton'),
+              icon: const Icon(Icons.language),
+              tooltip: l10n.language,
+              onPressed: _pickLanguage,
+            ),
           IconButton(
             key: const Key('backupAllButton'),
             icon: const Icon(Icons.backup),

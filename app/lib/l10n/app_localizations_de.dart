@@ -209,6 +209,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get cancel => 'Abbrechen';
 
   @override
+  String get language => 'Sprache';
+
+  @override
+  String get systemLanguage => 'Systemsprache';
+
+  @override
   String get myTrips => 'Meine Reisen';
 
   @override
