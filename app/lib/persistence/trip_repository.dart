@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../domain/backup.dart';
 import '../domain/civil_date.dart';
 import '../domain/money.dart';
 import '../domain/participant.dart';
@@ -273,5 +274,42 @@ class TripRepository {
         ExchangeRate(fromCurrency: oldCurrency, toCurrency: newCurrency, rate: oldToNewRate),
       );
     });
+  }
+
+  /// Assembles every trip currently in the database (with its expenses and
+  /// exchange rates) into one JSON-serializable backup. Pure data assembly —
+  /// nothing here writes to disk or touches the OS share sheet; that's the
+  /// UI layer's job (`ui/file_io.dart`).
+  Future<Map<String, dynamic>> exportAllTripsToJson() async {
+    final trips = await getAllTrips();
+    final bundles = <TripBundle>[];
+    for (final trip in trips) {
+      bundles.add(TripBundle(
+        trip: trip,
+        expenses: await getExpenses(trip.id),
+        exchangeRates: await getExchangeRates(trip.id),
+      ));
+    }
+    return backupToJson(bundles);
+  }
+
+  /// Restores every trip in [json] into the database via the same
+  /// `createTrip`/`addExpense`/`setExchangeRate` calls any other code path
+  /// uses — callers are responsible for only invoking this on an empty
+  /// database (see the design spec: this app doesn't support merging a
+  /// backup into existing data). Returns the number of trips imported, for
+  /// a UI success message.
+  Future<int> importAllTripsFromJson(Map<String, dynamic> json) async {
+    final bundles = backupFromJson(json); // throws UnsupportedBackupVersionException if too new
+    for (final bundle in bundles) {
+      await createTrip(bundle.trip);
+      for (final rate in bundle.exchangeRates) {
+        await setExchangeRate(bundle.trip.id, rate);
+      }
+      for (final expense in bundle.expenses) {
+        await addExpense(expense);
+      }
+    }
+    return bundles.length;
   }
 }

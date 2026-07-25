@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:travelspendplus/domain/backup.dart';
 import 'package:travelspendplus/domain/money.dart';
 import 'package:travelspendplus/domain/participant.dart';
 import 'package:travelspendplus/domain/trip.dart';
@@ -295,5 +296,64 @@ void main() {
     expect(trip!.totalBudget, Money.fromMajor(1000, 'EUR'));
     final expenses = await repo.getExpenses('t1');
     expect(expenses.first.amountInHomeCurrency, Money.fromMajor(30, 'EUR'));
+  });
+
+  group('export/import', () {
+    test('exportAllTripsToJson then importAllTripsFromJson (into a fresh db) round-trips '
+        'a trip with an expense and a rate', () async {
+      final trip = makeTrip();
+      await repo.createTrip(trip);
+      await repo.setExchangeRate(
+          trip.id, const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'EUR', rate: 0.006));
+      await repo.addExpense(Expense(
+        id: 'e1',
+        tripId: trip.id,
+        category: 'food',
+        amount: Money.fromMajor(1000, 'JPY'),
+        amountInHomeCurrency: Money.fromMajor(6, 'EUR'),
+        description: 'Ramen',
+        date: DateTime(2026, 1, 2),
+        status: ExpenseStatus.actual,
+        includeInSplit: true,
+        paidBy: alice,
+        paidFor: [alice],
+      ));
+
+      final json = await repo.exportAllTripsToJson();
+
+      final freshDb = AppDatabase.memory();
+      final freshRepo = TripRepository(freshDb);
+      final importedCount = await freshRepo.importAllTripsFromJson(json);
+      expect(importedCount, 1);
+
+      final restoredTrip = await freshRepo.getTrip(trip.id);
+      expect(restoredTrip, isNotNull);
+      expect(restoredTrip!.name, trip.name);
+      final restoredExpenses = await freshRepo.getExpenses(trip.id);
+      expect(restoredExpenses, hasLength(1));
+      expect(restoredExpenses.single.description, 'Ramen');
+      final restoredRates = await freshRepo.getExchangeRates(trip.id);
+      expect(restoredRates, hasLength(1));
+      expect(restoredRates.single.fromCurrency, 'JPY');
+
+      await freshDb.close();
+    });
+
+    test('exportAllTripsToJson with zero trips produces an empty trips list', () async {
+      final json = await repo.exportAllTripsToJson();
+      expect(json['trips'], isEmpty);
+    });
+
+    test('importAllTripsFromJson rejects a backup with a newer schemaVersion', () async {
+      final json = {
+        'schemaVersion': kBackupSchemaVersion + 1,
+        'exportedAt': DateTime.now().toUtc().toIso8601String(),
+        'trips': <Map<String, dynamic>>[],
+      };
+      expect(
+        () => repo.importAllTripsFromJson(json),
+        throwsA(isA<UnsupportedBackupVersionException>()),
+      );
+    });
   });
 }
