@@ -278,9 +278,8 @@ class _TripCard extends StatelessWidget {
         // distinct, separately-labeled figures (matching the pattern
         // TripDetailScreen's budget-summary card already uses).
         final committed = summary.actualTotal + summary.plannedTotal;
-        final progress = trip.totalBudget.minorUnits == 0
-            ? 0.0
-            : committed.minorUnits / trip.totalBudget.minorUnits;
+        final hasBudget = trip.totalBudget.minorUnits != 0;
+        final progress = hasBudget ? committed.minorUnits / trip.totalBudget.minorUnits : 0.0;
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: InkWell(
@@ -333,7 +332,10 @@ class _TripCard extends StatelessWidget {
                       // real zero the user set.
                       if (summary.plannedTotal.minorUnits != 0)
                         Text('${l10n.plannedTotal} ${formatMoney(summary.plannedTotal)}'),
-                      Text(formatMoney(trip.totalBudget)),
+                      // No budget was set for this trip — showing "EUR 0.00"
+                      // here would read as a real zero budget, not "tracking
+                      // is off" (matches TripDetailScreen's hasBudget check).
+                      if (hasBudget) Text(formatMoney(trip.totalBudget)),
                     ],
                   ),
                   if (avgDaily != null) ...[

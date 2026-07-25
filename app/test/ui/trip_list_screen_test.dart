@@ -245,6 +245,26 @@ void main() {
     expect(find.textContaining('Planned'), findsNothing);
   });
 
+  testWidgets('hides the budget total figure entirely when a trip has no budget set',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan Trip',
+      startDate: DateTime(2026, 10, 5),
+      endDate: DateTime(2026, 10, 12),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(0, 'CNY'), // budget tracking off
+      participants: [me],
+    ));
+
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+
+    // "CNY 0.00" would read as a real zero budget, not "tracking is off" —
+    // it must not appear anywhere on the card.
+    expect(find.text('CNY 0.00'), findsNothing);
+  });
+
   testWidgets('the FAB navigates to CreateTripScreen', (tester) async {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();

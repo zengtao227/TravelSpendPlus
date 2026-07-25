@@ -653,7 +653,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           value,
           style: Theme.of(context)
               .textTheme
-              .headlineMedium
+              .headlineSmall
               ?.copyWith(color: color, fontWeight: FontWeight.bold),
         ),
       ],
