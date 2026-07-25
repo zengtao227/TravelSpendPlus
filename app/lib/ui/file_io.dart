@@ -30,7 +30,9 @@ Future<void> shareFile(String path, {String? subject}) async {
 /// in this app ever does with the path is immediately read it), or `null`
 /// if the user cancelled.
 Future<String?> pickJsonFile() async {
-  final result = await FilePicker.platform.pickFiles(
+  // file_picker 12.x removed the `FilePicker.platform` singleton indirection
+  // in favor of calling the static methods directly.
+  final result = await FilePicker.pickFiles(
     type: FileType.custom,
     allowedExtensions: ['json'],
   );
