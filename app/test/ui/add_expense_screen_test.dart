@@ -88,7 +88,9 @@ void main() {
     await tester.tap(find.text('住宿').last);
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('expenseAmountField')), '10000');
-    await tester.enterText(find.byKey(const Key('expenseCurrencyField')), 'JPY');
+    await tester.tap(find.byKey(const Key('expenseCurrencyField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('JPY').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('expenseExchangeRateField')), findsOneWidget);
     await tester.enterText(find.byKey(const Key('expenseExchangeRateField')), '0.05');
@@ -110,23 +112,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('请选择类别'), findsOneWidget);
-    expect(await repo.getExpenses('t1'), isEmpty);
-  });
-
-  testWidgets('an invalid (not 3-letter) currency code shows a validation error and does not save',
-      (tester) async {
-    await tester.pumpWidget(wrap());
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('expenseCategoryField')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('餐饮').last);
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('expenseAmountField')), '30');
-    await tester.enterText(find.byKey(const Key('expenseCurrencyField')), 'X');
-    await tester.tap(find.byKey(const Key('saveExpenseButton')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('请输入3位货币代码'), findsOneWidget);
     expect(await repo.getExpenses('t1'), isEmpty);
   });
 

@@ -70,9 +70,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'End date must be on or after the start date';
 
   @override
-  String get errorCurrencyCode => 'Enter a 3-letter currency code';
-
-  @override
   String get addExpense => 'Add Expense';
 
   @override

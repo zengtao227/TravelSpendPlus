@@ -70,9 +70,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Enddatum darf nicht vor dem Startdatum liegen';
 
   @override
-  String get errorCurrencyCode => '3-stelligen Währungscode eingeben';
-
-  @override
   String get addExpense => 'Ausgabe hinzufügen';
 
   @override

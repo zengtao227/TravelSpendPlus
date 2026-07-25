@@ -220,12 +220,6 @@ abstract class AppLocalizations {
   /// **'End date must be on or after the start date'**
   String get errorEndDateBeforeStart;
 
-  /// No description provided for @errorCurrencyCode.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a 3-letter currency code'**
-  String get errorCurrencyCode;
-
   /// No description provided for @addExpense.
   ///
   /// In en, this message translates to:

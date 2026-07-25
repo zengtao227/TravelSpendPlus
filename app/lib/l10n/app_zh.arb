@@ -20,7 +20,6 @@
   "errorEnterTripName": "请输入行程名称",
   "errorPositiveAmount": "请输入大于0的金额",
   "errorEndDateBeforeStart": "结束日期不能早于开始日期",
-  "errorCurrencyCode": "请输入3位货币代码",
   "addExpense": "记一笔",
   "editExpense": "编辑支出",
   "category": "类别",

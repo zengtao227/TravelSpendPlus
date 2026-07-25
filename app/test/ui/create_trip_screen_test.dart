@@ -39,6 +39,22 @@ void main() {
     expect(trips.first.participants.length, 1);
   });
 
+  testWidgets('picking a currency from the dropdown saves the trip with that home currency',
+      (tester) async {
+    await tester.pumpWidget(wrap(CreateTripScreen(repository: repo)));
+    await tester.enterText(find.byKey(const Key('tripNameField')), 'Alps Trip');
+    await tester.enterText(find.byKey(const Key('tripBudgetField')), '1000');
+    await tester.tap(find.byKey(const Key('tripCurrencyField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('EUR').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('saveTripButton')));
+    await tester.pumpAndSettle();
+
+    final trips = await repo.getAllTrips();
+    expect(trips.single.homeCurrency, 'EUR');
+  });
+
   testWidgets('leaving budget empty saves the trip with a zero budget', (tester) async {
     await tester.pumpWidget(wrap(CreateTripScreen(repository: repo)));
     await tester.enterText(find.byKey(const Key('tripNameField')), 'Backpacking');

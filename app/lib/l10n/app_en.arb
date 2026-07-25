@@ -21,7 +21,6 @@
   "errorEnterTripName": "Enter a trip name",
   "errorPositiveAmount": "Enter a positive amount",
   "errorEndDateBeforeStart": "End date must be on or after the start date",
-  "errorCurrencyCode": "Enter a 3-letter currency code",
   "addExpense": "Add Expense",
   "editExpense": "Edit Expense",
   "category": "Category",

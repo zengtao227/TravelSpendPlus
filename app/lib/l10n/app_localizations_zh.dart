@@ -69,9 +69,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorEndDateBeforeStart => '结束日期不能早于开始日期';
 
   @override
-  String get errorCurrencyCode => '请输入3位货币代码';
-
-  @override
   String get addExpense => '记一笔';
 
   @override

@@ -7,6 +7,7 @@ import '../domain/money.dart';
 import '../domain/participant.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
+import 'currency_field.dart';
 import 'formatting.dart';
 
 class CreateTripScreen extends StatefulWidget {
@@ -21,7 +22,7 @@ class CreateTripScreen extends StatefulWidget {
 class _CreateTripScreenState extends State<CreateTripScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _currencyController;
+  late String _currency;
   late final TextEditingController _budgetController;
   late DateTime _startDate;
   late DateTime _endDate;
@@ -34,7 +35,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     super.initState();
     final trip = widget.existingTrip;
     _nameController = TextEditingController(text: trip?.name ?? '');
-    _currencyController = TextEditingController(text: trip?.homeCurrency ?? 'CNY');
+    _currency = trip?.homeCurrency ?? 'CNY';
     _budgetController =
         TextEditingController(text: trip != null ? trip.totalBudget.major.toString() : '');
     _startDate = civilDate(trip?.startDate ?? DateTime.now());
@@ -44,7 +45,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _currencyController.dispose();
     _budgetController.dispose();
     super.dispose();
   }
@@ -67,7 +67,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     });
     if (!_formKey.currentState!.validate() || _dateError != null) return;
 
-    final currency = _currencyController.text.trim().toUpperCase();
+    final currency = _currency;
     final budgetText = _budgetController.text.trim();
     final budget = Money.fromMajor(budgetText.isEmpty ? 0 : double.parse(budgetText), currency);
 
@@ -133,13 +133,11 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
               ),
             const SizedBox(height: 12),
             if (!_isEditing)
-              TextFormField(
-                key: const Key('tripCurrencyField'),
-                controller: _currencyController,
-                decoration: InputDecoration(labelText: l10n.homeCurrency),
-                textCapitalization: TextCapitalization.characters,
-                validator: (value) =>
-                    (value?.trim().length ?? 0) == 3 ? null : l10n.errorCurrencyCode,
+              CurrencyDropdownField(
+                fieldKey: const Key('tripCurrencyField'),
+                value: _currency,
+                label: l10n.homeCurrency,
+                onChanged: (value) => setState(() => _currency = value),
               ),
             const SizedBox(height: 12),
             TextFormField(

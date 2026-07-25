@@ -40,7 +40,10 @@ void main() {
   testWidgets('adding a rate persists it and shows it in the list', (tester) async {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('newRateCurrencyField')), 'JPY');
+    await tester.tap(find.byKey(const Key('newRateCurrencyField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('JPY').last);
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('newRateValueField')), '0.05');
     await tester.tap(find.byKey(const Key('saveRateButton')));
     await tester.pumpAndSettle();
@@ -57,7 +60,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('changeCurrencyButton')));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('newHomeCurrencyField')), 'JPY');
+    await tester.tap(find.byKey(const Key('newHomeCurrencyField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('JPY').last);
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('oldToNewRateField')), '20');
     await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
     await tester.pumpAndSettle();
@@ -67,13 +73,16 @@ void main() {
     expect(reloaded.totalBudget.major, closeTo(20000 * 20, 0.01));
   });
 
-  testWidgets('entering the trip\'s own current currency as the "new" one shows an error and changes nothing',
+  testWidgets('picking the trip\'s own current currency as the "new" one shows an error and changes nothing',
       (tester) async {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('changeCurrencyButton')));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('newHomeCurrencyField')), 'CNY'); // trip's own home currency
+    await tester.tap(find.byKey(const Key('newHomeCurrencyField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('CNY').last); // trip's own home currency
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('oldToNewRateField')), '2');
     await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
     await tester.pumpAndSettle();
@@ -85,45 +94,19 @@ void main() {
     expect(reloaded.totalBudget, Money.fromMajor(20000, 'CNY'), reason: 'budget must be untouched, not doubled');
   });
 
-  testWidgets('adding a rate with an invalid currency code shows an error instead of failing silently',
-      (tester) async {
-    await tester.pumpWidget(wrap());
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('newRateCurrencyField')), 'X');
-    await tester.enterText(find.byKey(const Key('newRateValueField')), '0.05');
-    await tester.tap(find.byKey(const Key('saveRateButton')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Enter a 3-letter currency code'), findsOneWidget);
-    expect(await repo.getExchangeRates('t1'), isEmpty);
-  });
-
   testWidgets('adding a rate with an invalid rate value shows an error instead of failing silently',
       (tester) async {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('newRateCurrencyField')), 'JPY');
+    await tester.tap(find.byKey(const Key('newRateCurrencyField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('JPY').last);
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('newRateValueField')), '0');
     await tester.tap(find.byKey(const Key('saveRateButton')));
     await tester.pumpAndSettle();
 
     expect(find.text('Enter a positive exchange rate'), findsOneWidget);
     expect(await repo.getExchangeRates('t1'), isEmpty);
-  });
-
-  testWidgets('changing home currency with an invalid new-currency code shows an error and changes nothing',
-      (tester) async {
-    await tester.pumpWidget(wrap());
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('changeCurrencyButton')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('newHomeCurrencyField')), 'X');
-    await tester.enterText(find.byKey(const Key('oldToNewRateField')), '2');
-    await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Enter a 3-letter currency code'), findsOneWidget);
-    final reloaded = await repo.getTrip('t1');
-    expect(reloaded!.homeCurrency, 'CNY');
   });
 }

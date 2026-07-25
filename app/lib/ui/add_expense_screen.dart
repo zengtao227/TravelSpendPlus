@@ -9,6 +9,7 @@ import '../domain/expense_category.dart';
 import '../domain/money.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
+import 'currency_field.dart';
 import 'formatting.dart';
 
 class AddExpenseScreen extends StatefulWidget {
@@ -30,7 +31,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _formKey = GlobalKey<FormState>();
   String? _category;
   late final TextEditingController _amountController;
-  late final TextEditingController _currencyController;
+  late String _currency;
   late final TextEditingController _descriptionController;
   final _exchangeRateController = TextEditingController();
   late DateTime _date;
@@ -46,12 +47,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     _category = existing?.category;
     _amountController =
         TextEditingController(text: existing != null ? existing.amount.major.toString() : '');
-    _currencyController =
-        TextEditingController(text: existing?.amount.currencyCode ?? widget.trip.homeCurrency);
+    _currency = existing?.amount.currencyCode ?? widget.trip.homeCurrency;
     _descriptionController = TextEditingController(text: existing?.description ?? '');
     _date = civilDate(existing?.date ?? DateTime.now());
     _status = existing?.status ?? ExpenseStatus.actual;
-    _currencyController.addListener(() => setState(() {}));
     _loadRates();
   }
 
@@ -63,16 +62,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   void dispose() {
     _amountController.dispose();
-    _currencyController.dispose();
     _descriptionController.dispose();
     _exchangeRateController.dispose();
     super.dispose();
   }
 
   bool get _needsNewExchangeRate {
-    final currency = _currencyController.text.trim().toUpperCase();
-    if (currency == widget.trip.homeCurrency || currency.length != 3) return false;
-    return !_existingRates.any((r) => r.fromCurrency == currency);
+    if (_currency == widget.trip.homeCurrency) return false;
+    return !_existingRates.any((r) => r.fromCurrency == _currency);
   }
 
   Future<void> _pickDate() async {
@@ -90,7 +87,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       return;
     }
 
-    final currency = _currencyController.text.trim().toUpperCase();
+    final currency = _currency;
     final amount = Money.fromMajor(double.parse(_amountController.text), currency);
     final existing = widget.existingExpense;
 
@@ -190,13 +187,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               },
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              key: const Key('expenseCurrencyField'),
-              controller: _currencyController,
-              decoration: InputDecoration(labelText: l10n.currency),
-              textCapitalization: TextCapitalization.characters,
-              validator: (value) =>
-                  (value?.trim().length ?? 0) == 3 ? null : l10n.errorCurrencyCode,
+            CurrencyDropdownField(
+              fieldKey: const Key('expenseCurrencyField'),
+              value: _currency,
+              label: l10n.currency,
+              onChanged: (value) => setState(() => _currency = value),
             ),
             if (_needsNewExchangeRate) ...[
               const SizedBox(height: 12),
@@ -204,10 +199,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 key: const Key('expenseExchangeRateField'),
                 controller: _exchangeRateController,
                 decoration: InputDecoration(
-                  labelText: l10n.exchangeRatePrompt(
-                    _currencyController.text.trim().toUpperCase(),
-                    widget.trip.homeCurrency,
-                  ),
+                  labelText: l10n.exchangeRatePrompt(_currency, widget.trip.homeCurrency),
                 ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {

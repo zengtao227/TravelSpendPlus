@@ -2,9 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
 
+import '../domain/currency_list.dart';
 import '../domain/exchange_rate.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
+import 'currency_field.dart';
 
 class ExchangeRateSettingsScreen extends StatefulWidget {
   final Trip trip;
@@ -17,25 +19,31 @@ class ExchangeRateSettingsScreen extends StatefulWidget {
 
 class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen> {
   late Future<List<ExchangeRate>> _ratesFuture;
-  final _newRateCurrency = TextEditingController();
+  late String _newRateCurrency;
   final _newRateValue = TextEditingController();
   bool _showChangeCurrencyForm = false;
-  final _newHomeCurrency = TextEditingController();
+  late String _newHomeCurrency;
   final _oldToNewRate = TextEditingController();
   String? _changeCurrencyError;
   String? _addRateError;
+
+  // A currency dropdown always needs a starting value; default to the first
+  // curated currency that isn't already the trip's home currency (picking
+  // the home currency itself would be a nonsensical default here).
+  static String _defaultOtherCurrency(String homeCurrency) =>
+      kAllCurrencyCodesOrdered.firstWhere((c) => c != homeCurrency, orElse: () => homeCurrency);
 
   @override
   void initState() {
     super.initState();
     _ratesFuture = widget.repository.getExchangeRates(widget.trip.id);
+    _newRateCurrency = _defaultOtherCurrency(widget.trip.homeCurrency);
+    _newHomeCurrency = _defaultOtherCurrency(widget.trip.homeCurrency);
   }
 
   @override
   void dispose() {
-    _newRateCurrency.dispose();
     _newRateValue.dispose();
-    _newHomeCurrency.dispose();
     _oldToNewRate.dispose();
     super.dispose();
   }
@@ -46,14 +54,11 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
 
   Future<void> _saveRate() async {
     final l10n = AppLocalizations.of(context)!;
-    final currency = _newRateCurrency.text.trim().toUpperCase();
+    final currency = _newRateCurrency;
     final rate = double.tryParse(_newRateValue.text);
-    // Every rejection path below must set a visible error — an invalid
-    // currency or rate must never look like the button silently did nothing.
-    if (currency.length != 3) {
-      setState(() => _addRateError = l10n.errorCurrencyCode);
-      return;
-    }
+    // The dropdown can't produce an invalid currency code, so the only
+    // remaining rejection path is the rate — but it must still set a
+    // visible error, not look like the button silently did nothing.
     if (rate == null || rate <= 0) {
       setState(() => _addRateError = l10n.errorPositiveRate);
       return;
@@ -63,19 +68,15 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
       widget.trip.id,
       ExchangeRate(fromCurrency: currency, toCurrency: widget.trip.homeCurrency, rate: rate),
     );
-    _newRateCurrency.clear();
     _newRateValue.clear();
+    setState(() => _newRateCurrency = _defaultOtherCurrency(widget.trip.homeCurrency));
     _refresh();
   }
 
   Future<void> _confirmChangeCurrency() async {
     final l10n = AppLocalizations.of(context)!;
-    final newCurrency = _newHomeCurrency.text.trim().toUpperCase();
+    final newCurrency = _newHomeCurrency;
     final rate = double.tryParse(_oldToNewRate.text);
-    if (newCurrency.length != 3) {
-      setState(() => _changeCurrencyError = l10n.errorCurrencyCode);
-      return;
-    }
     if (rate == null || rate <= 0) {
       setState(() => _changeCurrencyError = l10n.errorPositiveRate);
       return;
@@ -121,11 +122,11 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
           ),
           const Divider(),
           Text(l10n.addRate, style: Theme.of(context).textTheme.titleSmall),
-          TextField(
-            key: const Key('newRateCurrencyField'),
-            controller: _newRateCurrency,
-            decoration: InputDecoration(labelText: l10n.newCurrency),
-            textCapitalization: TextCapitalization.characters,
+          CurrencyDropdownField(
+            fieldKey: const Key('newRateCurrencyField'),
+            value: _newRateCurrency,
+            label: l10n.newCurrency,
+            onChanged: (value) => setState(() => _newRateCurrency = value),
           ),
           TextField(
             key: const Key('newRateValueField'),
@@ -154,20 +155,17 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
           else ...[
             Text(l10n.changeCurrencyWarning,
                 style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            TextField(
-              key: const Key('newHomeCurrencyField'),
-              controller: _newHomeCurrency,
-              decoration: InputDecoration(labelText: l10n.newHomeCurrency),
-              textCapitalization: TextCapitalization.characters,
+            CurrencyDropdownField(
+              fieldKey: const Key('newHomeCurrencyField'),
+              value: _newHomeCurrency,
+              label: l10n.newHomeCurrency,
+              onChanged: (value) => setState(() => _newHomeCurrency = value),
             ),
             TextField(
               key: const Key('oldToNewRateField'),
               controller: _oldToNewRate,
               decoration: InputDecoration(
-                labelText: l10n.oldToNewRateLabel(
-                  widget.trip.homeCurrency,
-                  _newHomeCurrency.text.trim().isEmpty ? '?' : _newHomeCurrency.text.trim(),
-                ),
+                labelText: l10n.oldToNewRateLabel(widget.trip.homeCurrency, _newHomeCurrency),
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
             ),

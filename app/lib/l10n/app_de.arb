@@ -20,7 +20,6 @@
   "errorEnterTripName": "Reisenamen eingeben",
   "errorPositiveAmount": "Positiven Betrag eingeben",
   "errorEndDateBeforeStart": "Enddatum darf nicht vor dem Startdatum liegen",
-  "errorCurrencyCode": "3-stelligen Währungscode eingeben",
   "addExpense": "Ausgabe hinzufügen",
   "editExpense": "Ausgabe bearbeiten",
   "category": "Kategorie",
