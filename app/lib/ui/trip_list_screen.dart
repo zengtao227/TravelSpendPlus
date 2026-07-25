@@ -254,7 +254,10 @@ class _TripCard extends StatelessWidget {
                 children: [
                   Text(trip.name, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
-                  Text('${formatDate(context, trip.startDate)} - ${formatDate(context, trip.endDate)}'),
+                  Text(
+                    '${formatDate(context, trip.startDate)} - ${formatDate(context, trip.endDate)} '
+                    '(${l10n.tripLengthDays(trip.totalDays)})',
+                  ),
                   const SizedBox(height: 8),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),

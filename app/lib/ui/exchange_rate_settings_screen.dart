@@ -66,7 +66,10 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
     setState(() => _addRateError = null);
     await widget.repository.setExchangeRate(
       widget.trip.id,
-      ExchangeRate(fromCurrency: currency, toCurrency: widget.trip.homeCurrency, rate: rate),
+      // The field prompts "1 home = ? foreign" — ExchangeRate.rate's stored
+      // meaning stays "1 fromCurrency(foreign) = rate toCurrency(home)", so
+      // the typed value is inverted before it's stored.
+      ExchangeRate(fromCurrency: currency, toCurrency: widget.trip.homeCurrency, rate: 1 / rate),
     );
     _newRateValue.clear();
     setState(() => _newRateCurrency = _defaultOtherCurrency(widget.trip.homeCurrency));
@@ -114,7 +117,10 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
                 children: [
                   for (final rate in rates)
                     ListTile(
-                      title: Text('1 ${rate.fromCurrency} = ${rate.rate} ${rate.toCurrency}'),
+                      // Displayed as "1 home = ? foreign", matching the
+                      // input direction — rate.rate itself still means
+                      // "1 fromCurrency(foreign) = rate toCurrency(home)".
+                      title: Text('1 ${rate.toCurrency} = ${1 / rate.rate} ${rate.fromCurrency}'),
                     ),
                 ],
               );
@@ -131,7 +137,9 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
           TextField(
             key: const Key('newRateValueField'),
             controller: _newRateValue,
-            decoration: InputDecoration(labelText: l10n.rateValue),
+            decoration: InputDecoration(
+              labelText: l10n.exchangeRatePrompt(widget.trip.homeCurrency, _newRateCurrency),
+            ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
           if (_addRateError != null)

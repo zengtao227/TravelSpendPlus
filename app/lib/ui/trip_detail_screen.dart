@@ -142,6 +142,28 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     }
   }
 
+  Future<void> _deleteTrip(Trip trip) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteTrip),
+        content: Text(l10n.deleteTripConfirm(trip.name)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+          TextButton(
+            key: const Key('confirmDeleteTripButton'),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.confirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await widget.repository.deleteTrip(trip.id);
+    if (mounted) Navigator.pop(context, true);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -178,6 +200,12 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   icon: const Icon(Icons.ios_share),
                   tooltip: l10n.exportTripCsv,
                   onPressed: () => _exportCsv(trip, snapshot.data!.expenses),
+                ),
+                IconButton(
+                  key: const Key('deleteTripButton'),
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: l10n.deleteTrip,
+                  onPressed: () => _deleteTrip(trip),
                 ),
               ]);
             },
@@ -233,10 +261,15 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               trip: trip, expenses: expenses, asOf: now);
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            // Extra bottom padding so the last expense row can scroll clear
+            // of the floating action button instead of sitting under it.
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
             children: [
               Text(trip.name, style: Theme.of(context).textTheme.headlineSmall),
-              Text('${formatDate(context, trip.startDate)} - ${formatDate(context, trip.endDate)}'),
+              Text(
+                '${formatDate(context, trip.startDate)} - ${formatDate(context, trip.endDate)} '
+                '(${l10n.tripLengthDays(trip.totalDays)})',
+              ),
               const SizedBox(height: 8),
               budgetTimingWidget,
               if (averageDailySpend != null)

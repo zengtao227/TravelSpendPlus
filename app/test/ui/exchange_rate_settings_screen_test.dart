@@ -37,21 +37,26 @@ void main() {
         home: ExchangeRateSettingsScreen(trip: trip, repository: repo),
       );
 
-  testWidgets('adding a rate persists it and shows it in the list', (tester) async {
+  testWidgets(
+      'adding a rate persists it (entered as "1 home = ? foreign", stored as the reciprocal) '
+      'and shows it in the list', (tester) async {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('newRateCurrencyField')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('JPY').last);
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('newRateValueField')), '0.05');
+    // "1 CNY = 20 JPY" — the direction a traveler exchanging cash thinks in.
+    await tester.enterText(find.byKey(const Key('newRateValueField')), '20');
     await tester.tap(find.byKey(const Key('saveRateButton')));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('JPY'), findsWidgets);
     final rates = await repo.getExchangeRates('t1');
     expect(rates.length, 1);
-    expect(rates.first.rate, 0.05);
+    // ExchangeRate.rate's own meaning is unchanged ("1 JPY = rate CNY"),
+    // so the stored value is the reciprocal of what was typed.
+    expect(rates.first.rate, closeTo(0.05, 0.0001));
   });
 
   testWidgets('changing home currency rescales the trip and clears the change form',

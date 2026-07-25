@@ -229,7 +229,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         orElse: () => ExchangeRate(
           fromCurrency: currency,
           toCurrency: widget.trip.homeCurrency,
-          rate: double.parse(_exchangeRateController.text),
+          // The field prompts "1 home = ? foreign" (see exchangeRatePrompt
+          // below) — ExchangeRate.rate's own stored meaning is unchanged
+          // ("1 fromCurrency(foreign) = rate toCurrency(home)"), so what the
+          // user typed has to be inverted before it's stored.
+          rate: 1 / double.parse(_exchangeRateController.text),
         ),
       );
       if (_needsNewExchangeRate) {
@@ -343,7 +347,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 key: const Key('expenseExchangeRateField'),
                 controller: _exchangeRateController,
                 decoration: InputDecoration(
-                  labelText: l10n.exchangeRatePrompt(_currency, widget.trip.homeCurrency),
+                  // "1 home = ? foreign" — the direction a traveler actually
+                  // thinks in when exchanging cash, not "1 foreign = ? home".
+                  labelText: l10n.exchangeRatePrompt(widget.trip.homeCurrency, _currency),
                 ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {

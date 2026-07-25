@@ -298,6 +298,50 @@ void main() {
     expect(expenses.first.amountInHomeCurrency, Money.fromMajor(30, 'EUR'));
   });
 
+  test('deleteTrip removes the trip and every child row (participants, expenses, rates, '
+      'custom categories), leaving other trips untouched', () async {
+    final trip = makeTrip();
+    await repo.createTrip(trip);
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(30, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
+      description: 'Dinner',
+      date: DateTime(2026, 1, 3),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+    await repo.setExchangeRate(
+        't1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'EUR', rate: 0.006));
+    await repo.addCustomCategory('t1', 'Souvenirs');
+
+    final otherTrip = Trip(
+      id: 't2',
+      name: 'Korea',
+      startDate: DateTime(2026, 2, 1),
+      endDate: DateTime(2026, 2, 5),
+      homeCurrency: 'KRW',
+      totalBudget: Money.fromMajor(500000, 'KRW'),
+      participants: [Participant(id: 'p3', name: 'Carol')],
+    );
+    await repo.createTrip(otherTrip);
+
+    await repo.deleteTrip('t1');
+
+    expect(await repo.getTrip('t1'), isNull);
+    expect(await repo.getExpenses('t1'), isEmpty);
+    expect(await repo.getExchangeRates('t1'), isEmpty);
+    expect(await repo.getCustomCategories('t1'), isEmpty);
+    expect(await repo.getAllTrips(), hasLength(1));
+    final remaining = await repo.getTrip('t2');
+    expect(remaining, isNotNull);
+    expect(remaining!.name, 'Korea');
+  });
+
   test('addCustomCategory then getCustomCategories round-trips, and adding the same name again '
       'does not duplicate it', () async {
     await repo.createTrip(makeTrip());

@@ -132,9 +132,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get newCurrency => 'Währung (3-stelliger Code)';
 
   @override
-  String get rateValue => 'Kurs';
-
-  @override
   String get saveRate => 'Kurs speichern';
 
   @override
@@ -166,6 +163,17 @@ class AppLocalizationsDe extends AppLocalizations {
       locale: localeName,
       other: '$days Tage bis zur Abreise',
       one: '1 Tag bis zur Abreise',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripLengthDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days Tage',
+      one: '1 Tag',
     );
     return '$_temp0';
   }
@@ -267,6 +275,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get exportTripCsv => 'Als CSV exportieren';
+
+  @override
+  String get deleteTrip => 'Reise löschen';
+
+  @override
+  String deleteTripConfirm(String name) {
+    return '„$name“ und alles darin löschen? Das kann nicht rückgängig gemacht werden.';
+  }
 
   @override
   String get csvHeaderDate => 'Datum';

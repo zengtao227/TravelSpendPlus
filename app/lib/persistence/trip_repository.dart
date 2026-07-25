@@ -276,6 +276,23 @@ class TripRepository {
     });
   }
 
+  /// Deletes a trip and everything under it. Foreign-key enforcement isn't
+  /// turned on for this database (no `PRAGMA foreign_keys`/`beforeOpen`
+  /// hook), so `.references(Trips, #id)` on the child tables is documentation
+  /// only — it does not cascade. Every child table must be deleted
+  /// explicitly, in one transaction, or deleting just the Trips row would
+  /// leave orphaned Participants/Expenses/TripExchangeRates/TripCategories
+  /// rows behind.
+  Future<void> deleteTrip(String tripId) async {
+    await _db.transaction(() async {
+      await (_db.delete(_db.expenses)..where((e) => e.tripId.equals(tripId))).go();
+      await (_db.delete(_db.tripExchangeRates)..where((r) => r.tripId.equals(tripId))).go();
+      await (_db.delete(_db.tripCategories)..where((c) => c.tripId.equals(tripId))).go();
+      await (_db.delete(_db.participants)..where((p) => p.tripId.equals(tripId))).go();
+      await (_db.delete(_db.trips)..where((t) => t.id.equals(tripId))).go();
+    });
+  }
+
   Future<List<String>> getCustomCategories(String tripId) async {
     final rows =
         await (_db.select(_db.tripCategories)..where((c) => c.tripId.equals(tripId))).get();

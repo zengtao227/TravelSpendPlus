@@ -93,7 +93,9 @@ void main() {
     await tester.tap(find.text('JPY').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('expenseExchangeRateField')), findsOneWidget);
-    await tester.enterText(find.byKey(const Key('expenseExchangeRateField')), '0.05');
+    // Field prompts "1 CNY = ? JPY" — 20 is the same effective rate as the
+    // old "1 JPY = 0.05 CNY" direction (10000 JPY / 20 = 500 CNY).
+    await tester.enterText(find.byKey(const Key('expenseExchangeRateField')), '20');
     // With every field visible (category, amount, currency, exchange rate,
     // description, date, status), the form is taller than the default test
     // viewport — scroll the save button into view before tapping it.

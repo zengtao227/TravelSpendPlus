@@ -125,6 +125,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Japan Trip'), findsOneWidget);
     expect(find.textContaining('CNY 20,000.00'), findsWidgets);
+    expect(find.textContaining('8 days'), findsOneWidget); // inclusive of both ends
   });
 
   testWidgets('shows actual and planned totals as separate, correctly-labeled figures',

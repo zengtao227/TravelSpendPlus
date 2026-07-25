@@ -131,9 +131,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get newCurrency => '币种(3位代码)';
 
   @override
-  String get rateValue => '汇率';
-
-  @override
   String get saveRate => '保存汇率';
 
   @override
@@ -159,6 +156,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String daysUntilDeparture(int days) {
     return '距出发还有 $days 天';
+  }
+
+  @override
+  String tripLengthDays(int days) {
+    return '$days天';
   }
 
   @override
@@ -247,6 +249,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get exportTripCsv => '导出为表格';
+
+  @override
+  String get deleteTrip => '删除行程';
+
+  @override
+  String deleteTripConfirm(String name) {
+    return '确定要删除「$name」吗？删除后无法恢复，行程里的所有记录都会一起删掉。';
+  }
 
   @override
   String get csvHeaderDate => '日期';

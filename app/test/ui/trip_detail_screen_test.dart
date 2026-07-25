@@ -42,6 +42,22 @@ void main() {
         ),
       );
 
+  testWidgets('the date range shows the trip length in days', (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime(2026, 10, 5),
+      endDate: DateTime(2026, 10, 12), // inclusive of both ends = 8 days
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('8天'), findsOneWidget);
+  });
+
   testWidgets('a not-yet-departed trip shows a countdown, not a daily budget', (tester) async {
     final farFuture = DateTime.now().add(const Duration(days: 30));
     await repo.createTrip(Trip(
@@ -383,6 +399,86 @@ void main() {
     expect(find.textContaining('JPY 2,000.00'), findsWidgets,
         reason: 'legend must follow the same view-currency switch as the summary card '
             '(100 CNY * 20 = 2000 JPY), not stay stuck showing home-currency amounts');
+  });
+
+  testWidgets('deleting a trip removes it, its expenses, and pops back to the caller',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime(2026, 10, 5),
+      endDate: DateTime(2026, 10, 12),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(300, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+      description: 'Dinner',
+      date: DateTime(2026, 10, 6),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    bool? poppedResult;
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('zh'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Builder(builder: (context) {
+        return ElevatedButton(
+          onPressed: () async {
+            poppedResult = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TripDetailScreen(tripId: 't1', repository: repo),
+              ),
+            );
+          },
+          child: const Text('open'),
+        );
+      }),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('deleteTripButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirmDeleteTripButton')));
+    await tester.pumpAndSettle();
+
+    expect(await repo.getTrip('t1'), isNull);
+    expect(await repo.getExpenses('t1'), isEmpty);
+    expect(poppedResult, isTrue);
+    expect(find.text('open'), findsOneWidget); // back on the caller screen
+  });
+
+  testWidgets('cancelling the delete-trip confirmation keeps the trip', (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime(2026, 10, 5),
+      endDate: DateTime(2026, 10, 12),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('deleteTripButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+
+    expect(await repo.getTrip('t1'), isNotNull);
   });
 
   testWidgets('the CSV export button shares a file containing one row per expense',

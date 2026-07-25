@@ -340,12 +340,6 @@ abstract class AppLocalizations {
   /// **'Currency (3-letter code)'**
   String get newCurrency;
 
-  /// No description provided for @rateValue.
-  ///
-  /// In en, this message translates to:
-  /// **'Rate'**
-  String get rateValue;
-
   /// No description provided for @saveRate.
   ///
   /// In en, this message translates to:
@@ -393,6 +387,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{days, plural, =1{1 day until departure} other{{days} days until departure}}'**
   String daysUntilDeparture(int days);
+
+  /// No description provided for @tripLengthDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day} other{{days} days}}'**
+  String tripLengthDays(int days);
 
   /// No description provided for @tripFinished.
   ///
@@ -555,6 +555,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Export as CSV'**
   String get exportTripCsv;
+
+  /// No description provided for @deleteTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete trip'**
+  String get deleteTrip;
+
+  /// No description provided for @deleteTripConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\" and everything in it? This can\'t be undone.'**
+  String deleteTripConfirm(String name);
 
   /// No description provided for @csvHeaderDate.
   ///
