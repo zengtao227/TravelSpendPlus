@@ -35,6 +35,7 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
   String? _changeCurrencyError;
   String? _addRateError;
   late final LiveRateService _liveRateService;
+  final _scrollController = ScrollController();
 
   // A currency dropdown always needs a starting value; default to the first
   // curated currency that isn't already the trip's home currency (picking
@@ -57,6 +58,7 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
     for (final controller in _directRateControllers.values) {
       controller.dispose();
     }
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -89,6 +91,24 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
     _newRateValue.clear();
     setState(() => _newRateCurrency = _defaultOtherCurrency(widget.trip.homeCurrency));
     _refresh();
+  }
+
+  // With an existing-rates list above it, revealing the change-currency
+  // form can land its fields (and the confirm button) entirely below the
+  // fold with nothing on screen hinting there's more to scroll to — a user
+  // could reasonably conclude there's nothing here and back out, leaving
+  // the change never actually confirmed. Scroll the newly-revealed section
+  // into view automatically instead of relying on the user to discover it.
+  void _revealChangeCurrencyForm() {
+    setState(() => _showChangeCurrencyForm = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   // Also shown as a SnackBar, not just the inline text near the confirm
@@ -157,6 +177,7 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
           }..remove(_newHomeCurrency);
 
           return ListView(
+            controller: _scrollController,
             // Extra bottom padding: a trip using several currencies can grow
             // one direct-rate field per currency, pushing the confirm
             // button below a short viewport.
@@ -207,7 +228,7 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
               if (!_showChangeCurrencyForm)
                 OutlinedButton(
                   key: const Key('changeCurrencyButton'),
-                  onPressed: () => setState(() => _showChangeCurrencyForm = true),
+                  onPressed: _revealChangeCurrencyForm,
                   child: Text(l10n.changeHomeCurrency),
                 )
               else ...[

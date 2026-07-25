@@ -449,6 +449,75 @@ void main() {
     expect(reloaded!.homeCurrency, 'CHF', reason: 'editing an unrelated expense field must not revert the home currency');
   });
 
+  testWidgets(
+      'changing home currency to a currency that already has expenses recorded in it (CHF is '
+      'also the dropdown\'s own default "other" currency for a EUR-home trip, so this reaches '
+      'the target without ever tapping the currency dropdown)', (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Switzerland',
+      startDate: DateTime.now().subtract(const Duration(days: 2)),
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      homeCurrency: 'EUR',
+      totalBudget: Money.fromMajor(1000, 'EUR'),
+      participants: [me],
+    ));
+    // 1 CHF = 1.05 EUR
+    await repo.setExchangeRate('t1', const ExchangeRate(fromCurrency: 'CHF', toCurrency: 'EUR', rate: 1.05));
+    await repo.addExpense(Expense(
+      id: 'e-eur',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(30, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
+      description: 'Dinner',
+      date: DateTime.now(),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e-chf',
+      tripId: 't1',
+      category: 'lodging',
+      amount: Money.fromMajor(200, 'CHF'),
+      amountInHomeCurrency: Money.fromMajor(210, 'EUR'),
+      description: 'Hotel',
+      date: DateTime.now(),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.currency_exchange));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('changeCurrencyButton')));
+    await tester.pumpAndSettle();
+
+    // CHF is already selected without tapping the dropdown — confirm the
+    // one required rate field (EUR) is actually there to fill in.
+    expect(find.byKey(const Key('directRateField_EUR')), findsOneWidget);
+    expect(find.byKey(const Key('directRateField_CHF')), findsNothing,
+        reason: 'CHF is becoming the home currency, it needs no rate to itself');
+
+    await tester.enterText(find.byKey(const Key('directRateField_EUR')), '0.95');
+    await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ExchangeRateSettingsScreen), findsNothing);
+    expect(find.text('CHF 950.00'), findsOneWidget);
+    final reloaded = await repo.getTrip('t1');
+    expect(reloaded!.homeCurrency, 'CHF');
+    final rates = await repo.getExchangeRates('t1');
+    expect(rates.length, 1);
+    expect(rates.first.fromCurrency, 'EUR');
+    expect(rates.first.toCurrency, 'CHF');
+  });
+
   testWidgets('the category legend follows the currency switcher, not just the summary card',
       (tester) async {
     await repo.createTrip(Trip(

@@ -280,6 +280,77 @@ void main() {
     expect(rates.first.rate, 155);
   });
 
+  test(
+      'changeHomeCurrency to a currency that already has both a rate row AND a real expense in '
+      'it: that expense converts 1:1, the old home currency gets a fresh reverse rate, and '
+      'everything actually persists on reload', () async {
+    await repo.createTrip(makeTrip()); // EUR home currency, 1000 EUR budget
+    // 1 CHF = 1.05 EUR
+    await repo.setExchangeRate(
+        't1', const ExchangeRate(fromCurrency: 'CHF', toCurrency: 'EUR', rate: 1.05));
+    await repo.addExpense(Expense(
+      id: 'e-eur',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(30, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
+      description: 'Dinner',
+      date: DateTime(2026, 10, 6),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e-chf',
+      tripId: 't1',
+      category: 'lodging',
+      amount: Money.fromMajor(200, 'CHF'),
+      amountInHomeCurrency: Money.fromMajor(210, 'EUR'), // 200 * 1.05
+      description: 'Hotel',
+      date: DateTime(2026, 10, 7),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+
+    // Changing TO the currency that's already in use as a foreign currency
+    // (not a brand-new third currency) — only EUR needs a direct rate,
+    // since CHF becoming the home currency needs no rate to itself.
+    await repo.changeHomeCurrency(
+      tripId: 't1',
+      newCurrency: 'CHF',
+      directRatesToNewCurrency: {'EUR': 0.95}, // 1 EUR = 0.95 CHF
+    );
+
+    // Re-fetch everything from scratch via brand-new repository reads,
+    // exactly like navigating back to the trip page does — not reusing any
+    // in-memory value from before the call.
+    final trip = await repo.getTrip('t1');
+    expect(trip!.homeCurrency, 'CHF');
+    expect(trip.totalBudget.currencyCode, 'CHF');
+    expect(trip.totalBudget.major, closeTo(1000 * 0.95, 0.01));
+
+    final expenses = await repo.getExpenses('t1');
+    final eurExpense = expenses.firstWhere((e) => e.id == 'e-eur');
+    final chfExpense = expenses.firstWhere((e) => e.id == 'e-chf');
+    expect(eurExpense.amountInHomeCurrency.currencyCode, 'CHF');
+    expect(eurExpense.amountInHomeCurrency.major, closeTo(30 * 0.95, 0.01));
+    // The CHF expense needs no conversion at all — same currency as the
+    // new home currency.
+    expect(chfExpense.amountInHomeCurrency.currencyCode, 'CHF');
+    expect(chfExpense.amountInHomeCurrency.major, closeTo(200, 0.01));
+
+    final rates = await repo.getExchangeRates('t1');
+    // The stale CHF->EUR row must be gone (self-referential now), replaced
+    // by exactly one fresh EUR->CHF row.
+    expect(rates.length, 1);
+    expect(rates.first.fromCurrency, 'EUR');
+    expect(rates.first.toCurrency, 'CHF');
+    expect(rates.first.rate, closeTo(0.95, 0.0001));
+  });
+
   test('changeHomeCurrency rejects a "change" to the currency the trip already uses', () async {
     await repo.createTrip(makeTrip()); // EUR home currency
     await repo.addExpense(Expense(
