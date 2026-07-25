@@ -48,6 +48,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get totalBudget => '总预算';
 
   @override
+  String get totalBudgetOptional => '总预算（选填）';
+
+  @override
   String get homeCurrency => '本位币';
 
   @override
@@ -155,6 +158,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String dailyBudgetRemaining(String amount) {
     return '每日剩余预算：$amount/天';
+  }
+
+  @override
+  String averageDailySpend(String amount) {
+    return '目前日均花费：$amount/天';
   }
 
   @override

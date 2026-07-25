@@ -78,8 +78,44 @@ void main() {
     await tester.pumpWidget(wrap('t1'));
     await tester.pumpAndSettle();
     // See the comment in the first test: app_zh.arb's dailyBudgetRemaining
-    // renders ".../天", not "/day" — the locale is pinned to zh here.
-    expect(find.textContaining('/天'), findsOneWidget);
+    // renders ".../天", not "/day" — the locale is pinned to zh here. The
+    // average-daily-spend line also ends in "/天" once the trip has started
+    // (it's independent of the budget), so match on its distinct prefix
+    // rather than the shared suffix.
+    expect(find.textContaining('每日剩余预算'), findsOneWidget);
+    expect(find.textContaining('目前日均花费'), findsOneWidget);
+  });
+
+  testWidgets('the average-daily-spend line reflects actual spend regardless of budget',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime.now().subtract(const Duration(days: 2)), // 3 elapsed days incl. today
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(0, 'CNY'), // no budget set
+      participants: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(300, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+      description: 'Visa fee',
+      date: DateTime.now(),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    // 300 / 3 elapsed days = 100.00/day, shown even though totalBudget is 0.
+    expect(find.textContaining('目前日均花费'), findsOneWidget);
+    expect(find.textContaining('100.00'), findsWidgets);
   });
 
   testWidgets('a finished trip shows a static "trip finished" summary', (tester) async {
@@ -96,7 +132,11 @@ void main() {
     await tester.pumpWidget(wrap('t1'));
     await tester.pumpAndSettle();
     expect(find.text('行程已结束'), findsOneWidget);
-    expect(find.textContaining('/天'), findsNothing);
+    // No more remaining-daily-budget line once finished, but the
+    // average-daily-spend line still shows (it's meaningful for the whole
+    // finished trip, unlike remaining-budget).
+    expect(find.textContaining('每日剩余预算'), findsNothing);
+    expect(find.textContaining('目前日均花费'), findsOneWidget);
   });
 
   testWidgets('a trip on its own last calendar day still shows the daily budget, not finished',
@@ -120,7 +160,7 @@ void main() {
     await tester.pumpWidget(wrap('t1'));
     await tester.pumpAndSettle();
     expect(find.text('行程已结束'), findsNothing);
-    expect(find.textContaining('/天'), findsOneWidget);
+    expect(find.textContaining('每日剩余预算'), findsOneWidget);
   });
 
   testWidgets('the category legend shows each category name and its exact amount, not just percentages in the pie',

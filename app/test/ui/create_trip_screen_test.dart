@@ -39,6 +39,27 @@ void main() {
     expect(trips.first.participants.length, 1);
   });
 
+  testWidgets('leaving budget empty saves the trip with a zero budget', (tester) async {
+    await tester.pumpWidget(wrap(CreateTripScreen(repository: repo)));
+    await tester.enterText(find.byKey(const Key('tripNameField')), 'Backpacking');
+    await tester.tap(find.byKey(const Key('saveTripButton')));
+    await tester.pumpAndSettle();
+
+    final trips = await repo.getAllTrips();
+    expect(trips.length, 1);
+    expect(trips.first.totalBudget.minorUnits, 0);
+  });
+
+  testWidgets('a negative budget is still rejected', (tester) async {
+    await tester.pumpWidget(wrap(CreateTripScreen(repository: repo)));
+    await tester.enterText(find.byKey(const Key('tripNameField')), 'Backpacking');
+    await tester.enterText(find.byKey(const Key('tripBudgetField')), '-5');
+    await tester.tap(find.byKey(const Key('saveTripButton')));
+    await tester.pumpAndSettle();
+
+    expect(await repo.getAllTrips(), isEmpty);
+  });
+
   testWidgets('empty name shows a validation error and does not save', (tester) async {
     await tester.pumpWidget(wrap(CreateTripScreen(repository: repo)));
     await tester.enterText(find.byKey(const Key('tripBudgetField')), '1000');

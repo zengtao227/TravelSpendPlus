@@ -48,6 +48,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get totalBudget => 'Gesamtbudget';
 
   @override
+  String get totalBudgetOptional => 'Gesamtbudget (optional)';
+
+  @override
   String get homeCurrency => 'Heimatwährung';
 
   @override
@@ -164,6 +167,11 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String dailyBudgetRemaining(String amount) {
     return 'Verbleibendes Tagesbudget: $amount/Tag';
+  }
+
+  @override
+  String averageDailySpend(String amount) {
+    return 'Bisheriger Tagesdurchschnitt: $amount/Tag';
   }
 
   @override

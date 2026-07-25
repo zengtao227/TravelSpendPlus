@@ -228,6 +228,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 ? const SizedBox.shrink()
                 : Text(l10n.dailyBudgetRemaining(formatMoney(display(daily))));
           }
+          // Independent of totalBudget — meaningful even when no budget was
+          // set, unlike remainingDailyBudget above.
+          final averageDailySpend = BudgetCalculator.averageDailySpendSoFar(
+              trip: trip, expenses: expenses, asOf: now);
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -236,6 +240,9 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               Text('${formatDate(context, trip.startDate)} - ${formatDate(context, trip.endDate)}'),
               const SizedBox(height: 8),
               budgetTimingWidget,
+              if (averageDailySpend != null)
+                Text(l10n.averageDailySpend(formatMoney(display(averageDailySpend))),
+                    style: TextStyle(fontSize: 12, color: AppColors.mutedText)),
               const SizedBox(height: 12),
               Card(
                 child: Padding(

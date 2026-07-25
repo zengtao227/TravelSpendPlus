@@ -79,4 +79,29 @@ class BudgetCalculator {
     final remainingAtStartOfToday = trip.totalBudget - usedSoFar;
     return remainingAtStartOfToday.dividedBy(daysLeft);
   }
+
+  /// Total actual (not planned) spending so far, divided by the number of
+  /// trip days elapsed up to and including [asOf]'s day — independent of
+  /// [Trip.totalBudget], so it's meaningful even when no budget was set.
+  /// Returns null before the trip has started (nothing has elapsed yet).
+  static Money? averageDailySpendSoFar({
+    required Trip trip,
+    required List<Expense> expenses,
+    required DateTime asOf,
+  }) {
+    final effectiveEnd = civilDate(asOf).isAfter(civilDate(trip.endDate))
+        ? civilDate(trip.endDate)
+        : civilDate(asOf);
+    final startOfTrip = civilDate(trip.startDate);
+    if (effectiveEnd.isBefore(startOfTrip)) return null;
+    final elapsedDays = effectiveEnd.difference(startOfTrip).inDays + 1;
+
+    Money spentSoFar = Money(minorUnits: 0, currencyCode: trip.homeCurrency);
+    for (final e in expenses) {
+      if (e.status == ExpenseStatus.actual) {
+        spentSoFar = spentSoFar + e.amountInHomeCurrency;
+      }
+    }
+    return spentSoFar.dividedBy(elapsedDays);
+  }
 }

@@ -68,7 +68,8 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     if (!_formKey.currentState!.validate() || _dateError != null) return;
 
     final currency = _currencyController.text.trim().toUpperCase();
-    final budget = Money.fromMajor(double.parse(_budgetController.text), currency);
+    final budgetText = _budgetController.text.trim();
+    final budget = Money.fromMajor(budgetText.isEmpty ? 0 : double.parse(budgetText), currency);
 
     if (_isEditing) {
       final existing = widget.existingTrip!;
@@ -144,11 +145,13 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
             TextFormField(
               key: const Key('tripBudgetField'),
               controller: _budgetController,
-              decoration: InputDecoration(labelText: l10n.totalBudget),
+              decoration: InputDecoration(labelText: l10n.totalBudgetOptional),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
-                final parsed = double.tryParse(value ?? '');
-                return (parsed != null && parsed > 0) ? null : l10n.errorPositiveAmount;
+                final trimmed = value?.trim() ?? '';
+                if (trimmed.isEmpty) return null; // optional: blank means no budget (0)
+                final parsed = double.tryParse(trimmed);
+                return (parsed != null && parsed >= 0) ? null : l10n.errorPositiveAmount;
               },
             ),
             const SizedBox(height: 20),

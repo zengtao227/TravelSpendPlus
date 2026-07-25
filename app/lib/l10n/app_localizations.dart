@@ -178,6 +178,12 @@ abstract class AppLocalizations {
   /// **'Total budget'**
   String get totalBudget;
 
+  /// No description provided for @totalBudgetOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Total budget (optional)'**
+  String get totalBudgetOptional;
+
   /// No description provided for @homeCurrency.
   ///
   /// In en, this message translates to:
@@ -381,6 +387,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Daily budget remaining: {amount}/day'**
   String dailyBudgetRemaining(String amount);
+
+  /// No description provided for @averageDailySpend.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. daily spend so far: {amount}/day'**
+  String averageDailySpend(String amount);
 
   /// No description provided for @plannedLabel.
   ///

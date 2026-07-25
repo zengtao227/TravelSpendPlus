@@ -137,6 +137,63 @@ void main() {
     expect(daily!.major, closeTo(-50.00, 0.01));
   });
 
+  test('averageDailySpendSoFar divides actual spend by elapsed trip days', () {
+    final trip = makeTenDayTrip();
+    final expenses = [actualExpense(800.00, DateTime(2026, 1, 3))];
+    final avg = BudgetCalculator.averageDailySpendSoFar(
+      trip: trip,
+      expenses: expenses,
+      asOf: DateTime(2026, 1, 7), // day 7: 7 days elapsed (1..7 inclusive)
+    );
+    expect(avg, isNotNull);
+    expect(avg!.major, closeTo(800.00 / 7, 0.01));
+  });
+
+  test('averageDailySpendSoFar ignores planned expenses', () {
+    final trip = makeTenDayTrip();
+    final planned = Expense(
+      id: 'e-planned',
+      tripId: 't1',
+      category: 'Hotel',
+      amount: Money.fromMajor(400.00, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(400.00, 'EUR'),
+      description: 'hotel',
+      date: DateTime(2026, 1, 9),
+      status: ExpenseStatus.planned,
+      includeInSplit: false,
+      paidBy: alice,
+      paidFor: [alice],
+    );
+    final expenses = [actualExpense(800.00, DateTime(2026, 1, 3)), planned];
+    final avg = BudgetCalculator.averageDailySpendSoFar(
+      trip: trip,
+      expenses: expenses,
+      asOf: DateTime(2026, 1, 7),
+    );
+    expect(avg!.major, closeTo(800.00 / 7, 0.01));
+  });
+
+  test('averageDailySpendSoFar returns null before the trip has started', () {
+    final trip = makeTenDayTrip();
+    final avg = BudgetCalculator.averageDailySpendSoFar(
+      trip: trip,
+      expenses: [],
+      asOf: DateTime(2025, 12, 31),
+    );
+    expect(avg, isNull);
+  });
+
+  test('averageDailySpendSoFar clamps elapsed days to the trip length once it has ended', () {
+    final trip = makeTenDayTrip();
+    final expenses = [actualExpense(1000.00, DateTime(2026, 1, 3))];
+    final avg = BudgetCalculator.averageDailySpendSoFar(
+      trip: trip,
+      expenses: expenses,
+      asOf: DateTime(2026, 2, 1), // long after the trip ended
+    );
+    expect(avg!.major, closeTo(1000.00 / 10, 0.01)); // divided by the trip's 10 days, not more
+  });
+
   test('summarize totals planned and actual separately', () {
     final trip = makeTenDayTrip();
     final planned = Expense(
