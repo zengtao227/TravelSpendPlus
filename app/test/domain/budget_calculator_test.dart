@@ -173,7 +173,8 @@ void main() {
     expect(avg!.major, closeTo(800.00 / 7, 0.01));
   });
 
-  test('averageDailySpendSoFar returns null before the trip has started', () {
+  test('averageDailySpendSoFar returns null before the trip has started with nothing spent yet',
+      () {
     final trip = makeTenDayTrip();
     final avg = BudgetCalculator.averageDailySpendSoFar(
       trip: trip,
@@ -181,6 +182,19 @@ void main() {
       asOf: DateTime(2025, 12, 31),
     );
     expect(avg, isNull);
+  });
+
+  test(
+      'averageDailySpendSoFar divides by the full trip length when actual money has already '
+      'been spent before the trip starts (e.g. a flight booked ahead of time)', () {
+    final trip = makeTenDayTrip(); // Jan 1 - Jan 10, 2026 (10 days)
+    final avg = BudgetCalculator.averageDailySpendSoFar(
+      trip: trip,
+      expenses: [actualExpense(1000.00, DateTime(2025, 12, 20))],
+      asOf: DateTime(2025, 12, 31), // before the trip starts
+    );
+    expect(avg, isNotNull);
+    expect(avg!.major, closeTo(1000.00 / 10, 0.01));
   });
 
   test('averageDailySpendSoFar clamps elapsed days to the trip length once it has ended', () {

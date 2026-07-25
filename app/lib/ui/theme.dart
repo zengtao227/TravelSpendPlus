@@ -13,7 +13,7 @@ class AppColors {
   static const mutedText = Color(0xFF8A7F70); // secondary text
   static const border = Color(0xFFEFE4D5);
 
-  /// Fixed order, matches `kExpenseCategoryKeys` — food, transport,
+  /// Fixed order, matches `kExpenseCategoryKeys` — food, transport, flight,
   /// lodging, shopping, entertainment, other.
   static const categoryChartColors = [
     coral,
@@ -22,6 +22,7 @@ class AppColors {
     Color(0xFF6D8B96), // dusty blue
     Color(0xFF8AA17E), // sage
     Color(0xFFB08968), // warm taupe
+    Color(0xFF9B7EDE), // lavender
   ];
 }
 

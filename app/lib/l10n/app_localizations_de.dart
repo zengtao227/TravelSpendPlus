@@ -18,6 +18,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get categoryTransport => 'Transport';
 
   @override
+  String get categoryFlight => 'Flug';
+
+  @override
   String get categoryLodging => 'Unterkunft';
 
   @override

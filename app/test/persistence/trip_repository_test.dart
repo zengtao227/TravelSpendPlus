@@ -223,8 +223,14 @@ void main() {
       paidFor: [alice],
     ));
 
-    // 1 EUR = 155 JPY
-    await repo.changeHomeCurrency(tripId: 't1', newCurrency: 'JPY', oldToNewRate: 155);
+    // 1 EUR = 155 JPY, and a direct 1 USD = 143.6 JPY (happens to equal the
+    // old USD->EUR rate times the EUR->JPY rate here, but is supplied
+    // directly rather than derived by chaining through EUR).
+    await repo.changeHomeCurrency(
+      tripId: 't1',
+      newCurrency: 'JPY',
+      directRatesToNewCurrency: {'EUR': 155, 'USD': 0.92 * 155},
+    );
 
     final trip = await repo.getTrip('t1');
     expect(trip!.homeCurrency, 'JPY');
@@ -257,7 +263,11 @@ void main() {
     await repo.setExchangeRate(
         't1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'EUR', rate: 0.0062));
 
-    await repo.changeHomeCurrency(tripId: 't1', newCurrency: 'JPY', oldToNewRate: 155);
+    await repo.changeHomeCurrency(
+      tripId: 't1',
+      newCurrency: 'JPY',
+      directRatesToNewCurrency: {'EUR': 155},
+    );
 
     final rates = await repo.getExchangeRates('t1');
     // The stale JPY row is gone, but a fresh "1 EUR = 155 JPY" row must
@@ -287,7 +297,11 @@ void main() {
     ));
 
     await expectLater(
-      repo.changeHomeCurrency(tripId: 't1', newCurrency: 'EUR', oldToNewRate: 2.0),
+      repo.changeHomeCurrency(
+        tripId: 't1',
+        newCurrency: 'EUR',
+        directRatesToNewCurrency: {'EUR': 2.0},
+      ),
       throwsArgumentError,
     );
 
@@ -296,6 +310,83 @@ void main() {
     expect(trip!.totalBudget, Money.fromMajor(1000, 'EUR'));
     final expenses = await repo.getExpenses('t1');
     expect(expenses.first.amountInHomeCurrency, Money.fromMajor(30, 'EUR'));
+  });
+
+  test(
+      'changeHomeCurrency converts each currency using its own direct rate, not by chaining '
+      'through the old home currency', () async {
+    await repo.createTrip(makeTrip()); // EUR home, 1000 EUR budget
+    // A JPY expense whose entry-time rate (1 JPY = 0.0065 EUR) implies a
+    // transitive JPY->CHF rate of 0.0065 * 155 = 1.0075 if chained through
+    // EUR — but the caller supplies a different, real-market direct JPY->CHF
+    // rate of 1.02 below, and that direct rate must be what's actually used.
+    await repo.setExchangeRate(
+        't1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'EUR', rate: 0.0065));
+    await repo.addExpense(Expense(
+      id: 'e-eur',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(30, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
+      description: 'Dinner',
+      date: DateTime(2026, 1, 3),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e-jpy',
+      tripId: 't1',
+      category: 'shopping',
+      amount: Money.fromMajor(1000, 'JPY'),
+      amountInHomeCurrency: Money.fromMajor(6.5, 'EUR'), // 1000 JPY * 0.0065
+      description: 'Souvenirs',
+      date: DateTime(2026, 1, 4),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+
+    await repo.changeHomeCurrency(
+      tripId: 't1',
+      newCurrency: 'CHF',
+      directRatesToNewCurrency: {'EUR': 155, 'JPY': 1.02},
+    );
+
+    final expenses = await repo.getExpenses('t1');
+    final eurExpense = expenses.firstWhere((e) => e.id == 'e-eur');
+    final jpyExpense = expenses.firstWhere((e) => e.id == 'e-jpy');
+    expect(eurExpense.amountInHomeCurrency.currencyCode, 'CHF');
+    expect(eurExpense.amountInHomeCurrency.major, closeTo(30 * 155, 0.01));
+    // Must use the direct 1000 * 1.02 rate, NOT the chained 1000 * 0.0065 * 155.
+    expect(jpyExpense.amountInHomeCurrency.major, closeTo(1000 * 1.02, 0.01));
+
+    final rates = await repo.getExchangeRates('t1');
+    final jpyRate = rates.firstWhere((r) => r.fromCurrency == 'JPY');
+    expect(jpyRate.toCurrency, 'CHF');
+    expect(jpyRate.rate, 1.02);
+  });
+
+  test('changeHomeCurrency rejects a missing direct rate for a currency actually in use',
+      () async {
+    await repo.createTrip(makeTrip()); // EUR home
+    await repo.setExchangeRate(
+        't1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'EUR', rate: 0.0065));
+
+    await expectLater(
+      // Only supplies EUR's rate, omitting the required JPY->CHF rate.
+      repo.changeHomeCurrency(
+        tripId: 't1',
+        newCurrency: 'CHF',
+        directRatesToNewCurrency: {'EUR': 155},
+      ),
+      throwsArgumentError,
+    );
+
+    final trip = await repo.getTrip('t1');
+    expect(trip!.homeCurrency, 'EUR', reason: 'the transaction must not partially apply');
   });
 
   test('deleteTrip removes the trip and every child row (participants, expenses, rates, '

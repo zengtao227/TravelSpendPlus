@@ -10,7 +10,7 @@ void main() {
     expect(theme.scaffoldBackgroundColor, const Color(0xFFFBF6EF));
   });
 
-  test('AppColors exposes exactly 6 category chart colors', () {
-    expect(AppColors.categoryChartColors.length, 6);
+  test('AppColors exposes exactly 7 category chart colors', () {
+    expect(AppColors.categoryChartColors.length, 7);
   });
 }

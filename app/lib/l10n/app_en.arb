@@ -4,6 +4,7 @@
   "@appTitle": {"description": "The application title"},
   "categoryFood": "Food",
   "categoryTransport": "Transport",
+  "categoryFlight": "Flight",
   "categoryLodging": "Lodging",
   "categoryShopping": "Shopping",
   "categoryEntertainment": "Entertainment",

@@ -1,11 +1,13 @@
-/// The fixed set of expense categories (TravelSpend's own default set).
-/// `Expense.category` always stores one of these lowercase keys, never a
-/// display string — screens localize the key via `categoryLabel()`
+/// The fixed set of built-in expense categories, available in every trip.
+/// `Expense.category` stores one of these lowercase keys, or a per-trip
+/// custom category name typed by the user (see `persistence/database.dart`'s
+/// TripCategories table) — built-in keys are localized via `categoryLabel()`
 /// (`lib/ui/formatting.dart`) so category statistics don't fragment across
-/// languages. No custom/user-defined categories in this app.
+/// languages; custom categories have no translation and display as typed.
 const List<String> kExpenseCategoryKeys = [
   'food',
   'transport',
+  'flight',
   'lodging',
   'shopping',
   'entertainment',

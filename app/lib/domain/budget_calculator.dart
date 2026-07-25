@@ -83,25 +83,35 @@ class BudgetCalculator {
   /// Total actual (not planned) spending so far, divided by the number of
   /// trip days elapsed up to and including [asOf]'s day — independent of
   /// [Trip.totalBudget], so it's meaningful even when no budget was set.
-  /// Returns null before the trip has started (nothing has elapsed yet).
+  ///
+  /// Before the trip has started, no days have "elapsed" within it, but
+  /// money can already be actually spent (e.g. a flight booked ahead of
+  /// time) — in that case this instead divides by the trip's full planned
+  /// length, giving a forward-looking run rate. Returns null only when
+  /// there's nothing to show: the trip hasn't started and nothing has been
+  /// actually spent yet.
   static Money? averageDailySpendSoFar({
     required Trip trip,
     required List<Expense> expenses,
     required DateTime asOf,
   }) {
-    final effectiveEnd = civilDate(asOf).isAfter(civilDate(trip.endDate))
-        ? civilDate(trip.endDate)
-        : civilDate(asOf);
-    final startOfTrip = civilDate(trip.startDate);
-    if (effectiveEnd.isBefore(startOfTrip)) return null;
-    final elapsedDays = effectiveEnd.difference(startOfTrip).inDays + 1;
-
     Money spentSoFar = Money(minorUnits: 0, currencyCode: trip.homeCurrency);
     for (final e in expenses) {
       if (e.status == ExpenseStatus.actual) {
         spentSoFar = spentSoFar + e.amountInHomeCurrency;
       }
     }
+
+    final startOfTrip = civilDate(trip.startDate);
+    final today = civilDate(asOf);
+    if (today.isBefore(startOfTrip)) {
+      if (spentSoFar.minorUnits == 0) return null;
+      return spentSoFar.dividedBy(trip.totalDays);
+    }
+
+    final effectiveEnd =
+        today.isAfter(civilDate(trip.endDate)) ? civilDate(trip.endDate) : today;
+    final elapsedDays = effectiveEnd.difference(startOfTrip).inDays + 1;
     return spentSoFar.dividedBy(elapsedDays);
   }
 }

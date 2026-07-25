@@ -18,6 +18,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get categoryTransport => '交通';
 
   @override
+  String get categoryFlight => '机票';
+
+  @override
   String get categoryLodging => '住宿';
 
   @override

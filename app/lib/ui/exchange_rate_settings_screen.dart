@@ -23,7 +23,7 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
   final _newRateValue = TextEditingController();
   bool _showChangeCurrencyForm = false;
   late String _newHomeCurrency;
-  final _oldToNewRate = TextEditingController();
+  final Map<String, TextEditingController> _directRateControllers = {};
   String? _changeCurrencyError;
   String? _addRateError;
 
@@ -44,9 +44,14 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
   @override
   void dispose() {
     _newRateValue.dispose();
-    _oldToNewRate.dispose();
+    for (final controller in _directRateControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
+
+  TextEditingController _directRateControllerFor(String currency) =>
+      _directRateControllers.putIfAbsent(currency, () => TextEditingController());
 
   void _refresh() => setState(() {
         _ratesFuture = widget.repository.getExchangeRates(widget.trip.id);
@@ -76,14 +81,9 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
     _refresh();
   }
 
-  Future<void> _confirmChangeCurrency() async {
+  Future<void> _confirmChangeCurrency(Set<String> requiredCurrencies) async {
     final l10n = AppLocalizations.of(context)!;
     final newCurrency = _newHomeCurrency;
-    final rate = double.tryParse(_oldToNewRate.text);
-    if (rate == null || rate <= 0) {
-      setState(() => _changeCurrencyError = l10n.errorPositiveRate);
-      return;
-    }
     if (newCurrency == widget.trip.homeCurrency) {
       // Catch this here with a plain, visible error rather than only
       // relying on TripRepository.changeHomeCurrency's ArgumentError —
@@ -92,11 +92,24 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
       setState(() => _changeCurrencyError = l10n.errorSameCurrency);
       return;
     }
+    // One direct "1 currency = ? newCurrency" rate per currency actually in
+    // use in the trip — never derived by chaining through another currency,
+    // so e.g. a JPY expense gets its own real JPY->newCurrency rate instead
+    // of being funneled through the old home currency's rate.
+    final rates = <String, double>{};
+    for (final currency in requiredCurrencies) {
+      final rate = double.tryParse(_directRateControllerFor(currency).text);
+      if (rate == null || rate <= 0) {
+        setState(() => _changeCurrencyError = l10n.errorPositiveRate);
+        return;
+      }
+      rates[currency] = rate;
+    }
     setState(() => _changeCurrencyError = null);
     await widget.repository.changeHomeCurrency(
       tripId: widget.trip.id,
       newCurrency: newCurrency,
-      oldToNewRate: rate,
+      directRatesToNewCurrency: rates,
     );
     if (mounted) Navigator.pop(context, true);
   }
@@ -106,90 +119,104 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.exchangeRates)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          FutureBuilder<List<ExchangeRate>>(
-            future: _ratesFuture,
-            builder: (context, snapshot) {
-              final rates = snapshot.data ?? [];
-              return Column(
-                children: [
-                  for (final rate in rates)
-                    ListTile(
-                      // Displayed as "1 home = ? foreign", matching the
-                      // input direction — rate.rate itself still means
-                      // "1 fromCurrency(foreign) = rate toCurrency(home)".
-                      title: Text('1 ${rate.toCurrency} = ${1 / rate.rate} ${rate.fromCurrency}'),
-                    ),
-                ],
-              );
-            },
-          ),
-          const Divider(),
-          Text(l10n.addRate, style: Theme.of(context).textTheme.titleSmall),
-          CurrencyDropdownField(
-            fieldKey: const Key('newRateCurrencyField'),
-            value: _newRateCurrency,
-            label: l10n.newCurrency,
-            onChanged: (value) => setState(() => _newRateCurrency = value),
-          ),
-          TextField(
-            key: const Key('newRateValueField'),
-            controller: _newRateValue,
-            decoration: InputDecoration(
-              labelText: l10n.exchangeRatePrompt(widget.trip.homeCurrency, _newRateCurrency),
-            ),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          ),
-          if (_addRateError != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(_addRateError!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            ),
-          ElevatedButton(
-            key: const Key('saveRateButton'),
-            onPressed: _saveRate,
-            child: Text(l10n.saveRate),
-          ),
-          const Divider(height: 32),
-          if (!_showChangeCurrencyForm)
-            OutlinedButton(
-              key: const Key('changeCurrencyButton'),
-              onPressed: () => setState(() => _showChangeCurrencyForm = true),
-              child: Text(l10n.changeHomeCurrency),
-            )
-          else ...[
-            Text(l10n.changeCurrencyWarning,
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            CurrencyDropdownField(
-              fieldKey: const Key('newHomeCurrencyField'),
-              value: _newHomeCurrency,
-              label: l10n.newHomeCurrency,
-              onChanged: (value) => setState(() => _newHomeCurrency = value),
-            ),
-            TextField(
-              key: const Key('oldToNewRateField'),
-              controller: _oldToNewRate,
-              decoration: InputDecoration(
-                labelText: l10n.oldToNewRateLabel(widget.trip.homeCurrency, _newHomeCurrency),
+      body: FutureBuilder<List<ExchangeRate>>(
+        future: _ratesFuture,
+        builder: (context, snapshot) {
+          final rates = snapshot.data ?? [];
+          // Every currency actually in use in the trip other than the
+          // chosen new home currency: the trip's current home currency,
+          // plus every currency that already has a rate row (every
+          // non-home-currency expense always has one — see
+          // AddExpenseScreen). Each needs its own direct rate to the new
+          // home currency when changing currencies.
+          final requiredCurrencies = <String>{
+            widget.trip.homeCurrency,
+            ...rates.map((r) => r.fromCurrency),
+          }..remove(_newHomeCurrency);
+
+          return ListView(
+            // Extra bottom padding: a trip using several currencies can grow
+            // one direct-rate field per currency, pushing the confirm
+            // button below a short viewport.
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 48),
+            children: [
+              for (final rate in rates)
+                ListTile(
+                  // Displayed as "1 home = ? foreign", matching the input
+                  // direction — rate.rate itself still means "1
+                  // fromCurrency(foreign) = rate toCurrency(home)".
+                  title: Text('1 ${rate.toCurrency} = ${1 / rate.rate} ${rate.fromCurrency}'),
+                ),
+              const Divider(),
+              Text(l10n.addRate, style: Theme.of(context).textTheme.titleSmall),
+              CurrencyDropdownField(
+                fieldKey: const Key('newRateCurrencyField'),
+                value: _newRateCurrency,
+                label: l10n.newCurrency,
+                onChanged: (value) => setState(() => _newRateCurrency = value),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            ),
-            if (_changeCurrencyError != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(_changeCurrencyError!,
+              TextField(
+                key: const Key('newRateValueField'),
+                controller: _newRateValue,
+                decoration: InputDecoration(
+                  labelText: l10n.exchangeRatePrompt(widget.trip.homeCurrency, _newRateCurrency),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              ),
+              if (_addRateError != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(_addRateError!,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                ),
+              ElevatedButton(
+                key: const Key('saveRateButton'),
+                onPressed: _saveRate,
+                child: Text(l10n.saveRate),
+              ),
+              const Divider(height: 32),
+              if (!_showChangeCurrencyForm)
+                OutlinedButton(
+                  key: const Key('changeCurrencyButton'),
+                  onPressed: () => setState(() => _showChangeCurrencyForm = true),
+                  child: Text(l10n.changeHomeCurrency),
+                )
+              else ...[
+                Text(l10n.changeCurrencyWarning,
                     style: TextStyle(color: Theme.of(context).colorScheme.error)),
-              ),
-            ElevatedButton(
-              key: const Key('confirmChangeCurrencyButton'),
-              onPressed: _confirmChangeCurrency,
-              child: Text(l10n.confirmChangeCurrency),
-            ),
-          ],
-        ],
+                CurrencyDropdownField(
+                  fieldKey: const Key('newHomeCurrencyField'),
+                  value: _newHomeCurrency,
+                  label: l10n.newHomeCurrency,
+                  onChanged: (value) => setState(() => _newHomeCurrency = value),
+                ),
+                for (final currency in requiredCurrencies)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: TextField(
+                      key: Key('directRateField_$currency'),
+                      controller: _directRateControllerFor(currency),
+                      decoration: InputDecoration(
+                        labelText: l10n.oldToNewRateLabel(currency, _newHomeCurrency),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                  ),
+                if (_changeCurrencyError != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(_changeCurrencyError!,
+                        style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  ),
+                ElevatedButton(
+                  key: const Key('confirmChangeCurrencyButton'),
+                  onPressed: () => _confirmChangeCurrency(requiredCurrencies),
+                  child: Text(l10n.confirmChangeCurrency),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }

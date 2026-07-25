@@ -24,6 +24,8 @@ String categoryLabel(BuildContext context, String key) {
       return l10n.categoryFood;
     case 'transport':
       return l10n.categoryTransport;
+    case 'flight':
+      return l10n.categoryFlight;
     case 'lodging':
       return l10n.categoryLodging;
     case 'shopping':

@@ -118,6 +118,12 @@ abstract class AppLocalizations {
   /// **'Transport'**
   String get categoryTransport;
 
+  /// No description provided for @categoryFlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Flight'**
+  String get categoryFlight;
+
   /// No description provided for @categoryLodging.
   ///
   /// In en, this message translates to:

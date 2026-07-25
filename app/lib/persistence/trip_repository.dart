@@ -202,19 +202,31 @@ class TripRepository {
     }
   }
 
-  /// Changes a trip's home currency and rescales everything already
-  /// denominated in the old one by [oldToNewRate] ("1 old home currency =
-  /// oldToNewRate new home currency") — `Expense.amountInHomeCurrency` and
+  /// Changes a trip's home currency, converting everything already
+  /// denominated in the old one using a *direct* rate to the new home
+  /// currency for each currency actually in use — one currency's rate never
+  /// gets derived by chaining through another (e.g. a JPY expense converts
+  /// straight to CHF via the JPY->CHF rate the caller supplies, not via
+  /// JPY->old-home->CHF), since manually-entered rates for different pairs
+  /// aren't guaranteed transitively consistent and chaining them compounds
+  /// whatever error each one carries.
+  ///
+  /// [directRatesToNewCurrency] must contain a "1 currency = ? newCurrency"
+  /// entry for every currency actually in use in the trip other than
+  /// [newCurrency] itself: the trip's current home currency, plus every
+  /// currency that has an existing [TripExchangeRates] row (every non-home
+  /// currency an expense can be in always has one — see
+  /// `AddExpenseScreen`). `Expense.amountInHomeCurrency` and
   /// `Trip.totalBudget` are both stored as plain numbers re-labeled with
   /// whatever the trip's *current* home currency is, so simply changing
-  /// the label without rescaling the numbers would silently corrupt every
+  /// the label without recomputing the numbers would silently corrupt every
   /// existing total. See docs/superpowers/specs/2026-07-24-travelspendplus-ui-design.md
   /// section 五 for why this replaced an earlier "just clear the rate
   /// table" design.
   Future<void> changeHomeCurrency({
     required String tripId,
     required String newCurrency,
-    required double oldToNewRate,
+    required Map<String, double> directRatesToNewCurrency,
   }) async {
     await _db.transaction(() async {
       final tripRow =
@@ -227,8 +239,20 @@ class TripRepository {
         // "change" through with an arbitrary multiplier.
         throw ArgumentError('New home currency ($newCurrency) is the same as the current one');
       }
-      final newBudgetMinorUnits =
-          (tripRow.totalBudgetMinorUnits * oldToNewRate).round();
+
+      final rateRows = await (_db.select(_db.tripExchangeRates)
+            ..where((r) => r.tripId.equals(tripId)))
+          .get();
+      final requiredCurrencies = {oldCurrency, ...rateRows.map((r) => r.fromCurrency)}
+        ..remove(newCurrency);
+      for (final currency in requiredCurrencies) {
+        if (!directRatesToNewCurrency.containsKey(currency)) {
+          throw ArgumentError('Missing a direct rate for $currency -> $newCurrency');
+        }
+      }
+
+      final oldToNewRate = directRatesToNewCurrency[oldCurrency]!;
+      final newBudgetMinorUnits = (tripRow.totalBudgetMinorUnits * oldToNewRate).round();
       await (_db.update(_db.trips)..where((t) => t.id.equals(tripId))).write(
         TripsCompanion(
           homeCurrency: Value(newCurrency),
@@ -239,16 +263,17 @@ class TripRepository {
       final expenseRows =
           await (_db.select(_db.expenses)..where((e) => e.tripId.equals(tripId))).get();
       for (final row in expenseRows) {
-        final newAmountInHome =
-            (row.amountInHomeCurrencyMinorUnits * oldToNewRate).round();
+        // An expense already in the new home currency needs no conversion
+        // at all — using its own amount 1:1 avoids requiring a pointless
+        // "1 newCurrency = ? newCurrency" rate from the caller.
+        final newAmountInHome = row.amountCurrency == newCurrency
+            ? row.amountMinorUnits
+            : (row.amountMinorUnits * directRatesToNewCurrency[row.amountCurrency]!).round();
         await (_db.update(_db.expenses)..where((e) => e.id.equals(row.id))).write(
           ExpensesCompanion(amountInHomeCurrencyMinorUnits: Value(newAmountInHome)),
         );
       }
 
-      final rateRows = await (_db.select(_db.tripExchangeRates)
-            ..where((r) => r.tripId.equals(tripId)))
-          .get();
       for (final row in rateRows) {
         if (row.fromCurrency == newCurrency) {
           // This currency IS the new home currency now — a rescaled "1 X =
@@ -257,8 +282,11 @@ class TripRepository {
           // must be deleted here rather than rescaled.
           await (_db.delete(_db.tripExchangeRates)..where((r) => r.id.equals(row.id))).go();
         } else {
-          await (_db.update(_db.tripExchangeRates)..where((r) => r.id.equals(row.id)))
-              .write(TripExchangeRatesCompanion(rate: Value(row.rate * oldToNewRate)));
+          await (_db.update(_db.tripExchangeRates)..where((r) => r.id.equals(row.id))).write(
+            TripExchangeRatesCompanion(
+              rate: Value(directRatesToNewCurrency[row.fromCurrency]!),
+            ),
+          );
         }
       }
 
