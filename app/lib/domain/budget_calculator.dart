@@ -1,3 +1,4 @@
+import 'civil_date.dart';
 import 'money.dart';
 import 'trip.dart';
 import 'expense.dart';
@@ -49,16 +50,28 @@ class BudgetCalculator {
     required DateTime asOf,
     bool includePlannedInDailyBudget = true,
   }) {
-    final startOfAsOfDay = DateTime(asOf.year, asOf.month, asOf.day);
-    final daysLeft = trip.endDate.difference(startOfAsOfDay).inDays + 1;
+    // Normalized to UTC-midnight civil dates (see civil_date.dart) so this
+    // arithmetic is exact across a DST transition and independent of
+    // whatever timezone `asOf`/`trip.endDate`/each expense date happen to
+    // carry — none of these DateTimes are guaranteed pre-normalized (tests
+    // construct plain local ones directly), so this function normalizes
+    // defensively rather than trusting callers.
+    final startOfAsOfDay = civilDate(asOf);
+    final daysLeft = civilDate(trip.endDate).difference(startOfAsOfDay).inDays + 1;
     if (daysLeft <= 0) return null;
 
     Money usedSoFar = Money(minorUnits: 0, currencyCode: trip.homeCurrency);
     for (final e in expenses) {
-      final isActualBeforeToday =
-          e.status == ExpenseStatus.actual && e.date.isBefore(startOfAsOfDay);
+      // Compare by calendar day, not by instant — expense dates carry a time
+      // component (e.g. AddExpenseScreen defaults to DateTime.now()), so a
+      // raw isBefore/isAfter against midnight would wrongly include today's
+      // own actual spending (created earlier today) or exclude an actual
+      // expense recorded exactly at midnight.
+      final expenseDay = civilDate(e.date);
+      final isActualNotToday =
+          e.status == ExpenseStatus.actual && expenseDay != startOfAsOfDay;
       final isCountedPlanned = e.status == ExpenseStatus.planned && includePlannedInDailyBudget;
-      if (isActualBeforeToday || isCountedPlanned) {
+      if (isActualNotToday || isCountedPlanned) {
         usedSoFar = usedSoFar + e.amountInHomeCurrency;
       }
     }

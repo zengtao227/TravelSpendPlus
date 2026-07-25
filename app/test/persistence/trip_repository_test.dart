@@ -42,8 +42,11 @@ void main() {
     expect(loaded!.name, 'Japan');
     expect(loaded.homeCurrency, 'EUR');
     expect(loaded.totalBudget, Money.fromMajor(1000.00, 'EUR'));
-    expect(loaded.startDate, DateTime(2026, 1, 1));
-    expect(loaded.endDate, DateTime(2026, 1, 10));
+    // Dates round-trip as UTC-midnight civil dates (see civil_date.dart) —
+    // DateTime's == also checks isUtc, so the expected values must be UTC
+    // too, not just numerically matching year/month/day.
+    expect(loaded.startDate, DateTime.utc(2026, 1, 1));
+    expect(loaded.endDate, DateTime.utc(2026, 1, 10));
     expect(loaded.participants.map((p) => p.name).toSet(), {'Alice', 'Bob'});
   });
 
@@ -177,7 +180,7 @@ void main() {
 
     final reloaded = await repo.getTrip(trip.id);
     expect(reloaded!.name, 'Japan (renamed)');
-    expect(reloaded.startDate, DateTime(2026, 10, 6));
+    expect(reloaded.startDate, DateTime.utc(2026, 10, 6));
     expect(reloaded.totalBudget, Money.fromMajor(3000, trip.homeCurrency));
   });
 

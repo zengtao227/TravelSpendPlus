@@ -113,6 +113,39 @@ void main() {
     expect(await repo.getExpenses('t1'), isEmpty);
   });
 
+  testWidgets('an invalid (not 3-letter) currency code shows a validation error and does not save',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('餐饮').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '30');
+    await tester.enterText(find.byKey(const Key('expenseCurrencyField')), 'X');
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('请输入3位货币代码'), findsOneWidget);
+    expect(await repo.getExpenses('t1'), isEmpty);
+  });
+
+  testWidgets('an amount that rounds to 0 minor units (e.g. 0.001) fails validation instead of '
+      'silently saving as a 0-value expense', (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('餐饮').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '0.001');
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('请输入大于0的金额'), findsOneWidget);
+    expect(await repo.getExpenses('t1'), isEmpty);
+  });
+
   testWidgets('edit mode pre-fills every field from the existing expense', (tester) async {
     final me = trip.participants.first;
     final existing = Expense(

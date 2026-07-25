@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
 
+import '../domain/civil_date.dart';
 import '../domain/exchange_rate.dart';
 import '../domain/expense.dart';
 import '../domain/expense_category.dart';
@@ -48,7 +49,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     _currencyController =
         TextEditingController(text: existing?.amount.currencyCode ?? widget.trip.homeCurrency);
     _descriptionController = TextEditingController(text: existing?.description ?? '');
-    _date = existing?.date ?? DateTime.now();
+    _date = civilDate(existing?.date ?? DateTime.now());
     _status = existing?.status ?? ExpenseStatus.actual;
     _currencyController.addListener(() => setState(() {}));
     _loadRates();
@@ -81,7 +82,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (picked != null) setState(() => _date = picked);
+    if (picked != null) setState(() => _date = civilDate(picked));
   }
 
   Future<void> _save() async {
@@ -180,7 +181,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
                 final parsed = double.tryParse(value ?? '');
-                return (parsed != null && parsed > 0) ? null : l10n.errorPositiveAmount;
+                // Validate against the rounded minor-units value Money.fromMajor
+                // will actually store, not the raw double — otherwise a value
+                // like 0.001 passes here (0.001 > 0) but rounds to 0 cents.
+                return (parsed != null && (parsed * 100).round() > 0)
+                    ? null
+                    : l10n.errorPositiveAmount;
               },
             ),
             const SizedBox(height: 12),
@@ -189,6 +195,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               controller: _currencyController,
               decoration: InputDecoration(labelText: l10n.currency),
               textCapitalization: TextCapitalization.characters,
+              validator: (value) =>
+                  (value?.trim().length ?? 0) == 3 ? null : l10n.errorCurrencyCode,
             ),
             if (_needsNewExchangeRate) ...[
               const SizedBox(height: 12),

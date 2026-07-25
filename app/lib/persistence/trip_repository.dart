@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../domain/civil_date.dart';
 import '../domain/money.dart';
 import '../domain/participant.dart';
 import '../domain/trip.dart';
@@ -16,8 +17,8 @@ class TripRepository {
     await _db.into(_db.trips).insert(TripsCompanion.insert(
           id: trip.id,
           name: trip.name,
-          startDate: trip.startDate,
-          endDate: trip.endDate,
+          startDate: civilDate(trip.startDate),
+          endDate: civilDate(trip.endDate),
           homeCurrency: trip.homeCurrency,
           totalBudgetMinorUnits: trip.totalBudget.minorUnits,
         ));
@@ -41,8 +42,8 @@ class TripRepository {
     return Trip(
       id: tripRow.id,
       name: tripRow.name,
-      startDate: tripRow.startDate,
-      endDate: tripRow.endDate,
+      startDate: civilDate(tripRow.startDate.toUtc()),
+      endDate: civilDate(tripRow.endDate.toUtc()),
       homeCurrency: tripRow.homeCurrency,
       totalBudget: Money(minorUnits: tripRow.totalBudgetMinorUnits, currencyCode: tripRow.homeCurrency),
       participants: participantRows
@@ -61,8 +62,8 @@ class TripRepository {
       trips.add(Trip(
         id: tripRow.id,
         name: tripRow.name,
-        startDate: tripRow.startDate,
-        endDate: tripRow.endDate,
+        startDate: civilDate(tripRow.startDate.toUtc()),
+        endDate: civilDate(tripRow.endDate.toUtc()),
         homeCurrency: tripRow.homeCurrency,
         totalBudget: Money(
           minorUnits: tripRow.totalBudgetMinorUnits,
@@ -79,8 +80,8 @@ class TripRepository {
     await (_db.update(_db.trips)..where((t) => t.id.equals(trip.id))).write(
       TripsCompanion(
         name: Value(trip.name),
-        startDate: Value(trip.startDate),
-        endDate: Value(trip.endDate),
+        startDate: Value(civilDate(trip.startDate)),
+        endDate: Value(civilDate(trip.endDate)),
         homeCurrency: Value(trip.homeCurrency),
         totalBudgetMinorUnits: Value(trip.totalBudget.minorUnits),
       ),
@@ -125,7 +126,7 @@ class TripRepository {
           currencyCode: homeCurrency,
         ),
         description: row.description,
-        date: row.date,
+        date: civilDate(row.date.toUtc()),
         status: row.status == 'actual' ? ExpenseStatus.actual : ExpenseStatus.planned,
         includeInSplit: row.includeInSplit,
         paidBy: participantsById[row.paidById]!,
@@ -143,7 +144,7 @@ class TripRepository {
           amountCurrency: expense.amount.currencyCode,
           amountInHomeCurrencyMinorUnits: expense.amountInHomeCurrency.minorUnits,
           description: expense.description,
-          date: expense.date,
+          date: civilDate(expense.date),
           status: expense.status == ExpenseStatus.actual ? 'actual' : 'planned',
           includeInSplit: expense.includeInSplit,
           paidById: expense.paidBy.id,
@@ -159,7 +160,7 @@ class TripRepository {
         amountCurrency: Value(expense.amount.currencyCode),
         amountInHomeCurrencyMinorUnits: Value(expense.amountInHomeCurrency.minorUnits),
         description: Value(expense.description),
-        date: Value(expense.date),
+        date: Value(civilDate(expense.date)),
         status: Value(expense.status == ExpenseStatus.actual ? 'actual' : 'planned'),
         includeInSplit: Value(expense.includeInSplit),
         paidById: Value(expense.paidBy.id),

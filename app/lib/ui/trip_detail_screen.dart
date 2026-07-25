@@ -5,6 +5,7 @@ import 'package:travelspendplus/l10n/app_localizations.dart';
 
 import '../domain/budget_calculator.dart';
 import '../domain/category_breakdown.dart';
+import '../domain/civil_date.dart';
 import '../domain/currency_converter.dart';
 import '../domain/exchange_rate.dart';
 import '../domain/expense.dart';
@@ -164,16 +165,17 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 );
 
           final now = DateTime.now();
-          final startOfToday = DateTime(now.year, now.month, now.day);
+          // Both sides of every comparison below are normalized to UTC-
+          // midnight civil dates (see civil_date.dart) — comparing `now`
+          // directly against `trip.startDate`/`endDate` mixed local instants
+          // against UTC-normalized ones and could flip a day early/late
+          // depending on the device's current UTC offset.
+          final startOfToday = civilDate(now);
           Widget budgetTimingWidget;
-          if (now.isBefore(trip.startDate)) {
+          if (startOfToday.isBefore(trip.startDate)) {
             final days = trip.startDate.difference(startOfToday).inDays;
             budgetTimingWidget = Chip(label: Text(l10n.daysUntilDeparture(days)));
           } else if (startOfToday.isAfter(trip.endDate)) {
-            // Compare the start of *today* (not the current instant) against
-            // endDate: endDate is stored at midnight, so comparing `now`
-            // directly would flip to "finished" at 00:00:01 on the trip's own
-            // last day, cutting it a full day short.
             budgetTimingWidget = Chip(label: Text(l10n.tripFinished));
           } else {
             final daily = BudgetCalculator.remainingDailyBudget(

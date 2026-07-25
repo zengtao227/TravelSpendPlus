@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
 
+import '../domain/civil_date.dart';
 import '../domain/money.dart';
 import '../domain/participant.dart';
 import '../domain/trip.dart';
@@ -36,8 +37,8 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     _currencyController = TextEditingController(text: trip?.homeCurrency ?? 'CNY');
     _budgetController =
         TextEditingController(text: trip != null ? trip.totalBudget.major.toString() : '');
-    _startDate = trip?.startDate ?? DateTime.now();
-    _endDate = trip?.endDate ?? DateTime.now().add(const Duration(days: 6));
+    _startDate = civilDate(trip?.startDate ?? DateTime.now());
+    _endDate = civilDate(trip?.endDate ?? DateTime.now().add(const Duration(days: 6)));
   }
 
   @override
@@ -56,7 +57,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       lastDate: DateTime(2100),
     );
     if (picked == null) return;
-    setState(() => isStart ? _startDate = picked : _endDate = picked);
+    setState(() => isStart ? _startDate = civilDate(picked) : _endDate = civilDate(picked));
   }
 
   Future<void> _save() async {

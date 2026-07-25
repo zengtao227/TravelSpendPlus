@@ -23,6 +23,7 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
   final _newHomeCurrency = TextEditingController();
   final _oldToNewRate = TextEditingController();
   String? _changeCurrencyError;
+  String? _addRateError;
 
   @override
   void initState() {
@@ -44,9 +45,20 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
       });
 
   Future<void> _saveRate() async {
+    final l10n = AppLocalizations.of(context)!;
     final currency = _newRateCurrency.text.trim().toUpperCase();
     final rate = double.tryParse(_newRateValue.text);
-    if (currency.length != 3 || rate == null || rate <= 0) return;
+    // Every rejection path below must set a visible error — an invalid
+    // currency or rate must never look like the button silently did nothing.
+    if (currency.length != 3) {
+      setState(() => _addRateError = l10n.errorCurrencyCode);
+      return;
+    }
+    if (rate == null || rate <= 0) {
+      setState(() => _addRateError = l10n.errorPositiveRate);
+      return;
+    }
+    setState(() => _addRateError = null);
     await widget.repository.setExchangeRate(
       widget.trip.id,
       ExchangeRate(fromCurrency: currency, toCurrency: widget.trip.homeCurrency, rate: rate),
@@ -57,15 +69,23 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
   }
 
   Future<void> _confirmChangeCurrency() async {
+    final l10n = AppLocalizations.of(context)!;
     final newCurrency = _newHomeCurrency.text.trim().toUpperCase();
     final rate = double.tryParse(_oldToNewRate.text);
-    if (newCurrency.length != 3 || rate == null || rate <= 0) return;
+    if (newCurrency.length != 3) {
+      setState(() => _changeCurrencyError = l10n.errorCurrencyCode);
+      return;
+    }
+    if (rate == null || rate <= 0) {
+      setState(() => _changeCurrencyError = l10n.errorPositiveRate);
+      return;
+    }
     if (newCurrency == widget.trip.homeCurrency) {
       // Catch this here with a plain, visible error rather than only
       // relying on TripRepository.changeHomeCurrency's ArgumentError —
       // that guard exists too, but a thrown exception with no on-screen
       // message would look like the button silently did nothing.
-      setState(() => _changeCurrencyError = AppLocalizations.of(context)!.errorSameCurrency);
+      setState(() => _changeCurrencyError = l10n.errorSameCurrency);
       return;
     }
     setState(() => _changeCurrencyError = null);
@@ -113,6 +133,12 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
             decoration: InputDecoration(labelText: l10n.rateValue),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
+          if (_addRateError != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(_addRateError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            ),
           ElevatedButton(
             key: const Key('saveRateButton'),
             onPressed: _saveRate,

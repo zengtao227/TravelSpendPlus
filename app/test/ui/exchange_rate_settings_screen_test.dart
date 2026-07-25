@@ -84,4 +84,46 @@ void main() {
     expect(reloaded!.homeCurrency, 'CNY');
     expect(reloaded.totalBudget, Money.fromMajor(20000, 'CNY'), reason: 'budget must be untouched, not doubled');
   });
+
+  testWidgets('adding a rate with an invalid currency code shows an error instead of failing silently',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('newRateCurrencyField')), 'X');
+    await tester.enterText(find.byKey(const Key('newRateValueField')), '0.05');
+    await tester.tap(find.byKey(const Key('saveRateButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a 3-letter currency code'), findsOneWidget);
+    expect(await repo.getExchangeRates('t1'), isEmpty);
+  });
+
+  testWidgets('adding a rate with an invalid rate value shows an error instead of failing silently',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('newRateCurrencyField')), 'JPY');
+    await tester.enterText(find.byKey(const Key('newRateValueField')), '0');
+    await tester.tap(find.byKey(const Key('saveRateButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a positive exchange rate'), findsOneWidget);
+    expect(await repo.getExchangeRates('t1'), isEmpty);
+  });
+
+  testWidgets('changing home currency with an invalid new-currency code shows an error and changes nothing',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('changeCurrencyButton')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('newHomeCurrencyField')), 'X');
+    await tester.enterText(find.byKey(const Key('oldToNewRateField')), '2');
+    await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a 3-letter currency code'), findsOneWidget);
+    final reloaded = await repo.getTrip('t1');
+    expect(reloaded!.homeCurrency, 'CNY');
+  });
 }

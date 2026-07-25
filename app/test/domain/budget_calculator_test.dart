@@ -108,6 +108,35 @@ void main() {
     expect(daily!.major, closeTo(50.00, 0.01)); // planned hotel excluded, same as the base example
   });
 
+  test('an actual expense dated today (even with a time component) is still '
+      'excluded from usedSoFar, matching the "today hasn\'t posted yet this '
+      'morning" rule', () {
+    final trip = makeTenDayTrip();
+    final actualToday = actualExpense(300.00, DateTime(2026, 1, 7, 14, 30));
+    final expenses = [actualExpense(800.00, DateTime(2026, 1, 3)), actualToday];
+    final daily = BudgetCalculator.remainingDailyBudget(
+      trip: trip,
+      expenses: expenses,
+      asOf: DateTime(2026, 1, 7),
+    );
+    expect(daily!.major, closeTo(50.00, 0.01)); // unchanged: today's actual not counted yet
+  });
+
+  test('a planned expense marked as actual with a future date still counts '
+      'toward usedSoFar — converting planned to actual must not make '
+      'future-dated committed spending disappear from the daily budget', () {
+    final trip = makeTenDayTrip();
+    final actualFuture = actualExpense(400.00, DateTime(2026, 1, 9));
+    final expenses = [actualExpense(800.00, DateTime(2026, 1, 3)), actualFuture];
+    final daily = BudgetCalculator.remainingDailyBudget(
+      trip: trip,
+      expenses: expenses,
+      asOf: DateTime(2026, 1, 7),
+    );
+    // remaining = 1000 - 800 - 400 = -200, same total as the "planned counts" test above
+    expect(daily!.major, closeTo(-50.00, 0.01));
+  });
+
   test('summarize totals planned and actual separately', () {
     final trip = makeTenDayTrip();
     final planned = Expense(

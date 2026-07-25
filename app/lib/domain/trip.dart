@@ -1,3 +1,4 @@
+import 'civil_date.dart';
 import 'money.dart';
 import 'participant.dart';
 
@@ -22,6 +23,8 @@ class Trip {
 
   /// Inclusive of both [startDate] and [endDate] — a trip from day 1 to day
   /// 10 is 10 days, matching how TravelSpend's own daily-budget example
-  /// counts trip length.
-  int get totalDays => endDate.difference(startDate).inDays + 1;
+  /// counts trip length. Normalized via [civilDate] so a DST transition
+  /// within the trip can't shift a `Duration`-based day count by an hour and
+  /// silently floor away a day.
+  int get totalDays => civilDate(endDate).difference(civilDate(startDate)).inDays + 1;
 }
