@@ -132,6 +132,25 @@ void main() {
     // 300 / 3 elapsed days = 100.00/day, shown even though totalBudget is 0.
     expect(find.textContaining('目前日均花费'), findsOneWidget);
     expect(find.textContaining('100.00'), findsWidgets);
+    // With no budget set, "remaining" is just the negative of what's been
+    // spent — not a meaningful number, so it isn't shown at all.
+    expect(find.text('预计还剩'), findsNothing);
+  });
+
+  testWidgets('a trip with a budget set still shows the "remaining" figure', (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime.now().subtract(const Duration(days: 2)),
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    expect(find.text('预计还剩'), findsOneWidget);
   });
 
   testWidgets('a finished trip shows a static "trip finished" summary', (tester) async {

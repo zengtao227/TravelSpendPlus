@@ -306,7 +306,12 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                         children: [
                           _legendItem(context, AppColors.teal, l10n.actualLabel, display(summary.actualTotal)),
                           _legendItem(context, AppColors.gold, l10n.plannedLabel, display(summary.plannedTotal)),
-                          _legendItem(context, AppColors.mutedText, l10n.remainingLabel, display(summary.remaining)),
+                          // With no budget set (defaults to 0), "remaining"
+                          // is just the negative of what's been spent —
+                          // not a meaningful number, so there's nothing
+                          // useful to show here.
+                          if (trip.totalBudget.minorUnits != 0)
+                            _legendItem(context, AppColors.mutedText, l10n.remainingLabel, display(summary.remaining)),
                         ],
                       ),
                     ],
