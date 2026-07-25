@@ -51,7 +51,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get totalBudget => 'Total budget';
 
   @override
-  String get totalBudgetOptional => 'Total budget (optional)';
+  String get trackBudget => 'Track a budget';
 
   @override
   String get homeCurrency => 'Home currency';
@@ -307,6 +307,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String deleteTripConfirm(String name) {
     return 'Delete \"$name\" and everything in it? This can\'t be undone.';
   }
+
+  @override
+  String get deleteExpense => 'Delete expense';
+
+  @override
+  String get deleteExpenseConfirm =>
+      'Delete this expense? This can\'t be undone.';
 
   @override
   String get csvHeaderDate => 'Date';

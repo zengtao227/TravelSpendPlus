@@ -170,6 +170,10 @@ class TripRepository {
     );
   }
 
+  Future<void> deleteExpense(String expenseId) async {
+    await (_db.delete(_db.expenses)..where((e) => e.id.equals(expenseId))).go();
+  }
+
   Future<List<ExchangeRate>> getExchangeRates(String tripId) async {
     final tripRow =
         await (_db.select(_db.trips)..where((t) => t.id.equals(tripId))).getSingleOrNull();

@@ -603,6 +603,83 @@ void main() {
     expect(reloaded!.homeCurrency, 'JPY');
   });
 
+  testWidgets('swiping an expense and confirming deletes it and refreshes the totals',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime(2026, 10, 5),
+      endDate: DateTime(2026, 10, 12),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(300, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+      description: 'Dinner',
+      date: DateTime(2026, 10, 6),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    expect(find.text('Dinner'), findsOneWidget);
+    expect(find.textContaining('CNY 300.00'), findsWidgets);
+
+    await tester.drag(find.text('Dinner'), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirmDeleteExpenseButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dinner'), findsNothing);
+    expect(await repo.getExpenses('t1'), isEmpty);
+    expect(find.textContaining('CNY 300.00'), findsNothing,
+        reason: 'the Actual total must drop back to zero once the expense is gone');
+  });
+
+  testWidgets('cancelling the swipe-to-delete confirmation keeps the expense', (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime(2026, 10, 5),
+      endDate: DateTime(2026, 10, 12),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(300, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+      description: 'Dinner',
+      date: DateTime(2026, 10, 6),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.text('Dinner'), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dinner'), findsOneWidget);
+    expect(await repo.getExpenses('t1'), hasLength(1));
+  });
+
   testWidgets('deleting a trip removes it, its expenses, and pops back to the caller',
       (tester) async {
     await repo.createTrip(Trip(

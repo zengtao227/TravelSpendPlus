@@ -283,6 +283,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             budgetTimingWidget = Chip(label: Text(l10n.daysUntilDeparture(days)));
           } else if (startOfToday.isAfter(trip.endDate)) {
             budgetTimingWidget = Chip(label: Text(l10n.tripFinished));
+          } else if (trip.totalBudget.minorUnits == 0) {
+            // No budget was set — "remaining daily budget" would just be
+            // the negative of what's been spent, not a meaningful number.
+            budgetTimingWidget = const SizedBox.shrink();
           } else {
             final daily = BudgetCalculator.remainingDailyBudget(
                 trip: trip, expenses: expenses, asOf: now);
@@ -311,50 +315,59 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 Text(l10n.averageDailySpend(formatMoney(display(averageDailySpend))),
                     style: TextStyle(fontSize: 12, color: AppColors.mutedText)),
               const SizedBox(height: 12),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l10n.totalBudget,
-                          style: TextStyle(fontSize: 11, color: AppColors.mutedText)),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(formatMoney(display(summary.totalBudget)),
-                              style: Theme.of(context).textTheme.headlineMedium),
-                          DropdownButton<String>(
-                            value: displayCurrency,
-                            underline: const SizedBox.shrink(),
-                            items: {
-                              trip.homeCurrency,
-                              ...data.rates.map((r) => r.fromCurrency),
-                            }.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                            onChanged: (value) {
-                              if (value != null) _onViewCurrencyChanged(value, trip);
-                            },
+              Builder(builder: (context) {
+                final hasBudget = trip.totalBudget.minorUnits != 0;
+                final currencyDropdown = DropdownButton<String>(
+                  value: displayCurrency,
+                  underline: const SizedBox.shrink(),
+                  items: {
+                    trip.homeCurrency,
+                    ...data.rates.map((r) => r.fromCurrency),
+                  }.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (value) {
+                    if (value != null) _onViewCurrencyChanged(value, trip);
+                  },
+                );
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // With budget tracking off, there's no meaningful
+                        // "total budget" number to show — the currency
+                        // dropdown (still needed as the entry point for
+                        // viewing in / switching the home currency) moves
+                        // up on its own instead of sitting beside a
+                        // misleading "0.00".
+                        if (hasBudget) ...[
+                          Text(l10n.totalBudget,
+                              style: TextStyle(fontSize: 11, color: AppColors.mutedText)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(formatMoney(display(summary.totalBudget)),
+                                  style: Theme.of(context).textTheme.headlineMedium),
+                              currencyDropdown,
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _legendItem(context, AppColors.teal, l10n.actualLabel, display(summary.actualTotal)),
-                          _legendItem(context, AppColors.gold, l10n.plannedLabel, display(summary.plannedTotal)),
-                          // With no budget set (defaults to 0), "remaining"
-                          // is just the negative of what's been spent —
-                          // not a meaningful number, so there's nothing
-                          // useful to show here.
-                          if (trip.totalBudget.minorUnits != 0)
-                            _legendItem(context, AppColors.mutedText, l10n.remainingLabel, display(summary.remaining)),
-                        ],
-                      ),
-                    ],
+                          const SizedBox(height: 8),
+                        ] else
+                          Align(alignment: Alignment.centerRight, child: currencyDropdown),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _legendItem(context, AppColors.teal, l10n.actualLabel, display(summary.actualTotal)),
+                            _legendItem(context, AppColors.gold, l10n.plannedLabel, display(summary.plannedTotal)),
+                            if (hasBudget)
+                              _legendItem(context, AppColors.mutedText, l10n.remainingLabel, display(summary.remaining)),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              }),
               const SizedBox(height: 16),
               if (breakdown.isNotEmpty) ...[
                 Text(l10n.spendingByCategory, style: Theme.of(context).textTheme.titleMedium),
@@ -438,39 +451,74 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 ),
               Text(l10n.expenses, style: Theme.of(context).textTheme.titleMedium),
               for (final expense in expenses)
-                ListTile(
-                  onTap: () async {
-                    await Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => AddExpenseScreen(
-                        trip: trip,
-                        repository: widget.repository,
-                        existingExpense: expense,
+                Dismissible(
+                  key: ValueKey(expense.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    color: Theme.of(context).colorScheme.error,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: const Icon(Icons.delete_outline, color: Colors.white),
+                  ),
+                  confirmDismiss: (_) async {
+                    final l10n = AppLocalizations.of(context)!;
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text(l10n.deleteExpense),
+                        content: Text(l10n.deleteExpenseConfirm),
+                        actions: [
+                          TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text(l10n.cancel)),
+                          TextButton(
+                            key: const Key('confirmDeleteExpenseButton'),
+                            onPressed: () => Navigator.pop(context, true),
+                            child: Text(l10n.confirm),
+                          ),
+                        ],
                       ),
-                    ));
+                    );
+                    return confirmed == true;
+                  },
+                  onDismissed: (_) async {
+                    await widget.repository.deleteExpense(expense.id);
                     _refresh();
                   },
-                  title: Text(expense.description.isEmpty
-                      ? categoryLabel(context, expense.category)
-                      : expense.description),
-                  subtitle: Text(categoryLabel(context, expense.category)),
-                  trailing: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(formatMoney(expense.amount)),
-                      if (expense.status == ExpenseStatus.planned)
-                        TextButton(
-                          onPressed: () => _markAsSpent(expense),
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: Text(l10n.markAsSpent, style: const TextStyle(fontSize: 11)),
-                        )
-                      else
-                        Text(l10n.actualLabel, style: const TextStyle(fontSize: 11)),
-                    ],
+                  child: ListTile(
+                    onTap: () async {
+                      await Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => AddExpenseScreen(
+                          trip: trip,
+                          repository: widget.repository,
+                          existingExpense: expense,
+                        ),
+                      ));
+                      _refresh();
+                    },
+                    title: Text(expense.description.isEmpty
+                        ? categoryLabel(context, expense.category)
+                        : expense.description),
+                    subtitle: Text(categoryLabel(context, expense.category)),
+                    trailing: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(formatMoney(expense.amount)),
+                        if (expense.status == ExpenseStatus.planned)
+                          TextButton(
+                            onPressed: () => _markAsSpent(expense),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(l10n.markAsSpent, style: const TextStyle(fontSize: 11)),
+                          )
+                        else
+                          Text(l10n.actualLabel, style: const TextStyle(fontSize: 11)),
+                      ],
+                    ),
                   ),
                 ),
             ],

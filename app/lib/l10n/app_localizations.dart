@@ -184,11 +184,11 @@ abstract class AppLocalizations {
   /// **'Total budget'**
   String get totalBudget;
 
-  /// No description provided for @totalBudgetOptional.
+  /// No description provided for @trackBudget.
   ///
   /// In en, this message translates to:
-  /// **'Total budget (optional)'**
-  String get totalBudgetOptional;
+  /// **'Track a budget'**
+  String get trackBudget;
 
   /// No description provided for @homeCurrency.
   ///
@@ -609,6 +609,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete \"{name}\" and everything in it? This can\'t be undone.'**
   String deleteTripConfirm(String name);
+
+  /// No description provided for @deleteExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete expense'**
+  String get deleteExpense;
+
+  /// No description provided for @deleteExpenseConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this expense? This can\'t be undone.'**
+  String get deleteExpenseConfirm;
 
   /// No description provided for @csvHeaderDate.
   ///

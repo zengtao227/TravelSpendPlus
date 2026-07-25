@@ -24,6 +24,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
   late final TextEditingController _nameController;
   late String _currency;
   late final TextEditingController _budgetController;
+  late bool _hasBudget;
   late DateTime _startDate;
   late DateTime _endDate;
   String? _dateError;
@@ -36,6 +37,10 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     final trip = widget.existingTrip;
     _nameController = TextEditingController(text: trip?.name ?? '');
     _currency = trip?.homeCurrency ?? 'EUR';
+    // Off by default for a new trip — budget tracking is opt-in, not
+    // something you have to notice and skip. An existing trip's own state
+    // (0 minor units means "no budget" throughout this app) decides it.
+    _hasBudget = trip != null && trip.totalBudget.minorUnits != 0;
     _budgetController =
         TextEditingController(text: trip != null ? trip.totalBudget.major.toString() : '');
     _startDate = civilDate(trip?.startDate ?? DateTime.now());
@@ -69,7 +74,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
 
     final currency = _currency;
     final budgetText = _budgetController.text.trim();
-    final budget = Money.fromMajor(budgetText.isEmpty ? 0 : double.parse(budgetText), currency);
+    final budget = _hasBudget
+        ? Money.fromMajor(budgetText.isEmpty ? 0 : double.parse(budgetText), currency)
+        : Money(minorUnits: 0, currencyCode: currency);
 
     if (_isEditing) {
       final existing = widget.existingTrip!;
@@ -140,18 +147,26 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 onChanged: (value) => setState(() => _currency = value),
               ),
             const SizedBox(height: 12),
-            TextFormField(
-              key: const Key('tripBudgetField'),
-              controller: _budgetController,
-              decoration: InputDecoration(labelText: l10n.totalBudgetOptional),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              validator: (value) {
-                final trimmed = value?.trim() ?? '';
-                if (trimmed.isEmpty) return null; // optional: blank means no budget (0)
-                final parsed = double.tryParse(trimmed);
-                return (parsed != null && parsed >= 0) ? null : l10n.errorPositiveAmount;
-              },
+            SwitchListTile(
+              key: const Key('trackBudgetSwitch'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.trackBudget),
+              value: _hasBudget,
+              onChanged: (value) => setState(() => _hasBudget = value),
             ),
+            if (_hasBudget)
+              TextFormField(
+                key: const Key('tripBudgetField'),
+                controller: _budgetController,
+                decoration: InputDecoration(labelText: l10n.totalBudget),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  final trimmed = value?.trim() ?? '';
+                  if (trimmed.isEmpty) return null; // optional: blank means no budget (0)
+                  final parsed = double.tryParse(trimmed);
+                  return (parsed != null && parsed >= 0) ? null : l10n.errorPositiveAmount;
+                },
+              ),
             const SizedBox(height: 20),
             ElevatedButton(
               key: const Key('saveTripButton'),

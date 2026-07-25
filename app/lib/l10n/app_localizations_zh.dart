@@ -51,7 +51,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get totalBudget => '总预算';
 
   @override
-  String get totalBudgetOptional => '总预算（选填）';
+  String get trackBudget => '设置预算';
 
   @override
   String get homeCurrency => '本位币';
@@ -282,6 +282,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String deleteTripConfirm(String name) {
     return '确定要删除「$name」吗？删除后无法恢复，行程里的所有记录都会一起删掉。';
   }
+
+  @override
+  String get deleteExpense => '删除支出';
+
+  @override
+  String get deleteExpenseConfirm => '确定要删除这笔支出吗？删除后无法恢复。';
 
   @override
   String get csvHeaderDate => '日期';

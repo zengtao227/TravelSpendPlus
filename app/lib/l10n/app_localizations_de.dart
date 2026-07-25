@@ -51,7 +51,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get totalBudget => 'Gesamtbudget';
 
   @override
-  String get totalBudgetOptional => 'Gesamtbudget (optional)';
+  String get trackBudget => 'Budget verfolgen';
 
   @override
   String get homeCurrency => 'Heimatwährung';
@@ -309,6 +309,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String deleteTripConfirm(String name) {
     return '„$name“ und alles darin löschen? Das kann nicht rückgängig gemacht werden.';
   }
+
+  @override
+  String get deleteExpense => 'Ausgabe löschen';
+
+  @override
+  String get deleteExpenseConfirm =>
+      'Diese Ausgabe löschen? Das kann nicht rückgängig gemacht werden.';
 
   @override
   String get csvHeaderDate => 'Datum';

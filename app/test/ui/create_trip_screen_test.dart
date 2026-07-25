@@ -29,6 +29,8 @@ void main() {
       (tester) async {
     await tester.pumpWidget(wrap(CreateTripScreen(repository: repo)));
     await tester.enterText(find.byKey(const Key('tripNameField')), 'Japan Trip');
+    await tester.tap(find.byKey(const Key('trackBudgetSwitch')));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('tripBudgetField')), '1000');
     await tester.tap(find.byKey(const Key('saveTripButton')));
     await tester.pumpAndSettle();
@@ -44,6 +46,8 @@ void main() {
       (tester) async {
     await tester.pumpWidget(wrap(CreateTripScreen(repository: repo)));
     await tester.enterText(find.byKey(const Key('tripNameField')), 'Alps Trip');
+    await tester.tap(find.byKey(const Key('trackBudgetSwitch')));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('tripBudgetField')), '1000');
     await tester.tap(find.byKey(const Key('tripCurrencyField')));
     await tester.pumpAndSettle();
@@ -70,6 +74,8 @@ void main() {
   testWidgets('a negative budget is still rejected', (tester) async {
     await tester.pumpWidget(wrap(CreateTripScreen(repository: repo)));
     await tester.enterText(find.byKey(const Key('tripNameField')), 'Backpacking');
+    await tester.tap(find.byKey(const Key('trackBudgetSwitch')));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('tripBudgetField')), '-5');
     await tester.tap(find.byKey(const Key('saveTripButton')));
     await tester.pumpAndSettle();
@@ -79,6 +85,8 @@ void main() {
 
   testWidgets('empty name shows a validation error and does not save', (tester) async {
     await tester.pumpWidget(wrap(CreateTripScreen(repository: repo)));
+    await tester.tap(find.byKey(const Key('trackBudgetSwitch')));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('tripBudgetField')), '1000');
     await tester.tap(find.byKey(const Key('saveTripButton')));
     await tester.pumpAndSettle();
@@ -118,5 +126,49 @@ void main() {
     expect(reloaded.participants.map((p) => p.id).toList(), ['p1']);
     expect(reloaded.homeCurrency, 'CNY');
     expect(reloaded.totalBudget.currencyCode, 'CNY');
+  });
+
+  testWidgets('the budget switch defaults on when editing a trip that already has a budget, '
+      'and the field is visible without tapping anything', (tester) async {
+    final trip = Trip(
+      id: 't1',
+      name: 'Japan Trip',
+      startDate: DateTime(2026, 10, 5),
+      endDate: DateTime(2026, 10, 12),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [Participant(id: 'p1', name: 'Alice')],
+    );
+    await repo.createTrip(trip);
+
+    await tester.pumpWidget(wrap(CreateTripScreen(repository: repo, existingTrip: trip)));
+
+    expect(tester.widget<SwitchListTile>(find.byKey(const Key('trackBudgetSwitch'))).value, isTrue);
+    expect(find.byKey(const Key('tripBudgetField')), findsOneWidget);
+  });
+
+  testWidgets('turning off budget tracking for an existing trip clears its budget to zero',
+      (tester) async {
+    final trip = Trip(
+      id: 't1',
+      name: 'Japan Trip',
+      startDate: DateTime(2026, 10, 5),
+      endDate: DateTime(2026, 10, 12),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [Participant(id: 'p1', name: 'Alice')],
+    );
+    await repo.createTrip(trip);
+
+    await tester.pumpWidget(wrap(CreateTripScreen(repository: repo, existingTrip: trip)));
+    await tester.tap(find.byKey(const Key('trackBudgetSwitch')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tripBudgetField')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('saveTripButton')));
+    await tester.pumpAndSettle();
+
+    final reloaded = await repo.getTrip('t1');
+    expect(reloaded!.totalBudget.minorUnits, 0);
   });
 }
