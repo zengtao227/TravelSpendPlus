@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:travelspendplus/domain/backup.dart';
 import 'package:travelspendplus/domain/civil_date.dart';
 import 'package:travelspendplus/domain/money.dart';
@@ -8,19 +11,35 @@ import 'package:travelspendplus/domain/expense.dart';
 import 'package:travelspendplus/domain/exchange_rate.dart';
 import 'package:travelspendplus/persistence/database.dart' hide Trip, Participant, Expense;
 import 'package:travelspendplus/persistence/trip_repository.dart';
+import 'package:travelspendplus/services/trip_photo_store.dart';
+
+import '../test_helpers/fake_path_provider.dart';
 
 void main() {
   late AppDatabase db;
   late TripRepository repo;
+  late Directory photoTempDir;
 
-  setUp(() {
+  setUp(() async {
     db = AppDatabase.memory();
     repo = TripRepository(db);
+    photoTempDir = await Directory.systemTemp.createTemp('trip_repository_test');
+    FakePathProviderPlatform.install(photoTempDir.path);
+    TripPhotoStore.resetForTesting();
   });
 
   tearDown(() async {
     await db.close();
+    if (await photoTempDir.exists()) await photoTempDir.delete(recursive: true);
   });
+
+  Future<String> makeSourceJpeg() async {
+    final image = img.Image(width: 100, height: 100);
+    img.fill(image, color: img.ColorRgb8(10, 20, 30));
+    final file = File('${photoTempDir.path}/source.jpg');
+    await file.writeAsBytes(img.encodeJpg(image));
+    return file.path;
+  }
 
   final alice = Participant(id: 'p1', name: 'Alice');
   final bob = Participant(id: 'p2', name: 'Bob');
@@ -583,6 +602,7 @@ void main() {
       participants: [Participant(id: 'p3', name: 'Carol')],
     );
     await repo.createTrip(otherTrip);
+    await TripPhotoStore.saveFromPath('t1', await makeSourceJpeg());
 
     await repo.deleteTrip('t1');
 
@@ -591,6 +611,8 @@ void main() {
     expect(await repo.getExchangeRates('t1'), isEmpty);
     expect(await repo.getCustomCategories('t1'), isEmpty);
     expect(await repo.getAllTrips(), hasLength(1));
+    expect(await TripPhotoStore.hasPhoto('t1'), isFalse,
+        reason: 'the trip\'s photo file must be deleted along with its DB rows');
     final remaining = await repo.getTrip('t2');
     expect(remaining, isNotNull);
     expect(remaining!.name, 'Korea');
@@ -671,6 +693,32 @@ void main() {
       expect(restoredCategories, ['Souvenirs']);
 
       await freshDb.close();
+    });
+
+    test('exportAllTripsToJson then importAllTripsFromJson round-trips a trip\'s photo', () async {
+      final trip = makeTrip();
+      await repo.createTrip(trip);
+      await TripPhotoStore.saveFromPath(trip.id, await makeSourceJpeg());
+      final originalBytes = await (await TripPhotoStore.photoFile(trip.id)).readAsBytes();
+
+      final json = await repo.exportAllTripsToJson();
+
+      final freshDb = AppDatabase.memory();
+      final freshRepo = TripRepository(freshDb);
+      await freshRepo.importAllTripsFromJson(json);
+
+      expect(await TripPhotoStore.hasPhoto(trip.id), isTrue);
+      final restoredBytes = await (await TripPhotoStore.photoFile(trip.id)).readAsBytes();
+      expect(restoredBytes, originalBytes);
+
+      await freshDb.close();
+    });
+
+    test('exportAllTripsToJson omits the photo key for a trip with no stored photo', () async {
+      await repo.createTrip(makeTrip());
+      final json = await repo.exportAllTripsToJson();
+      final tripJson = (json['trips'] as List).single as Map<String, dynamic>;
+      expect(tripJson.containsKey('photo'), isFalse);
     });
 
     test('importAllTripsFromJson restores a v1 backup (no customCategories key) with an empty '

@@ -15,6 +15,16 @@ void main() {
   setUp(() {
     db = AppDatabase.memory();
     repo = TripRepository(db);
+    // The photo picker avatar added at the top of the form pushed
+    // saveTripButton below the default 800x600 test viewport — same fix
+    // applied to add_expense_screen_test.dart and
+    // exchange_rate_settings_screen_test.dart earlier in this project for
+    // the same reason.
+    final view = TestWidgetsFlutterBinding.ensureInitialized().platformDispatcher.views.first;
+    view.physicalSize = const Size(1080, 2400);
+    view.devicePixelRatio = 1.0;
+    addTearDown(view.resetPhysicalSize);
+    addTearDown(view.resetDevicePixelRatio);
   });
 
   tearDown(() async => db.close());
@@ -170,5 +180,28 @@ void main() {
 
     final reloaded = await repo.getTrip('t1');
     expect(reloaded!.totalBudget.minorUnits, 0);
+  });
+
+  // NOTE: this project's `flutter test` environment (Flutter 3.44.7,
+  // flutter_tester with software rendering) hangs indefinitely — a genuine
+  // native/engine-level deadlock, not a Dart-level timeout that
+  // `tester.runAsync()` or a bounded `pump()` count can route around — the
+  // instant a widget tree paints a *real, decodable* image via `FileImage`
+  // (confirmed with a minimal repro: a bare `CircleAvatar(foregroundImage:
+  // FileImage(realJpegOrPngFile))` in an otherwise-empty MaterialApp hangs
+  // on its very first pump(), independent of anything in this app's code).
+  // So "pick a photo, save it" and "remove an existing photo, save" are
+  // deliberately NOT covered by a widget test here — TripPhotoStore's own
+  // save/delete/read/write logic is fully covered in
+  // test/services/trip_photo_store_test.dart (no widget tree involved,
+  // passes fine), and the actual picker interaction was verified manually
+  // on the Android emulator instead (see the 2026-07-25 release notes).
+  testWidgets('with no stored photo, the picker shows the add-photo icon, not a remove button',
+      (tester) async {
+    await tester.pumpWidget(wrap(CreateTripScreen(repository: repo)));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.add_a_photo_outlined), findsOneWidget);
+    expect(find.byKey(const Key('removeTripPhotoButton')), findsNothing);
   });
 }

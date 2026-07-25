@@ -1,4 +1,6 @@
 // app/lib/ui/trip_detail_screen.dart
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
@@ -13,12 +15,38 @@ import '../domain/expense.dart';
 import '../domain/money.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
+import '../services/trip_photo_store.dart';
 import 'add_expense_screen.dart';
 import 'create_trip_screen.dart';
 import 'exchange_rate_settings_screen.dart';
 import 'file_io.dart' as file_io;
 import 'formatting.dart';
 import 'theme.dart';
+
+// A small round avatar showing the trip's stored photo, if any — renders
+// nothing (zero-size) for a trip with no photo, matching
+// trip_list_screen.dart's equivalent thumbnail widget.
+class _TripPhotoAvatar extends StatelessWidget {
+  final String tripId;
+  const _TripPhotoAvatar({required this.tripId});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: TripPhotoStore.hasPhoto(tripId),
+      builder: (context, snapshot) {
+        if (snapshot.data != true) return const SizedBox.shrink();
+        return FutureBuilder<File>(
+          future: TripPhotoStore.photoFile(tripId),
+          builder: (context, fileSnapshot) {
+            if (!fileSnapshot.hasData) return const SizedBox.shrink();
+            return CircleAvatar(radius: 32, backgroundImage: FileImage(fileSnapshot.data!));
+          },
+        );
+      },
+    );
+  }
+}
 
 class TripDetailScreen extends StatefulWidget {
   final String tripId;
@@ -318,10 +346,23 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             // of the floating action button instead of sitting under it.
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
             children: [
-              Text(trip.name, style: Theme.of(context).textTheme.headlineSmall),
-              Text(
-                '${formatDate(context, trip.startDate)} - ${formatDate(context, trip.endDate)} '
-                '(${l10n.tripLengthDays(trip.totalDays)})',
+              Row(
+                children: [
+                  _TripPhotoAvatar(tripId: trip.id),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(trip.name, style: Theme.of(context).textTheme.headlineSmall),
+                        Text(
+                          '${formatDate(context, trip.startDate)} - ${formatDate(context, trip.endDate)} '
+                          '(${l10n.tripLengthDays(trip.totalDays)})',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               budgetTimingWidget,

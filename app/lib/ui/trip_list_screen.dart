@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
@@ -7,6 +8,7 @@ import '../domain/backup.dart';
 import '../domain/budget_calculator.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
+import '../services/trip_photo_store.dart';
 import '../version.dart';
 import 'create_trip_screen.dart';
 import 'file_io.dart' as file_io;
@@ -227,6 +229,31 @@ class _TripListScreenState extends State<TripListScreen> {
   }
 }
 
+// A small round avatar showing the trip's stored photo, if any — renders
+// nothing (zero-size) for a trip with no photo, so trips without one don't
+// show an empty placeholder circle cluttering the list.
+class _TripPhotoThumbnail extends StatelessWidget {
+  final String tripId;
+  const _TripPhotoThumbnail({required this.tripId});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: TripPhotoStore.hasPhoto(tripId),
+      builder: (context, snapshot) {
+        if (snapshot.data != true) return const SizedBox.shrink();
+        return FutureBuilder<File>(
+          future: TripPhotoStore.photoFile(tripId),
+          builder: (context, fileSnapshot) {
+            if (!fileSnapshot.hasData) return const SizedBox.shrink();
+            return CircleAvatar(radius: 24, backgroundImage: FileImage(fileSnapshot.data!));
+          },
+        );
+      },
+    );
+  }
+}
+
 class _TripCard extends StatelessWidget {
   final Trip trip;
   final TripRepository repository;
@@ -270,11 +297,24 @@ class _TripCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(trip.name, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${formatDate(context, trip.startDate)} - ${formatDate(context, trip.endDate)} '
-                    '(${l10n.tripLengthDays(trip.totalDays)})',
+                  Row(
+                    children: [
+                      _TripPhotoThumbnail(tripId: trip.id),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(trip.name, style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${formatDate(context, trip.startDate)} - ${formatDate(context, trip.endDate)} '
+                              '(${l10n.tripLengthDays(trip.totalDays)})',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   ClipRRect(

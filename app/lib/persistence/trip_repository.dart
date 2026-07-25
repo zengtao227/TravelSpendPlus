@@ -7,6 +7,7 @@ import '../domain/participant.dart';
 import '../domain/trip.dart';
 import '../domain/expense.dart';
 import '../domain/exchange_rate.dart';
+import '../services/trip_photo_store.dart';
 import 'database.dart' hide Trip, Participant, Expense;
 
 class TripRepository {
@@ -334,6 +335,12 @@ class TripRepository {
       await (_db.delete(_db.participants)..where((p) => p.tripId.equals(tripId))).go();
       await (_db.delete(_db.trips)..where((t) => t.id.equals(tripId))).go();
     });
+    // Not part of the DB transaction above (it's not a DB operation) — runs
+    // only after that transaction has actually committed, so a failed
+    // delete never leaves the trip's row gone but its photo file orphaned
+    // (or vice versa: a failed file delete never leaves the trip row in
+    // place with a wrongly-deleted photo).
+    await TripPhotoStore.delete(tripId);
   }
 
   Future<List<String>> getCustomCategories(String tripId) async {
@@ -351,9 +358,10 @@ class TripRepository {
         .insert(TripCategoriesCompanion.insert(tripId: tripId, name: name));
   }
 
-  /// Assembles every trip currently in the database (with its expenses and
-  /// exchange rates) into one JSON-serializable backup. Pure data assembly —
-  /// nothing here writes to disk or touches the OS share sheet; that's the
+  /// Assembles every trip currently in the database (with its expenses,
+  /// exchange rates, and photo) into one JSON-serializable backup. Reads
+  /// each trip's photo file (if any) via TripPhotoStore, but otherwise
+  /// touches nothing else on disk and never the OS share sheet — that's the
   /// UI layer's job (`ui/file_io.dart`).
   Future<Map<String, dynamic>> exportAllTripsToJson() async {
     final trips = await getAllTrips();
@@ -364,6 +372,7 @@ class TripRepository {
         expenses: await getExpenses(trip.id),
         exchangeRates: await getExchangeRates(trip.id),
         customCategories: await getCustomCategories(trip.id),
+        photoBase64: await TripPhotoStore.readBase64(trip.id),
       ));
     }
     return backupToJson(bundles);
@@ -379,6 +388,9 @@ class TripRepository {
     final bundles = backupFromJson(json); // throws UnsupportedBackupVersionException if too new
     for (final bundle in bundles) {
       await createTrip(bundle.trip);
+      if (bundle.photoBase64 != null) {
+        await TripPhotoStore.writeBase64(bundle.trip.id, bundle.photoBase64!);
+      }
       for (final rate in bundle.exchangeRates) {
         await setExchangeRate(bundle.trip.id, rate);
       }

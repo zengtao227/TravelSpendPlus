@@ -23,7 +23,11 @@ import 'trip.dart';
 ///
 /// v4 added `excludeFromBreakdown` to each expense. An older backup missing
 /// this key still imports fine — it defaults to `false`.
-const int kBackupSchemaVersion = 4;
+///
+/// v5 added an optional `photo` (base64-encoded JPEG) to each trip bundle.
+/// An older backup missing this key still imports fine — `photoBase64`
+/// defaults to `null`, meaning no photo.
+const int kBackupSchemaVersion = 5;
 
 class UnsupportedBackupVersionException implements Exception {
   final int foundVersion;
@@ -44,11 +48,17 @@ class TripBundle {
   final List<Expense> expenses;
   final List<ExchangeRate> exchangeRates;
   final List<String> customCategories;
+  // Base64-encoded JPEG (already compressed by TripPhotoStore) — null when
+  // the trip has no stored photo. This file has no dart:io dependency, so
+  // the actual file read/write happens in TripRepository's export/import,
+  // not here.
+  final String? photoBase64;
   const TripBundle({
     required this.trip,
     required this.expenses,
     required this.exchangeRates,
     this.customCategories = const [],
+    this.photoBase64,
   });
 }
 
@@ -101,6 +111,7 @@ Map<String, dynamic> tripBundleToJson(TripBundle bundle) {
     'exchangeRates':
         bundle.exchangeRates.map((r) => {'fromCurrency': r.fromCurrency, 'rate': r.rate}).toList(),
     'customCategories': bundle.customCategories,
+    if (bundle.photoBase64 != null) 'photo': bundle.photoBase64,
   };
 }
 
@@ -173,6 +184,7 @@ TripBundle tripBundleFromJson(Map<String, dynamic> json) {
     expenses: expenses,
     exchangeRates: exchangeRates,
     customCategories: customCategories,
+    photoBase64: json['photo'] as String?,
   );
 }
 

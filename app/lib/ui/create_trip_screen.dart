@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
 
@@ -7,13 +10,24 @@ import '../domain/money.dart';
 import '../domain/participant.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
+import '../services/trip_photo_store.dart';
 import 'currency_field.dart';
 import 'formatting.dart';
 
 class CreateTripScreen extends StatefulWidget {
   final TripRepository repository;
   final Trip? existingTrip;
-  const CreateTripScreen({super.key, required this.repository, this.existingTrip});
+  // Injectable so widget tests can supply a fake picker instead of hitting
+  // the real platform channel (which has no implementation in the test
+  // harness) — same pattern as AddExpenseScreen's liveRateService and
+  // TripDetailScreen's writeTempFile/shareFile.
+  final Future<XFile?> Function() pickImage;
+  CreateTripScreen({
+    super.key,
+    required this.repository,
+    this.existingTrip,
+    Future<XFile?> Function()? pickImage,
+  }) : pickImage = pickImage ?? (() => ImagePicker().pickImage(source: ImageSource.gallery));
 
   @override
   State<CreateTripScreen> createState() => _CreateTripScreenState();
@@ -28,6 +42,12 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
   late DateTime _startDate;
   late DateTime _endDate;
   String? _dateError;
+  // A freshly picked photo not yet written to TripPhotoStore (that happens
+  // in _save(), once we know the trip's final id) — null means "unchanged
+  // from whatever's already stored", not "no photo".
+  String? _pickedPhotoPath;
+  bool _removeExistingPhoto = false;
+  File? _existingPhotoFile;
 
   bool get _isEditing => widget.existingTrip != null;
 
@@ -45,6 +65,30 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         TextEditingController(text: trip != null ? trip.totalBudget.major.toString() : '');
     _startDate = civilDate(trip?.startDate ?? DateTime.now());
     _endDate = civilDate(trip?.endDate ?? DateTime.now().add(const Duration(days: 6)));
+    if (trip != null) _loadExistingPhoto(trip.id);
+  }
+
+  Future<void> _loadExistingPhoto(String tripId) async {
+    final has = await TripPhotoStore.hasPhoto(tripId);
+    if (!has) return;
+    final file = await TripPhotoStore.photoFile(tripId);
+    if (mounted) setState(() => _existingPhotoFile = file);
+  }
+
+  Future<void> _pickPhoto() async {
+    final picked = await widget.pickImage();
+    if (picked == null) return;
+    setState(() {
+      _pickedPhotoPath = picked.path;
+      _removeExistingPhoto = false;
+    });
+  }
+
+  void _clearPhoto() {
+    setState(() {
+      _pickedPhotoPath = null;
+      _removeExistingPhoto = true;
+    });
   }
 
   @override
@@ -78,8 +122,10 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         ? Money.fromMajor(budgetText.isEmpty ? 0 : double.parse(budgetText), currency)
         : Money(minorUnits: 0, currencyCode: currency);
 
+    final String tripId;
     if (_isEditing) {
       final existing = widget.existingTrip!;
+      tripId = existing.id;
       await widget.repository.updateTrip(Trip(
         id: existing.id,
         name: _nameController.text.trim(),
@@ -90,9 +136,10 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         participants: existing.participants,
       ));
     } else {
+      tripId = const Uuid().v4();
       final defaultParticipant = Participant(id: const Uuid().v4(), name: 'Me');
       await widget.repository.createTrip(Trip(
-        id: const Uuid().v4(),
+        id: tripId,
         name: _nameController.text.trim(),
         startDate: _startDate,
         endDate: _endDate,
@@ -100,6 +147,11 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         totalBudget: budget,
         participants: [defaultParticipant],
       ));
+    }
+    if (_pickedPhotoPath != null) {
+      await TripPhotoStore.saveFromPath(tripId, _pickedPhotoPath!);
+    } else if (_removeExistingPhoto) {
+      await TripPhotoStore.delete(tripId);
     }
     if (mounted) Navigator.pop(context, true);
   }
@@ -114,6 +166,8 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            Center(child: _buildPhotoPicker()),
+            const SizedBox(height: 16),
             TextFormField(
               key: const Key('tripNameField'),
               controller: _nameController,
@@ -176,6 +230,54 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // Whether the avatar should currently render a photo — a freshly picked
+  // one always wins, otherwise an existing stored one unless the user just
+  // tapped to remove it.
+  bool get _showsPhoto =>
+      _pickedPhotoPath != null || (_existingPhotoFile != null && !_removeExistingPhoto);
+
+  Widget _buildPhotoPicker() {
+    final showsPhoto = _showsPhoto;
+    ImageProvider? imageProvider;
+    if (_pickedPhotoPath != null) {
+      imageProvider = FileImage(File(_pickedPhotoPath!));
+    } else if (_existingPhotoFile != null && !_removeExistingPhoto) {
+      imageProvider = FileImage(_existingPhotoFile!);
+    }
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        GestureDetector(
+          key: const Key('tripPhotoPicker'),
+          onTap: _pickPhoto,
+          child: CircleAvatar(
+            radius: 44,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            foregroundImage: imageProvider,
+            child: showsPhoto
+                ? null
+                : Icon(Icons.add_a_photo_outlined,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+        ),
+        if (showsPhoto)
+          Positioned(
+            right: -4,
+            top: -4,
+            child: GestureDetector(
+              key: const Key('removeTripPhotoButton'),
+              onTap: _clearPhoto,
+              child: CircleAvatar(
+                radius: 12,
+                backgroundColor: Theme.of(context).colorScheme.error,
+                child: const Icon(Icons.close, size: 16, color: Colors.white),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

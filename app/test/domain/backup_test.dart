@@ -133,6 +133,29 @@ void main() {
     expect(restored.expenses.single.excludeFromBreakdown, isFalse);
   });
 
+  test('photoBase64 round-trips through tripBundleToJson/tripBundleFromJson', () {
+    final bundle = TripBundle(
+      trip: makeTrip(),
+      expenses: const [],
+      exchangeRates: const [],
+      photoBase64: 'ZmFrZSBqcGVnIGJ5dGVz',
+    );
+    final json = tripBundleToJson(bundle);
+    expect(json['photo'], 'ZmFrZSBqcGVnIGJ5dGVz');
+
+    final restored = tripBundleFromJson(json);
+    expect(restored.photoBase64, 'ZmFrZSBqcGVnIGJ5dGVz');
+  });
+
+  test('a trip with no photo omits the "photo" key entirely rather than storing null', () {
+    final bundle = TripBundle(trip: makeTrip(), expenses: const [], exchangeRates: const []);
+    final json = tripBundleToJson(bundle);
+    expect(json.containsKey('photo'), isFalse);
+
+    final restored = tripBundleFromJson(json);
+    expect(restored.photoBase64, isNull);
+  });
+
   test('a planned expense and a whole-number exchange rate round-trip correctly '
       '(JSON decodes whole numbers as int, not double — the rate parser must handle both)',
       () {
