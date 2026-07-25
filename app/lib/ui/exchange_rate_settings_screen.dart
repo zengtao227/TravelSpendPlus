@@ -14,11 +14,19 @@ class ExchangeRateSettingsScreen extends StatefulWidget {
   final Trip trip;
   final TripRepository repository;
   final LiveRateService? liveRateService;
+  // When set, the screen opens straight into the change-home-currency form
+  // with this currency already selected, instead of the default rate-list
+  // view — used when the trip page's own currency switcher asks "set this
+  // as the home currency?" and the user says yes, so they land directly on
+  // the rate fields rather than having to find and tap "change home
+  // currency" and re-pick the same currency a second time.
+  final String? initialNewHomeCurrency;
   const ExchangeRateSettingsScreen({
     super.key,
     required this.trip,
     required this.repository,
     this.liveRateService,
+    this.initialNewHomeCurrency,
   });
 
   @override
@@ -49,7 +57,12 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
     _liveRateService = widget.liveRateService ?? LiveRateService();
     _ratesFuture = widget.repository.getExchangeRates(widget.trip.id);
     _newRateCurrency = _defaultOtherCurrency(widget.trip.homeCurrency);
-    _newHomeCurrency = _defaultOtherCurrency(widget.trip.homeCurrency);
+    final initialTarget = widget.initialNewHomeCurrency;
+    _newHomeCurrency = initialTarget ?? _defaultOtherCurrency(widget.trip.homeCurrency);
+    if (initialTarget != null) {
+      _showChangeCurrencyForm = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToChangeCurrencyForm());
+    }
   }
 
   @override
@@ -101,14 +114,16 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
   // into view automatically instead of relying on the user to discover it.
   void _revealChangeCurrencyForm() {
     setState(() => _showChangeCurrencyForm = true);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToChangeCurrencyForm());
+  }
+
+  void _scrollToChangeCurrencyForm() {
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   // Also shown as a SnackBar, not just the inline text near the confirm

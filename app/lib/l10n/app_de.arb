@@ -65,6 +65,8 @@
   "actualLabel": "Tatsächlich",
   "remainingLabel": "Verbleibend",
   "viewInCurrency": "Anzeigen in",
+  "setAsHomeCurrencyPrompt": "{currency} als Heimatwährung dieser Reise festlegen?",
+  "viewOnly": "Nur anzeigen",
   "spendingByCategory": "Ausgaben nach Kategorie",
   "noExpensesYet": "Noch keine Ausgaben",
   "expenses": "Ausgaben",

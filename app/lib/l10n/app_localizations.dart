@@ -466,6 +466,18 @@ abstract class AppLocalizations {
   /// **'View in'**
   String get viewInCurrency;
 
+  /// No description provided for @setAsHomeCurrencyPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Set {currency} as this trip\'s home currency?'**
+  String setAsHomeCurrencyPrompt(String currency);
+
+  /// No description provided for @viewOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'View only'**
+  String get viewOnly;
+
   /// No description provided for @spendingByCategory.
   ///
   /// In en, this message translates to:

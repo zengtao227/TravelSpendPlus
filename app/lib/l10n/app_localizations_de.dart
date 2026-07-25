@@ -222,6 +222,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String get viewInCurrency => 'Anzeigen in';
 
   @override
+  String setAsHomeCurrencyPrompt(String currency) {
+    return '$currency als Heimatwährung dieser Reise festlegen?';
+  }
+
+  @override
+  String get viewOnly => 'Nur anzeigen';
+
+  @override
   String get spendingByCategory => 'Ausgaben nach Kategorie';
 
   @override

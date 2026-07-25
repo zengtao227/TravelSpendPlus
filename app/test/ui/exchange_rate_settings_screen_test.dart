@@ -35,13 +35,14 @@ void main() {
 
   tearDown(() async => db.close());
 
-  Widget wrap({LiveRateService? liveRateService}) => MaterialApp(
+  Widget wrap({LiveRateService? liveRateService, String? initialNewHomeCurrency}) => MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: ExchangeRateSettingsScreen(
           trip: trip,
           repository: repo,
           liveRateService: liveRateService,
+          initialNewHomeCurrency: initialNewHomeCurrency,
         ),
       );
 
@@ -65,6 +66,26 @@ void main() {
     // ExchangeRate.rate's own meaning is unchanged ("1 JPY = rate CNY"),
     // so the stored value is the reciprocal of what was typed.
     expect(rates.first.rate, closeTo(0.05, 0.0001));
+  });
+
+  testWidgets(
+      'opening with initialNewHomeCurrency lands directly on the change-currency form, already '
+      'targeting that currency', (tester) async {
+    await tester.pumpWidget(wrap(initialNewHomeCurrency: 'JPY'));
+    await tester.pumpAndSettle();
+
+    // No need to tap "changeCurrencyButton" first, and no need to pick JPY
+    // from the dropdown either — both already reflect the caller's choice.
+    expect(find.byKey(const Key('changeCurrencyButton')), findsNothing);
+    expect(find.byKey(const Key('directRateField_CNY')), findsOneWidget);
+    expect(find.byKey(const Key('confirmChangeCurrencyButton')), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('directRateField_CNY')), '20');
+    await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
+    await tester.pumpAndSettle();
+
+    final reloaded = await repo.getTrip('t1');
+    expect(reloaded!.homeCurrency, 'JPY');
   });
 
   testWidgets('checking and accepting the market rate fills in the new-rate field', (tester) async {

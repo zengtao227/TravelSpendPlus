@@ -553,10 +553,51 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('JPY').last);
     await tester.pumpAndSettle();
+    // Picking a non-home currency now also asks whether to make it the home
+    // currency — dismiss with "view only" to keep this a pure display switch.
+    await tester.tap(find.text('仅查看'));
+    await tester.pumpAndSettle();
 
     expect(find.textContaining('JPY 2,000.00'), findsWidgets,
         reason: 'legend must follow the same view-currency switch as the summary card '
             '(100 CNY * 20 = 2000 JPY), not stay stuck showing home-currency amounts');
+  });
+
+  testWidgets(
+      'picking a non-home currency from the switcher and confirming "change home currency" '
+      'takes you straight to the rate field for it, and completing it actually changes the '
+      'trip', (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime.now().subtract(const Duration(days: 2)),
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+    await repo.setExchangeRate('t1', const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'CNY', rate: 0.05));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('JPY').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirmSetAsHomeCurrencyButton')));
+    await tester.pumpAndSettle();
+
+    // Landed directly on the rate field for CNY -> JPY, no extra taps needed.
+    expect(find.byType(ExchangeRateSettingsScreen), findsOneWidget);
+    expect(find.byKey(const Key('directRateField_CNY')), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('directRateField_CNY')), '20');
+    await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ExchangeRateSettingsScreen), findsNothing);
+    final reloaded = await repo.getTrip('t1');
+    expect(reloaded!.homeCurrency, 'JPY');
   });
 
   testWidgets('deleting a trip removes it, its expenses, and pops back to the caller',

@@ -222,6 +222,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewInCurrency => 'View in';
 
   @override
+  String setAsHomeCurrencyPrompt(String currency) {
+    return 'Set $currency as this trip\'s home currency?';
+  }
+
+  @override
+  String get viewOnly => 'View only';
+
+  @override
   String get spendingByCategory => 'Spending by category';
 
   @override

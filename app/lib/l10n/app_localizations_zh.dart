@@ -206,6 +206,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get viewInCurrency => '查看币种';
 
   @override
+  String setAsHomeCurrencyPrompt(String currency) {
+    return '要把「$currency」设为这个行程的本位币吗？';
+  }
+
+  @override
+  String get viewOnly => '仅查看';
+
+  @override
   String get spendingByCategory => '支出分类';
 
   @override

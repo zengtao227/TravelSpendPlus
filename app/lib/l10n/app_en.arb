@@ -75,6 +75,11 @@
   "actualLabel": "Actual",
   "remainingLabel": "Remaining",
   "viewInCurrency": "View in",
+  "setAsHomeCurrencyPrompt": "Set {currency} as this trip's home currency?",
+  "@setAsHomeCurrencyPrompt": {
+    "placeholders": {"currency": {"type": "String"}}
+  },
+  "viewOnly": "View only",
   "spendingByCategory": "Spending by category",
   "noExpensesYet": "No expenses yet",
   "expenses": "Expenses",

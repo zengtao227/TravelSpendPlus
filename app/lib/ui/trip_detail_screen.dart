@@ -142,6 +142,41 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     }
   }
 
+  // The dropdown next to the total-budget figure is primarily a *view*
+  // switch (see the class-level comment on _refresh), but picking a
+  // currency other than the trip's actual home currency is exactly what a
+  // user reaches for when they mean to permanently change it — asking here
+  // means they don't have to separately discover the exchange-rate screen's
+  // own "change home currency" button first.
+  Future<void> _onViewCurrencyChanged(String value, Trip trip) async {
+    setState(() => _viewCurrency = value);
+    if (value == trip.homeCurrency) return;
+    final l10n = AppLocalizations.of(context)!;
+    final wantsToChange = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: Text(l10n.setAsHomeCurrencyPrompt(value)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.viewOnly)),
+          TextButton(
+            key: const Key('confirmSetAsHomeCurrencyButton'),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.changeHomeCurrency),
+          ),
+        ],
+      ),
+    );
+    if (wantsToChange != true || !mounted) return;
+    await Navigator.push(context, MaterialPageRoute(
+      builder: (_) => ExchangeRateSettingsScreen(
+        trip: trip,
+        repository: widget.repository,
+        initialNewHomeCurrency: value,
+      ),
+    ));
+    _refresh();
+  }
+
   Future<void> _deleteTrip(Trip trip) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
@@ -296,7 +331,9 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                               trip.homeCurrency,
                               ...data.rates.map((r) => r.fromCurrency),
                             }.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                            onChanged: (value) => setState(() => _viewCurrency = value),
+                            onChanged: (value) {
+                              if (value != null) _onViewCurrencyChanged(value, trip);
+                            },
                           ),
                         ],
                       ),

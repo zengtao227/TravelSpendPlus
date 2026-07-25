@@ -61,6 +61,8 @@
   "actualLabel": "已发生",
   "remainingLabel": "预计还剩",
   "viewInCurrency": "查看币种",
+  "setAsHomeCurrencyPrompt": "要把「{currency}」设为这个行程的本位币吗？",
+  "viewOnly": "仅查看",
   "spendingByCategory": "支出分类",
   "noExpensesYet": "还没有记账",
   "expenses": "支出明细",
