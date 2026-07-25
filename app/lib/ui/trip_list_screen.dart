@@ -268,6 +268,8 @@ class _TripCard extends StatelessWidget {
       builder: (context, snapshot) {
         final expenses = snapshot.data ?? [];
         final summary = BudgetCalculator.summarize(trip: trip, expenses: expenses);
+        final avgDaily = BudgetCalculator.averageDailySpendSoFar(
+            trip: trip, expenses: expenses, asOf: DateTime.now());
         // Total *committed* money (already spent + planned/estimated) is
         // what the progress bar should reflect against the budget — that's
         // not the bug. The bug was showing this combined figure under the
@@ -334,6 +336,14 @@ class _TripCard extends StatelessWidget {
                       Text(formatMoney(trip.totalBudget)),
                     ],
                   ),
+                  if (avgDaily != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${l10n.avgPerDayLabel} ${formatMoney(avgDaily)}',
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.coral),
+                    ),
+                  ],
                 ],
               ),
             ),

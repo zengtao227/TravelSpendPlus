@@ -205,9 +205,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String averageDailySpend(String amount) {
-    return 'Bisheriger Tagesdurchschnitt: $amount/Tag';
-  }
+  String get totalSpentLabel => 'Bisher ausgegeben';
+
+  @override
+  String get avgPerDayLabel => 'Ø pro Tag';
 
   @override
   String get plannedLabel => 'Geplant';

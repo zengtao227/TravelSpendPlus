@@ -364,11 +364,25 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              // The two numbers a bookkeeping app's user actually wants at a
+              // glance — total spent and the daily run rate — get top billing
+              // right under the trip name, ahead of the budget card below.
+              Row(
+                children: [
+                  Expanded(
+                    child: _bigStat(context, l10n.totalSpentLabel,
+                        formatMoney(display(summary.actualTotal)), AppColors.teal),
+                  ),
+                  if (averageDailySpend != null)
+                    Expanded(
+                      child: _bigStat(context, l10n.avgPerDayLabel,
+                          formatMoney(display(averageDailySpend)), AppColors.coral),
+                    ),
+                ],
+              ),
               const SizedBox(height: 8),
               budgetTimingWidget,
-              if (averageDailySpend != null)
-                Text(l10n.averageDailySpend(formatMoney(display(averageDailySpend))),
-                    style: TextStyle(fontSize: 12, color: AppColors.mutedText)),
               const SizedBox(height: 12),
               Builder(builder: (context) {
                 final hasBudget = trip.totalBudget.minorUnits != 0;
@@ -627,6 +641,22 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _bigStat(BuildContext context, String label, String value, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedText)),
+        Text(
+          value,
+          style: Theme.of(context)
+              .textTheme
+              .headlineMedium
+              ?.copyWith(color: color, fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 

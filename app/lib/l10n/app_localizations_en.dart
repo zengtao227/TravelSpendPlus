@@ -205,9 +205,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String averageDailySpend(String amount) {
-    return 'Avg. daily spend so far: $amount/day';
-  }
+  String get totalSpentLabel => 'Total spent';
+
+  @override
+  String get avgPerDayLabel => 'Avg. per day';
 
   @override
   String get plannedLabel => 'Planned';

@@ -122,11 +122,11 @@ void main() {
     await tester.pumpAndSettle();
     // See the comment in the first test: app_zh.arb's dailyBudgetRemaining
     // renders ".../天", not "/day" — the locale is pinned to zh here. The
-    // average-daily-spend line also ends in "/天" once the trip has started
-    // (it's independent of the budget), so match on its distinct prefix
-    // rather than the shared suffix.
+    // average-daily-spend stat is shown too, once the trip has started (it's
+    // independent of the budget) — as a caption ("日均消费") above a big
+    // number, not a full sentence, so match on the caption.
     expect(find.textContaining('每日剩余预算'), findsOneWidget);
-    expect(find.textContaining('目前日均花费'), findsOneWidget);
+    expect(find.text('日均消费'), findsOneWidget);
   });
 
   testWidgets('the average-daily-spend line reflects actual spend regardless of budget',
@@ -159,7 +159,7 @@ void main() {
     await tester.pumpWidget(wrap('t1'));
     await tester.pumpAndSettle();
     // 300 / 3 elapsed days = 100.00/day, shown even though totalBudget is 0.
-    expect(find.textContaining('目前日均花费'), findsOneWidget);
+    expect(find.text('日均消费'), findsOneWidget);
     expect(find.textContaining('100.00'), findsWidgets);
     // With no budget set, "remaining" is just the negative of what's been
     // spent — not a meaningful number, so it isn't shown at all.
@@ -197,10 +197,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('行程已结束'), findsOneWidget);
     // No more remaining-daily-budget line once finished, but the
-    // average-daily-spend line still shows (it's meaningful for the whole
+    // average-daily-spend stat still shows (it's meaningful for the whole
     // finished trip, unlike remaining-budget).
     expect(find.textContaining('每日剩余预算'), findsNothing);
-    expect(find.textContaining('目前日均花费'), findsOneWidget);
+    expect(find.text('日均消费'), findsOneWidget);
   });
 
   testWidgets('a trip on its own last calendar day still shows the daily budget, not finished',

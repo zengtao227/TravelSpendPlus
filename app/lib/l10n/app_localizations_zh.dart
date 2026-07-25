@@ -189,9 +189,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String averageDailySpend(String amount) {
-    return '目前日均花费：$amount/天';
-  }
+  String get totalSpentLabel => '本次总花费';
+
+  @override
+  String get avgPerDayLabel => '日均消费';
 
   @override
   String get plannedLabel => '计划中';

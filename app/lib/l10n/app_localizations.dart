@@ -436,11 +436,17 @@ abstract class AppLocalizations {
   /// **'Daily budget remaining: {amount}/day'**
   String dailyBudgetRemaining(String amount);
 
-  /// No description provided for @averageDailySpend.
+  /// No description provided for @totalSpentLabel.
   ///
   /// In en, this message translates to:
-  /// **'Avg. daily spend so far: {amount}/day'**
-  String averageDailySpend(String amount);
+  /// **'Total spent'**
+  String get totalSpentLabel;
+
+  /// No description provided for @avgPerDayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. per day'**
+  String get avgPerDayLabel;
 
   /// No description provided for @plannedLabel.
   ///
