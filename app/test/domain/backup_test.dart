@@ -156,6 +156,55 @@ void main() {
     expect(restored.photoBase64, isNull);
   });
 
+  test('expensePhotosBase64 round-trips per expense through tripBundleToJson/tripBundleFromJson',
+      () {
+    final bundle = TripBundle(
+      trip: makeTrip(),
+      expenses: [makeExpense()],
+      exchangeRates: const [],
+      expensePhotosBase64: const {'e1': 'ZmFrZSBleHBlbnNlIHBob3Rv'},
+    );
+    final json = tripBundleToJson(bundle);
+    final expenseJson = (json['expenses'] as List).single as Map<String, dynamic>;
+    expect(expenseJson['photo'], 'ZmFrZSBleHBlbnNlIHBob3Rv');
+
+    final restored = tripBundleFromJson(json);
+    expect(restored.expensePhotosBase64['e1'], 'ZmFrZSBleHBlbnNlIHBob3Rv');
+  });
+
+  test('an expense with no photo omits the "photo" key entirely rather than storing null', () {
+    final bundle = TripBundle(trip: makeTrip(), expenses: [makeExpense()], exchangeRates: const []);
+    final json = tripBundleToJson(bundle);
+    final expenseJson = (json['expenses'] as List).single as Map<String, dynamic>;
+    expect(expenseJson.containsKey('photo'), isFalse);
+
+    final restored = tripBundleFromJson(json);
+    expect(restored.expensePhotosBase64.containsKey('e1'), isFalse);
+  });
+
+  test('tripBundleFromJson defaults expensePhotosBase64 to empty for an expense whose "photo" '
+      'key is absent (a pre-v6 backup, made before this field existed)', () {
+    final json = tripBundleToJson(
+      TripBundle(trip: makeTrip(), expenses: [makeExpense()], exchangeRates: const []),
+    );
+    final restored = tripBundleFromJson(json);
+    expect(restored.expensePhotosBase64, isEmpty);
+  });
+
+  test('a trip with multiple expenses keeps each one\'s photo keyed by its own id, not mixed up',
+      () {
+    final secondExpense = makeExpense().copyWith(id: 'e2');
+    final bundle = TripBundle(
+      trip: makeTrip(),
+      expenses: [makeExpense(), secondExpense],
+      exchangeRates: const [],
+      expensePhotosBase64: const {'e1': 'cGhvdG8gb25l'},
+    );
+    final restored = tripBundleFromJson(tripBundleToJson(bundle));
+    expect(restored.expensePhotosBase64['e1'], 'cGhvdG8gb25l');
+    expect(restored.expensePhotosBase64.containsKey('e2'), isFalse);
+  });
+
   test('a planned expense and a whole-number exchange rate round-trip correctly '
       '(JSON decodes whole numbers as int, not double — the rate parser must handle both)',
       () {

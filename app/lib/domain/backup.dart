@@ -27,7 +27,12 @@ import 'trip.dart';
 /// v5 added an optional `photo` (base64-encoded JPEG) to each trip bundle.
 /// An older backup missing this key still imports fine — `photoBase64`
 /// defaults to `null`, meaning no photo.
-const int kBackupSchemaVersion = 5;
+///
+/// v6 added an optional per-expense `photo` (base64-encoded JPEG) inside
+/// each expense entry. An older backup missing this key on an expense still
+/// imports fine — that expense's entry in `expensePhotosBase64` is simply
+/// absent, meaning no photo for that expense.
+const int kBackupSchemaVersion = 6;
 
 class UnsupportedBackupVersionException implements Exception {
   final int foundVersion;
@@ -53,12 +58,19 @@ class TripBundle {
   // the actual file read/write happens in TripRepository's export/import,
   // not here.
   final String? photoBase64;
+  // Base64-encoded JPEG per expense (already compressed by
+  // ExpensePhotoStore), keyed by expense id — absent key means that expense
+  // has no stored photo. Same file-has-no-dart:io-dependency split as
+  // photoBase64 above: the actual file read/write happens in
+  // TripRepository's export/import, not here.
+  final Map<String, String> expensePhotosBase64;
   const TripBundle({
     required this.trip,
     required this.expenses,
     required this.exchangeRates,
     this.customCategories = const [],
     this.photoBase64,
+    this.expensePhotosBase64 = const {},
   });
 }
 
@@ -106,6 +118,7 @@ Map<String, dynamic> tripBundleToJson(TripBundle bundle) {
               'includeInSplit': e.includeInSplit,
               'paidById': e.paidBy.id,
               'paidForIds': e.paidFor.map((p) => p.id).toList(),
+              if (bundle.expensePhotosBase64[e.id] != null) 'photo': bundle.expensePhotosBase64[e.id],
             })
         .toList(),
     'exchangeRates':
@@ -133,10 +146,14 @@ TripBundle tripBundleFromJson(Map<String, dynamic> json) {
     participants: participantsById.values.toList(),
   );
 
+  final expensePhotosBase64 = <String, String>{};
   final expenses = (json['expenses'] as List).cast<Map<String, dynamic>>().map((raw) {
     final paidForIds = (raw['paidForIds'] as List).cast<String>();
+    final expenseId = raw['id'] as String;
+    final photo = raw['photo'] as String?;
+    if (photo != null) expensePhotosBase64[expenseId] = photo;
     return Expense(
-      id: raw['id'] as String,
+      id: expenseId,
       tripId: trip.id,
       category: raw['category'] as String,
       amount: Money(
@@ -185,6 +202,7 @@ TripBundle tripBundleFromJson(Map<String, dynamic> json) {
     exchangeRates: exchangeRates,
     customCategories: customCategories,
     photoBase64: json['photo'] as String?,
+    expensePhotosBase64: expensePhotosBase64,
   );
 }
 
