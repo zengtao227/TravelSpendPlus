@@ -32,6 +32,21 @@ void main() {
     expect(categoryLabel(capturedContext, 'transport'), '交通');
   });
 
+  testWidgets('categoryLabel returns a custom (non-built-in) category name as-is', (tester) async {
+    late BuildContext capturedContext;
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('zh'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Builder(builder: (context) {
+        capturedContext = context;
+        return const SizedBox();
+      }),
+    ));
+    await tester.pumpAndSettle();
+    expect(categoryLabel(capturedContext, 'Souvenirs'), 'Souvenirs');
+  });
+
   testWidgets('formatDate uses a short readable form', (tester) async {
     late BuildContext capturedContext;
     await tester.pumpWidget(MaterialApp(

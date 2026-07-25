@@ -32,6 +32,10 @@
   "statusActual": "Actual",
   "saveExpense": "Save Expense",
   "errorSelectCategory": "Select a category",
+  "addCategory": "Add category",
+  "categoryName": "Category name",
+  "errorEnterCategoryName": "Enter a category name",
+  "errorDuplicateCategory": "This category already exists",
   "errorPositiveRate": "Enter a positive exchange rate",
   "exchangeRatePrompt": "1 {currency} = ? {homeCurrency}",
   "@exchangeRatePrompt": {

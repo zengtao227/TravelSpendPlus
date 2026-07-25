@@ -94,6 +94,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('expenseExchangeRateField')), findsOneWidget);
     await tester.enterText(find.byKey(const Key('expenseExchangeRateField')), '0.05');
+    // With every field visible (category, amount, currency, exchange rate,
+    // description, date, status), the form is taller than the default test
+    // viewport — scroll the save button into view before tapping it.
+    await tester.ensureVisible(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('saveExpenseButton')));
     await tester.pumpAndSettle();
 
@@ -103,6 +108,101 @@ void main() {
     final rates = await repo.getExchangeRates('t1');
     expect(rates.length, 1);
     expect(rates.first.fromCurrency, 'JPY');
+  });
+
+  testWidgets('adding a new category via "+ Add category" selects and persists it',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('添加分类').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('newCategoryNameField')), 'Souvenirs');
+    await tester.tap(find.byKey(const Key('confirmAddCategoryButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Souvenirs'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '50');
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    final expenses = await repo.getExpenses('t1');
+    expect(expenses.single.category, 'Souvenirs');
+    expect(await repo.getCustomCategories('t1'), ['Souvenirs']);
+  });
+
+  testWidgets('a previously-added custom category is offered again on a fresh screen',
+      (tester) async {
+    await repo.addCustomCategory('t1', 'Souvenirs');
+
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Souvenirs').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '20');
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    final expenses = await repo.getExpenses('t1');
+    expect(expenses.single.category, 'Souvenirs');
+    expect(await repo.getCustomCategories('t1'), ['Souvenirs'],
+        reason: 'picking an existing custom category must not add a duplicate row');
+  });
+
+  testWidgets('adding a category name that collides with a built-in key shows an error',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('添加分类').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('newCategoryNameField')), 'food');
+    await tester.tap(find.byKey(const Key('confirmAddCategoryButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('这个分类已经存在了'), findsOneWidget);
+    expect(await repo.getCustomCategories('t1'), isEmpty);
+  });
+
+  testWidgets('an empty category name shows an error instead of adding a blank category',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('添加分类').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirmAddCategoryButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('请输入分类名称'), findsOneWidget);
+    expect(await repo.getCustomCategories('t1'), isEmpty);
+  });
+
+  testWidgets(
+      'cancelling the add-category dialog keeps the previously selected category, not the "add" placeholder',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('餐饮').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('添加分类').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('餐饮'), findsOneWidget);
+    expect(await repo.getCustomCategories('t1'), isEmpty);
   });
 
   testWidgets('empty category shows a validation error and does not save', (tester) async {

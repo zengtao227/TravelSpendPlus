@@ -70,6 +70,27 @@ void main() {
     expect(restored.exchangeRates.single.rate, 0.05);
   });
 
+  test('customCategories round-trips through tripBundleToJson/tripBundleFromJson', () {
+    final bundle = TripBundle(
+      trip: makeTrip(),
+      expenses: const [],
+      exchangeRates: const [],
+      customCategories: const ['Souvenirs', 'Visa fee'],
+    );
+
+    final restored = tripBundleFromJson(tripBundleToJson(bundle));
+    expect(restored.customCategories, ['Souvenirs', 'Visa fee']);
+  });
+
+  test('tripBundleFromJson defaults customCategories to empty when the key is absent '
+      '(a v1 backup, made before this field existed)', () {
+    final json = tripBundleToJson(TripBundle(trip: makeTrip(), expenses: const [], exchangeRates: const []));
+    json.remove('customCategories');
+
+    final restored = tripBundleFromJson(json);
+    expect(restored.customCategories, isEmpty);
+  });
+
   test('a planned expense and a whole-number exchange rate round-trip correctly '
       '(JSON decodes whole numbers as int, not double — the rate parser must handle both)',
       () {

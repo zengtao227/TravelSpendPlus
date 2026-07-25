@@ -103,6 +103,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorSelectCategory => 'Select a category';
 
   @override
+  String get addCategory => 'Add category';
+
+  @override
+  String get categoryName => 'Category name';
+
+  @override
+  String get errorEnterCategoryName => 'Enter a category name';
+
+  @override
+  String get errorDuplicateCategory => 'This category already exists';
+
+  @override
   String get errorPositiveRate => 'Enter a positive exchange rate';
 
   @override

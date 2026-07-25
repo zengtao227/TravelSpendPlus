@@ -11,7 +11,12 @@ import 'trip.dart';
 /// older app version couldn't parse. `backupFromJson` refuses to read a
 /// backup with a higher version than this app understands (see
 /// [UnsupportedBackupVersionException]) rather than guessing.
-const int kBackupSchemaVersion = 1;
+///
+/// v2 added `customCategories` to each trip bundle. A v1 backup (no such
+/// key) still imports fine — `tripBundleFromJson` defaults it to an empty
+/// list — this bump only blocks a v2 (or later) backup from being read by
+/// an app that doesn't know about the newer field yet.
+const int kBackupSchemaVersion = 2;
 
 class UnsupportedBackupVersionException implements Exception {
   final int foundVersion;
@@ -31,7 +36,13 @@ class TripBundle {
   final Trip trip;
   final List<Expense> expenses;
   final List<ExchangeRate> exchangeRates;
-  const TripBundle({required this.trip, required this.expenses, required this.exchangeRates});
+  final List<String> customCategories;
+  const TripBundle({
+    required this.trip,
+    required this.expenses,
+    required this.exchangeRates,
+    this.customCategories = const [],
+  });
 }
 
 /// Formats as `"YYYY-MM-DD"` — a plain civil date, no time, no timezone.
@@ -79,6 +90,7 @@ Map<String, dynamic> tripBundleToJson(TripBundle bundle) {
         .toList(),
     'exchangeRates':
         bundle.exchangeRates.map((r) => {'fromCurrency': r.fromCurrency, 'rate': r.rate}).toList(),
+    'customCategories': bundle.customCategories,
   };
 }
 
@@ -133,7 +145,16 @@ TripBundle tripBundleFromJson(Map<String, dynamic> json) {
     );
   }).toList();
 
-  return TripBundle(trip: trip, expenses: expenses, exchangeRates: exchangeRates);
+  // Absent in a v1 backup (customCategories didn't exist yet) — default to
+  // empty rather than requiring the key, so old backups still import.
+  final customCategories = (json['customCategories'] as List?)?.cast<String>() ?? const [];
+
+  return TripBundle(
+    trip: trip,
+    expenses: expenses,
+    exchangeRates: exchangeRates,
+    customCategories: customCategories,
+  );
 }
 
 Map<String, dynamic> backupToJson(List<TripBundle> bundles) => {

@@ -69,7 +69,21 @@ class TripExchangeRates extends Table {
       ];
 }
 
-@DriftDatabase(tables: [Trips, Participants, Expenses, TripExchangeRates])
+/// A trip's user-added custom expense categories, additional to the fixed
+/// six built-in keys (see `domain/expense_category.dart`) — same shape and
+/// purpose as [TripExchangeRates]: a per-trip, user-extensible list.
+class TripCategories extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get tripId => text().references(Trips, #id)();
+  TextColumn get name => text()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {tripId, name},
+      ];
+}
+
+@DriftDatabase(tables: [Trips, Participants, Expenses, TripExchangeRates, TripCategories])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
@@ -82,7 +96,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -100,6 +114,9 @@ class AppDatabase extends _$AppDatabase {
               'CREATE UNIQUE INDEX IF NOT EXISTS trip_exchange_rates_trip_currency_unique '
               'ON trip_exchange_rates (trip_id, from_currency)',
             );
+          }
+          if (from < 4) {
+            await m.createTable(tripCategories);
           }
         },
       );

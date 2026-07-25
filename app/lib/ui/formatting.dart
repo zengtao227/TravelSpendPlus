@@ -13,6 +13,10 @@ String formatDate(BuildContext context, DateTime date) {
   return DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(date);
 }
 
+/// Localizes one of the fixed built-in category keys; a custom category
+/// (anything else — see `persistence/database.dart`'s TripCategories table)
+/// has no translation to look up and is already user-typed display text,
+/// so it's returned as-is.
 String categoryLabel(BuildContext context, String key) {
   final l10n = AppLocalizations.of(context)!;
   switch (key) {
@@ -29,6 +33,6 @@ String categoryLabel(BuildContext context, String key) {
     case 'other':
       return l10n.categoryOther;
     default:
-      throw ArgumentError('Unknown category key: $key');
+      return key;
   }
 }

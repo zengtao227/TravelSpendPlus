@@ -102,6 +102,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorSelectCategory => '请选择类别';
 
   @override
+  String get addCategory => '添加分类';
+
+  @override
+  String get categoryName => '分类名称';
+
+  @override
+  String get errorEnterCategoryName => '请输入分类名称';
+
+  @override
+  String get errorDuplicateCategory => '这个分类已经存在了';
+
+  @override
   String get errorPositiveRate => '请输入大于0的汇率';
 
   @override

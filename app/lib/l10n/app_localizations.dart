@@ -286,6 +286,30 @@ abstract class AppLocalizations {
   /// **'Select a category'**
   String get errorSelectCategory;
 
+  /// No description provided for @addCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add category'**
+  String get addCategory;
+
+  /// No description provided for @categoryName.
+  ///
+  /// In en, this message translates to:
+  /// **'Category name'**
+  String get categoryName;
+
+  /// No description provided for @errorEnterCategoryName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a category name'**
+  String get errorEnterCategoryName;
+
+  /// No description provided for @errorDuplicateCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'This category already exists'**
+  String get errorDuplicateCategory;
+
   /// No description provided for @errorPositiveRate.
   ///
   /// In en, this message translates to:

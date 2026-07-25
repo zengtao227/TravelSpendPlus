@@ -103,6 +103,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorSelectCategory => 'Kategorie auswählen';
 
   @override
+  String get addCategory => 'Kategorie hinzufügen';
+
+  @override
+  String get categoryName => 'Kategoriename';
+
+  @override
+  String get errorEnterCategoryName => 'Kategorienamen eingeben';
+
+  @override
+  String get errorDuplicateCategory => 'Diese Kategorie gibt es schon';
+
+  @override
   String get errorPositiveRate => 'Positiven Wechselkurs eingeben';
 
   @override

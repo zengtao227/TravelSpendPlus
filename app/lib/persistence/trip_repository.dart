@@ -276,6 +276,21 @@ class TripRepository {
     });
   }
 
+  Future<List<String>> getCustomCategories(String tripId) async {
+    final rows =
+        await (_db.select(_db.tripCategories)..where((c) => c.tripId.equals(tripId))).get();
+    return rows.map((row) => row.name).toList();
+  }
+
+  Future<void> addCustomCategory(String tripId, String name) async {
+    final existing = await (_db.select(_db.tripCategories)
+          ..where((c) => c.tripId.equals(tripId) & c.name.equals(name)))
+        .getSingleOrNull();
+    if (existing != null) return; // already exists — nothing to do
+    await _db.into(_db.tripCategories)
+        .insert(TripCategoriesCompanion.insert(tripId: tripId, name: name));
+  }
+
   /// Assembles every trip currently in the database (with its expenses and
   /// exchange rates) into one JSON-serializable backup. Pure data assembly —
   /// nothing here writes to disk or touches the OS share sheet; that's the
@@ -288,6 +303,7 @@ class TripRepository {
         trip: trip,
         expenses: await getExpenses(trip.id),
         exchangeRates: await getExchangeRates(trip.id),
+        customCategories: await getCustomCategories(trip.id),
       ));
     }
     return backupToJson(bundles);
@@ -305,6 +321,9 @@ class TripRepository {
       await createTrip(bundle.trip);
       for (final rate in bundle.exchangeRates) {
         await setExchangeRate(bundle.trip.id, rate);
+      }
+      for (final name in bundle.customCategories) {
+        await addCustomCategory(bundle.trip.id, name);
       }
       for (final expense in bundle.expenses) {
         await addExpense(expense);

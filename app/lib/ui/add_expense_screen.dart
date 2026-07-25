@@ -27,6 +27,83 @@ class AddExpenseScreen extends StatefulWidget {
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
 }
 
+// Never selectable via the DropdownButtonFormField's own item list under
+// this value — a real category name can't collide with it (guarded in
+// _promptAddCategory, which also rejects it as a typed name).
+const _kAddCategorySentinel = '__add_custom_category__';
+
+// A dedicated StatefulWidget so its TextEditingController is owned by the
+// dialog's own Element and disposed in its own dispose() — when the
+// controller was instead created/disposed by the caller around `await
+// showDialog(...)`, disposal ran the instant Navigator.pop resolved the
+// future, which is before the dialog's closing (reverse) transition
+// finishes actually tearing down the TextField still holding it, throwing
+// "A TextEditingController was used after being disposed."
+class _AddCategoryDialog extends StatefulWidget {
+  final bool Function(String trimmedName) isDuplicate;
+  const _AddCategoryDialog({required this.isDuplicate});
+
+  @override
+  State<_AddCategoryDialog> createState() => _AddCategoryDialogState();
+}
+
+class _AddCategoryDialogState extends State<_AddCategoryDialog> {
+  final _controller = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _confirm() {
+    final l10n = AppLocalizations.of(context)!;
+    final trimmed = _controller.text.trim();
+    if (trimmed.isEmpty) {
+      setState(() => _error = l10n.errorEnterCategoryName);
+      return;
+    }
+    if (widget.isDuplicate(trimmed)) {
+      setState(() => _error = l10n.errorDuplicateCategory);
+      return;
+    }
+    Navigator.pop(context, trimmed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return AlertDialog(
+      title: Text(l10n.addCategory),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            key: const Key('newCategoryNameField'),
+            controller: _controller,
+            decoration: InputDecoration(labelText: l10n.categoryName),
+            autofocus: true,
+          ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        TextButton(
+          key: const Key('confirmAddCategoryButton'),
+          onPressed: _confirm,
+          child: Text(l10n.confirm),
+        ),
+      ],
+    );
+  }
+}
+
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _formKey = GlobalKey<FormState>();
   String? _category;
@@ -37,6 +114,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   late DateTime _date;
   late ExpenseStatus _status;
   List<ExchangeRate> _existingRates = [];
+  List<String> _customCategories = [];
+  String? _categoryError;
 
   bool get _isEditing => widget.existingExpense != null;
 
@@ -52,11 +131,40 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     _date = civilDate(existing?.date ?? DateTime.now());
     _status = existing?.status ?? ExpenseStatus.actual;
     _loadRates();
+    _loadCategories();
   }
 
   Future<void> _loadRates() async {
     final rates = await widget.repository.getExchangeRates(widget.trip.id);
     if (mounted) setState(() => _existingRates = rates);
+  }
+
+  Future<void> _loadCategories() async {
+    final categories = await widget.repository.getCustomCategories(widget.trip.id);
+    if (mounted) setState(() => _customCategories = categories);
+  }
+
+  // Prompts for a new category name, persists it, and selects it. Declining
+  // (dialog cancelled) leaves _category untouched — this dropdown is a
+  // plain, fully-reactive DropdownButton (see build()), not a
+  // DropdownButtonFormField, so there's no leftover "selected" state to
+  // reset: the sentinel item was never treated as a real selection.
+  Future<void> _promptAddCategory() async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => _AddCategoryDialog(
+        isDuplicate: (trimmed) =>
+            kExpenseCategoryKeys.contains(trimmed.toLowerCase()) ||
+            _customCategories.any((c) => c.toLowerCase() == trimmed.toLowerCase()),
+      ),
+    );
+    if (name == null) return;
+    await widget.repository.addCustomCategory(widget.trip.id, name);
+    setState(() {
+      _customCategories = [..._customCategories, name];
+      _category = name;
+      _categoryError = null;
+    });
   }
 
   @override
@@ -83,9 +191,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    final l10n = AppLocalizations.of(context)!;
+    final formValid = _formKey.currentState!.validate();
+    final categoryValid = _category != null;
+    setState(() => _categoryError = categoryValid ? null : l10n.errorSelectCategory);
+    if (!formValid || !categoryValid) return;
 
     final currency = _currency;
     final amount = Money.fromMajor(double.parse(_amountController.text), currency);
@@ -159,16 +269,50 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            DropdownButtonFormField<String>(
-              key: const Key('expenseCategoryField'),
-              initialValue: _category,
-              decoration: InputDecoration(labelText: l10n.category),
-              items: [
-                for (final key in kExpenseCategoryKeys)
-                  DropdownMenuItem(value: key, child: Text(categoryLabel(context, key))),
-              ],
-              onChanged: (value) => setState(() => _category = value),
-              validator: (value) => value == null ? l10n.errorSelectCategory : null,
+            // A plain (fully-reactive) DropdownButton, not
+            // DropdownButtonFormField — the latter's FormFieldState only
+            // reads `initialValue` once and never re-syncs to an externally
+            // changed value, which broke the moment _category was updated
+            // programmatically (after adding a new category, the field kept
+            // showing the "+ Add category" placeholder as if still
+            // selected). Validation is done by hand in _save() instead of
+            // via a Form validator, matching the same manual-error-text
+            // pattern ExchangeRateSettingsScreen already uses.
+            InputDecorator(
+              decoration: InputDecoration(labelText: l10n.category, errorText: _categoryError),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  key: const Key('expenseCategoryField'),
+                  value: _category,
+                  isExpanded: true,
+                  items: [
+                    for (final key in kExpenseCategoryKeys)
+                      DropdownMenuItem(value: key, child: Text(categoryLabel(context, key))),
+                    for (final name in _customCategories)
+                      DropdownMenuItem(value: name, child: Text(name)),
+                    // Defensive: an existing expense's category might not be
+                    // in either list above yet (e.g. edit mode, first build,
+                    // before _loadCategories's Future resolves) — without
+                    // this, `value: _category` pointing at an item that
+                    // isn't in `items` throws.
+                    if (_category != null &&
+                        !kExpenseCategoryKeys.contains(_category) &&
+                        !_customCategories.contains(_category))
+                      DropdownMenuItem(value: _category, child: Text(_category!)),
+                    DropdownMenuItem(value: _kAddCategorySentinel, child: Text(l10n.addCategory)),
+                  ],
+                  onChanged: (value) {
+                    if (value == _kAddCategorySentinel) {
+                      _promptAddCategory();
+                      return;
+                    }
+                    setState(() {
+                      _category = value;
+                      _categoryError = null;
+                    });
+                  },
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             TextFormField(

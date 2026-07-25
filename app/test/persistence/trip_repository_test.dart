@@ -298,17 +298,48 @@ void main() {
     expect(expenses.first.amountInHomeCurrency, Money.fromMajor(30, 'EUR'));
   });
 
+  test('addCustomCategory then getCustomCategories round-trips, and adding the same name again '
+      'does not duplicate it', () async {
+    await repo.createTrip(makeTrip());
+    await repo.addCustomCategory('t1', 'Souvenirs');
+    var categories = await repo.getCustomCategories('t1');
+    expect(categories, ['Souvenirs']);
+
+    await repo.addCustomCategory('t1', 'Souvenirs');
+    categories = await repo.getCustomCategories('t1');
+    expect(categories, ['Souvenirs'], reason: 'adding the same name twice must not duplicate it');
+  });
+
+  test('getCustomCategories only returns categories for the given trip', () async {
+    await repo.createTrip(makeTrip());
+    await repo.createTrip(Trip(
+      id: 't2',
+      name: 'Korea',
+      startDate: DateTime(2026, 2, 1),
+      endDate: DateTime(2026, 2, 5),
+      homeCurrency: 'KRW',
+      totalBudget: Money.fromMajor(500000, 'KRW'),
+      participants: [Participant(id: 'p3', name: 'Carol')],
+    ));
+    await repo.addCustomCategory('t1', 'Souvenirs');
+    await repo.addCustomCategory('t2', 'Visa fee');
+
+    expect(await repo.getCustomCategories('t1'), ['Souvenirs']);
+    expect(await repo.getCustomCategories('t2'), ['Visa fee']);
+  });
+
   group('export/import', () {
     test('exportAllTripsToJson then importAllTripsFromJson (into a fresh db) round-trips '
-        'a trip with an expense and a rate', () async {
+        'a trip with an expense, a rate, and a custom category', () async {
       final trip = makeTrip();
       await repo.createTrip(trip);
       await repo.setExchangeRate(
           trip.id, const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'EUR', rate: 0.006));
+      await repo.addCustomCategory(trip.id, 'Souvenirs');
       await repo.addExpense(Expense(
         id: 'e1',
         tripId: trip.id,
-        category: 'food',
+        category: 'Souvenirs',
         amount: Money.fromMajor(1000, 'JPY'),
         amountInHomeCurrency: Money.fromMajor(6, 'EUR'),
         description: 'Ramen',
@@ -332,11 +363,43 @@ void main() {
       final restoredExpenses = await freshRepo.getExpenses(trip.id);
       expect(restoredExpenses, hasLength(1));
       expect(restoredExpenses.single.description, 'Ramen');
+      expect(restoredExpenses.single.category, 'Souvenirs');
       final restoredRates = await freshRepo.getExchangeRates(trip.id);
       expect(restoredRates, hasLength(1));
       expect(restoredRates.single.fromCurrency, 'JPY');
+      final restoredCategories = await freshRepo.getCustomCategories(trip.id);
+      expect(restoredCategories, ['Souvenirs']);
 
       await freshDb.close();
+    });
+
+    test('importAllTripsFromJson restores a v1 backup (no customCategories key) with an empty '
+        'custom category list, instead of failing', () async {
+      final trip = makeTrip();
+      final v1Json = {
+        'schemaVersion': 1,
+        'exportedAt': DateTime.now().toUtc().toIso8601String(),
+        'trips': [
+          {
+            'id': trip.id,
+            'name': trip.name,
+            'startDate': '2026-01-01',
+            'endDate': '2026-01-10',
+            'homeCurrency': trip.homeCurrency,
+            'totalBudgetMinorUnits': trip.totalBudget.minorUnits,
+            'participants': [
+              {'id': alice.id, 'name': alice.name},
+            ],
+            'expenses': <Map<String, dynamic>>[],
+            'exchangeRates': <Map<String, dynamic>>[],
+            // no 'customCategories' key — this is what a real v1 export looked like
+          },
+        ],
+      };
+
+      final importedCount = await repo.importAllTripsFromJson(v1Json);
+      expect(importedCount, 1);
+      expect(await repo.getCustomCategories(trip.id), isEmpty);
     });
 
     test('exportAllTripsToJson with zero trips produces an empty trips list', () async {

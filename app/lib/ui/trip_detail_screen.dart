@@ -10,7 +10,6 @@ import '../domain/civil_date.dart';
 import '../domain/currency_converter.dart';
 import '../domain/exchange_rate.dart';
 import '../domain/expense.dart';
-import '../domain/expense_category.dart';
 import '../domain/money.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
@@ -303,9 +302,14 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                             radius: 50,
                             titleStyle: const TextStyle(
                                 fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                            // Cycle by the breakdown's own position, not a
+                            // lookup into the fixed 6-key list — a custom
+                            // category isn't in kExpenseCategoryKeys at all,
+                            // and indexOf's -1 for those would have colored
+                            // every custom category identically instead of
+                            // cycling through the palette.
                             color: AppColors.categoryChartColors[
-                                kExpenseCategoryKeys.indexOf(breakdown[i].category) %
-                                    AppColors.categoryChartColors.length],
+                                i % AppColors.categoryChartColors.length],
                           ),
                       ])),
                     ),
@@ -325,8 +329,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: AppColors.categoryChartColors[
-                                          kExpenseCategoryKeys.indexOf(breakdown[i].category) %
-                                              AppColors.categoryChartColors.length],
+                                          i % AppColors.categoryChartColors.length],
                                     ),
                                   ),
                                   const SizedBox(width: 6),
