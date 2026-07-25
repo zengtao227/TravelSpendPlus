@@ -67,5 +67,13 @@
   "importSuccess": "已恢复 {count} 个行程",
   "errorImportParseFailed": "备份文件无法读取，请确认选择的是本 App 导出的备份文件",
   "errorImportUnsupportedVersion": "这个备份文件是更新版本的 App 导出的，请先升级 App",
-  "errorExportFailed": "导出失败，请重试"
+  "errorExportFailed": "导出失败，请重试",
+  "exportTripCsv": "导出为表格",
+  "csvHeaderDate": "日期",
+  "csvHeaderCategory": "类别",
+  "csvHeaderStatus": "状态",
+  "csvHeaderDescription": "备注",
+  "csvHeaderAmount": "金额",
+  "csvHeaderCurrency": "币种",
+  "csvHeaderAmountInHomeCurrency": "折合本位币金额"
 }

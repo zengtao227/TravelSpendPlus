@@ -77,5 +77,13 @@
   "@importSuccess": {"placeholders": {"count": {"type": "int"}}},
   "errorImportParseFailed": "This file couldn't be read as a TravelSpendPlus backup",
   "errorImportUnsupportedVersion": "This backup was created by a newer version of the app — please update first",
-  "errorExportFailed": "Export failed — please try again"
+  "errorExportFailed": "Export failed — please try again",
+  "exportTripCsv": "Export as CSV",
+  "csvHeaderDate": "Date",
+  "csvHeaderCategory": "Category",
+  "csvHeaderStatus": "Status",
+  "csvHeaderDescription": "Description",
+  "csvHeaderAmount": "Amount",
+  "csvHeaderCurrency": "Currency",
+  "csvHeaderAmountInHomeCurrency": "Amount (home currency)"
 }

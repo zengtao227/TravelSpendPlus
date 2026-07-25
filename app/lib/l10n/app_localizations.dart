@@ -507,6 +507,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Export failed — please try again'**
   String get errorExportFailed;
+
+  /// No description provided for @exportTripCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Export as CSV'**
+  String get exportTripCsv;
+
+  /// No description provided for @csvHeaderDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get csvHeaderDate;
+
+  /// No description provided for @csvHeaderCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get csvHeaderCategory;
+
+  /// No description provided for @csvHeaderStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get csvHeaderStatus;
+
+  /// No description provided for @csvHeaderDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get csvHeaderDescription;
+
+  /// No description provided for @csvHeaderAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get csvHeaderAmount;
+
+  /// No description provided for @csvHeaderCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get csvHeaderCurrency;
+
+  /// No description provided for @csvHeaderAmountInHomeCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount (home currency)'**
+  String get csvHeaderAmountInHomeCurrency;
 }
 
 class _AppLocalizationsDelegate

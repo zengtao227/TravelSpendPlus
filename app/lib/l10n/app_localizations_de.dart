@@ -241,4 +241,28 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get errorExportFailed =>
       'Export fehlgeschlagen — bitte erneut versuchen';
+
+  @override
+  String get exportTripCsv => 'Als CSV exportieren';
+
+  @override
+  String get csvHeaderDate => 'Datum';
+
+  @override
+  String get csvHeaderCategory => 'Kategorie';
+
+  @override
+  String get csvHeaderStatus => 'Status';
+
+  @override
+  String get csvHeaderDescription => 'Beschreibung';
+
+  @override
+  String get csvHeaderAmount => 'Betrag';
+
+  @override
+  String get csvHeaderCurrency => 'Währung';
+
+  @override
+  String get csvHeaderAmountInHomeCurrency => 'Betrag (Heimatwährung)';
 }

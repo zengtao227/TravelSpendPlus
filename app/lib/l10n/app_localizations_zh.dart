@@ -221,4 +221,28 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorExportFailed => '导出失败，请重试';
+
+  @override
+  String get exportTripCsv => '导出为表格';
+
+  @override
+  String get csvHeaderDate => '日期';
+
+  @override
+  String get csvHeaderCategory => '类别';
+
+  @override
+  String get csvHeaderStatus => '状态';
+
+  @override
+  String get csvHeaderDescription => '备注';
+
+  @override
+  String get csvHeaderAmount => '金额';
+
+  @override
+  String get csvHeaderCurrency => '币种';
+
+  @override
+  String get csvHeaderAmountInHomeCurrency => '折合本位币金额';
 }

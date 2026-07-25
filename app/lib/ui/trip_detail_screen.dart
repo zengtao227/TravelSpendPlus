@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
 
+import '../domain/backup.dart';
 import '../domain/budget_calculator.dart';
 import '../domain/category_breakdown.dart';
 import '../domain/civil_date.dart';
@@ -16,13 +17,23 @@ import '../persistence/trip_repository.dart';
 import 'add_expense_screen.dart';
 import 'create_trip_screen.dart';
 import 'exchange_rate_settings_screen.dart';
+import 'file_io.dart' as file_io;
 import 'formatting.dart';
 import 'theme.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final String tripId;
   final TripRepository repository;
-  const TripDetailScreen({super.key, required this.tripId, required this.repository});
+  final Future<String> Function(String filename, String content) writeTempFile;
+  final Future<void> Function(String path, {String? subject}) shareFile;
+
+  const TripDetailScreen({
+    super.key,
+    required this.tripId,
+    required this.repository,
+    this.writeTempFile = file_io.writeTempFile,
+    this.shareFile = file_io.shareFile,
+  });
 
   @override
   State<TripDetailScreen> createState() => _TripDetailScreenState();
@@ -105,6 +116,33 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     _refresh();
   }
 
+  Future<void> _exportCsv(Trip trip, List<Expense> expenses) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final csv = expensesToCsv(
+        expenses,
+        headers: [
+          l10n.csvHeaderDate,
+          l10n.csvHeaderCategory,
+          l10n.csvHeaderStatus,
+          l10n.csvHeaderDescription,
+          l10n.csvHeaderAmount,
+          l10n.csvHeaderCurrency,
+          l10n.csvHeaderAmountInHomeCurrency,
+        ],
+        categoryLabel: (key) => categoryLabel(context, key),
+        statusLabel: (status) =>
+            status == ExpenseStatus.actual ? l10n.statusActual : l10n.statusPlanned,
+      );
+      final safeName = trip.name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+      final path = await widget.writeTempFile('${safeName}_expenses.csv', csv);
+      await widget.shareFile(path, subject: trip.name);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.errorExportFailed)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -135,6 +173,12 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                     ));
                     _refresh();
                   },
+                ),
+                IconButton(
+                  key: const Key('exportTripCsvButton'),
+                  icon: const Icon(Icons.ios_share),
+                  tooltip: l10n.exportTripCsv,
+                  onPressed: () => _exportCsv(trip, snapshot.data!.expenses),
                 ),
               ]);
             },

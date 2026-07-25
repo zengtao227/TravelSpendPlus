@@ -25,11 +25,21 @@ void main() {
 
   tearDown(() async => db.close());
 
-  Widget wrap(String tripId) => MaterialApp(
+  Widget wrap(
+    String tripId, {
+    Future<String> Function(String, String)? writeTempFile,
+    Future<void> Function(String, {String? subject})? shareFile,
+  }) =>
+      MaterialApp(
         locale: const Locale('zh'), // tests tap/assert Chinese labels below; pin the locale explicitly
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: TripDetailScreen(tripId: tripId, repository: repo),
+        home: TripDetailScreen(
+          tripId: tripId,
+          repository: repo,
+          writeTempFile: writeTempFile ?? (name, content) async => '/tmp/$name',
+          shareFile: shareFile ?? (path, {subject}) async {},
+        ),
       );
 
   testWidgets('a not-yet-departed trip shows a countdown, not a daily budget', (tester) async {
@@ -333,5 +343,49 @@ void main() {
     expect(find.textContaining('JPY 2,000.00'), findsWidgets,
         reason: 'legend must follow the same view-currency switch as the summary card '
             '(100 CNY * 20 = 2000 JPY), not stay stuck showing home-currency amounts');
+  });
+
+  testWidgets('the CSV export button shares a file containing one row per expense',
+      (tester) async {
+    final trip = Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime(2026, 10, 5),
+      endDate: DateTime(2026, 10, 12),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    );
+    await repo.createTrip(trip);
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(300, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+      description: 'Dinner',
+      date: DateTime(2026, 10, 6),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    String? writtenContent;
+    await tester.pumpWidget(wrap(
+      't1',
+      writeTempFile: (name, content) async {
+        writtenContent = content;
+        return '/tmp/$name';
+      },
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('exportTripCsvButton')));
+    await tester.pumpAndSettle();
+
+    expect(writtenContent, isNotNull);
+    expect(writtenContent, contains('Dinner'));
+    expect(writtenContent, contains('2026-10-06'));
   });
 }
