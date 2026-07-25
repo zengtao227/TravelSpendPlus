@@ -61,5 +61,11 @@
   "myTrips": "我的行程",
   "noTripsYet": "还没有行程，点右下角开始规划你的第一趟旅行",
   "plannedTotal": "已计划",
-  "spentTotal": "已花费"
+  "spentTotal": "已花费",
+  "backupAll": "完整备份",
+  "restoreFromBackup": "从备份恢复",
+  "importSuccess": "已恢复 {count} 个行程",
+  "errorImportParseFailed": "备份文件无法读取，请确认选择的是本 App 导出的备份文件",
+  "errorImportUnsupportedVersion": "这个备份文件是更新版本的 App 导出的，请先升级 App",
+  "errorExportFailed": "导出失败，请重试"
 }

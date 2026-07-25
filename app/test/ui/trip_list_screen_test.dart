@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
+import 'package:travelspendplus/domain/backup.dart';
 import 'package:travelspendplus/domain/expense.dart';
 import 'package:travelspendplus/domain/money.dart';
 import 'package:travelspendplus/domain/participant.dart';
@@ -22,10 +25,20 @@ void main() {
 
   tearDown(() async => db.close());
 
-  Widget wrap() => MaterialApp(
+  Widget wrap({
+    Future<String> Function(String, String)? writeTempFile,
+    Future<void> Function(String, {String? subject})? shareFile,
+    Future<String?> Function()? pickJsonFile,
+  }) =>
+      MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: TripListScreen(repository: repo),
+        home: TripListScreen(
+          repository: repo,
+          writeTempFile: writeTempFile ?? (name, content) async => '/tmp/$name',
+          shareFile: shareFile ?? (path, {subject}) async {},
+          pickJsonFile: pickJsonFile ?? () async => null,
+        ),
       );
 
   testWidgets('shows an empty-state message when there are no trips', (tester) async {
@@ -110,5 +123,83 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     expect(find.byType(CreateTripScreen), findsOneWidget);
+  });
+
+  testWidgets('tapping the backup button shares a JSON file containing the exported data',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan Trip',
+      startDate: DateTime(2026, 10, 5),
+      endDate: DateTime(2026, 10, 12),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+
+    String? sharedPath;
+    Map<String, dynamic>? writtenContent;
+    await tester.pumpWidget(wrap(
+      writeTempFile: (name, content) async {
+        writtenContent = jsonDecode(content) as Map<String, dynamic>;
+        return '/tmp/$name';
+      },
+      shareFile: (path, {subject}) async => sharedPath = path,
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('backupAllButton')));
+    await tester.pumpAndSettle();
+
+    expect(sharedPath, isNotNull);
+    expect(writtenContent, isNotNull);
+    expect(writtenContent!['trips'], hasLength(1));
+    expect((writtenContent!['trips'] as List).first, containsPair('name', 'Japan Trip'));
+  });
+
+  testWidgets('the empty state offers a restore-from-backup button that imports the picked backup',
+      (tester) async {
+    final backupJson = backupToJson([
+      TripBundle(
+        trip: Trip(
+          id: 't1',
+          name: 'Restored Trip',
+          startDate: DateTime(2026, 1, 1),
+          endDate: DateTime(2026, 1, 5),
+          homeCurrency: 'EUR',
+          totalBudget: Money.fromMajor(1000, 'EUR'),
+          participants: [me],
+        ),
+        expenses: const [],
+        exchangeRates: const [],
+      ),
+    ]);
+
+    // pickJsonFile returns the file's *content* (see Task 4), so this fake
+    // can hand back a fabricated backup string directly — no real
+    // filesystem access needed to exercise the full real import path
+    // (jsonDecode -> TripRepository.importAllTripsFromJson -> the real
+    // in-memory database).
+    await tester.pumpWidget(wrap(pickJsonFile: () async => jsonEncode(backupJson)));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('restoreFromBackupButton')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('restoreFromBackupButton')));
+    await tester.pumpAndSettle();
+
+    // The empty state is gone and the restored trip's own card is showing —
+    // proof the button actually drove a real import, not just that it exists.
+    expect(find.text('Restored Trip'), findsOneWidget);
+  });
+
+  testWidgets('a failed import shows an error message instead of failing silently',
+      (tester) async {
+    await tester.pumpWidget(wrap(pickJsonFile: () async => 'not valid json{{{'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('restoreFromBackupButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('This file couldn\'t be read as a TravelSpendPlus backup'), findsOneWidget);
   });
 }

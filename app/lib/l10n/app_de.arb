@@ -63,5 +63,12 @@
   "myTrips": "Meine Reisen",
   "noTripsYet": "Noch keine Reisen — tippe auf +, um deine erste zu planen",
   "plannedTotal": "Geplant",
-  "spentTotal": "Ausgegeben"
+  "spentTotal": "Ausgegeben",
+  "backupAll": "Vollständiges Backup",
+  "restoreFromBackup": "Aus Backup wiederherstellen",
+  "importSuccess": "{count, plural, =1{1 Reise wiederhergestellt} other{{count} Reisen wiederhergestellt}}",
+  "@importSuccess": {"placeholders": {"count": {"type": "int"}}},
+  "errorImportParseFailed": "Diese Datei konnte nicht als TravelSpendPlus-Backup gelesen werden",
+  "errorImportUnsupportedVersion": "Dieses Backup wurde mit einer neueren App-Version erstellt — bitte zuerst aktualisieren",
+  "errorExportFailed": "Export fehlgeschlagen — bitte erneut versuchen"
 }

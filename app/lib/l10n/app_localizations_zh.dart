@@ -201,4 +201,24 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get spentTotal => '已花费';
+
+  @override
+  String get backupAll => '完整备份';
+
+  @override
+  String get restoreFromBackup => '从备份恢复';
+
+  @override
+  String importSuccess(int count) {
+    return '已恢复 $count 个行程';
+  }
+
+  @override
+  String get errorImportParseFailed => '备份文件无法读取，请确认选择的是本 App 导出的备份文件';
+
+  @override
+  String get errorImportUnsupportedVersion => '这个备份文件是更新版本的 App 导出的，请先升级 App';
+
+  @override
+  String get errorExportFailed => '导出失败，请重试';
 }

@@ -212,4 +212,33 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get spentTotal => 'Ausgegeben';
+
+  @override
+  String get backupAll => 'Vollständiges Backup';
+
+  @override
+  String get restoreFromBackup => 'Aus Backup wiederherstellen';
+
+  @override
+  String importSuccess(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Reisen wiederhergestellt',
+      one: '1 Reise wiederhergestellt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get errorImportParseFailed =>
+      'Diese Datei konnte nicht als TravelSpendPlus-Backup gelesen werden';
+
+  @override
+  String get errorImportUnsupportedVersion =>
+      'Dieses Backup wurde mit einer neueren App-Version erstellt — bitte zuerst aktualisieren';
+
+  @override
+  String get errorExportFailed =>
+      'Export fehlgeschlagen — bitte erneut versuchen';
 }
