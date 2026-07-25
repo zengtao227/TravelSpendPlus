@@ -115,4 +115,52 @@ void main() {
     expect(restored.expenses, isEmpty);
     expect(restored.exchangeRates, isEmpty);
   });
+
+  group('expensesToCsv', () {
+    Expense expenseWith({required String description, required double amountMajor}) => Expense(
+          id: 'e-$description',
+          tripId: 't1',
+          category: 'food',
+          amount: Money.fromMajor(amountMajor, 'JPY'),
+          amountInHomeCurrency: Money.fromMajor(amountMajor * 0.05, 'CNY'),
+          description: description,
+          date: DateTime.utc(2026, 10, 6),
+          status: ExpenseStatus.actual,
+          includeInSplit: true,
+          paidBy: alice,
+          paidFor: [alice],
+        );
+
+    String label(String key) => key == 'food' ? 'Food' : key;
+    String status(ExpenseStatus s) => s == ExpenseStatus.actual ? 'Actual' : 'Planned';
+    const headers = ['Date', 'Category', 'Status', 'Description', 'Amount', 'Currency', 'In CNY'];
+
+    test('produces a header row plus one row per expense', () {
+      final csv = expensesToCsv(
+        [expenseWith(description: 'Ramen', amountMajor: 1000)],
+        headers: headers,
+        categoryLabel: label,
+        statusLabel: status,
+      );
+      final lines = csv.trim().split('\r\n');
+      expect(lines, hasLength(2));
+      expect(lines[0], 'Date,Category,Status,Description,Amount,Currency,In CNY');
+      expect(lines[1], '2026-10-06,Food,Actual,Ramen,1000.00,JPY,50.00');
+    });
+
+    test('escapes a description containing a comma', () {
+      final csv = expensesToCsv(
+        [expenseWith(description: 'Ramen, extra egg', amountMajor: 1000)],
+        headers: headers,
+        categoryLabel: label,
+        statusLabel: status,
+      );
+      expect(csv, contains('"Ramen, extra egg"'));
+    });
+
+    test('an empty expense list produces just the header row', () {
+      final csv = expensesToCsv([], headers: headers, categoryLabel: label, statusLabel: status);
+      expect(csv.trim().split('\r\n'), hasLength(1));
+    });
+  });
 }

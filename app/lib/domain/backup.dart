@@ -1,3 +1,5 @@
+import 'package:csv/csv.dart';
+
 import 'civil_date.dart';
 import 'exchange_rate.dart';
 import 'expense.dart';
@@ -146,4 +148,32 @@ List<TripBundle> backupFromJson(Map<String, dynamic> json) {
     throw UnsupportedBackupVersionException(version ?? 0);
   }
   return (json['trips'] as List).cast<Map<String, dynamic>>().map(tripBundleFromJson).toList();
+}
+
+/// One row per expense, in the exact order given (callers typically pass
+/// `TripRepository.getExpenses`'s own order). [headers], [categoryLabel],
+/// and [statusLabel] are supplied by the caller because they're localized
+/// display text — this file has no dependency on Flutter/`AppLocalizations`
+/// so it stays unit-testable without a widget test harness.
+String expensesToCsv(
+  List<Expense> expenses, {
+  required List<String> headers,
+  required String Function(String categoryKey) categoryLabel,
+  required String Function(ExpenseStatus status) statusLabel,
+}) {
+  final rows = <List<String>>[headers];
+  for (final e in expenses) {
+    rows.add([
+      dateToBackupString(e.date),
+      categoryLabel(e.category),
+      statusLabel(e.status),
+      e.description,
+      e.amount.major.toStringAsFixed(2),
+      e.amount.currencyCode,
+      e.amountInHomeCurrency.major.toStringAsFixed(2),
+    ]);
+  }
+  // `csv` is this package's default top-level `Csv()` instance (csv 8.x
+  // redesigned the API away from the older `ListToCsvConverter` class).
+  return csv.encode(rows);
 }
