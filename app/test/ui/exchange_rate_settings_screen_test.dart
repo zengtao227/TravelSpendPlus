@@ -80,7 +80,8 @@ void main() {
     expect(find.byKey(const Key('directRateField_CNY')), findsOneWidget);
     expect(find.byKey(const Key('confirmChangeCurrencyButton')), findsOneWidget);
 
-    await tester.enterText(find.byKey(const Key('directRateField_CNY')), '20');
+    // "1 JPY = ? CNY" — the new home currency first.
+    await tester.enterText(find.byKey(const Key('directRateField_CNY')), '0.05');
     await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
     await tester.pumpAndSettle();
 
@@ -123,12 +124,16 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('JPY').last);
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('directRateField_CNY')), '20');
+    // "1 JPY = 0.05 CNY" — the new home currency first, same direction as
+    // every other rate field in the app ("1 home = ? foreign").
+    await tester.enterText(find.byKey(const Key('directRateField_CNY')), '0.05');
     await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
     await tester.pumpAndSettle();
 
     final reloaded = await repo.getTrip('t1');
     expect(reloaded!.homeCurrency, 'JPY');
+    // Stored as "1 CNY = ? JPY" internally regardless of typed direction:
+    // 1 / 0.05 = 20.
     expect(reloaded.totalBudget.major, closeTo(20000 * 20, 0.01));
   });
 
@@ -190,8 +195,12 @@ void main() {
     expect(find.byKey(const Key('directRateField_CNY')), findsOneWidget);
     expect(find.byKey(const Key('directRateField_JPY')), findsOneWidget);
 
-    await tester.enterText(find.byKey(const Key('directRateField_CNY')), '0.13');
-    await tester.enterText(find.byKey(const Key('directRateField_JPY')), '0.0062');
+    // "1 CHF = 8 CNY" and "1 CHF = 170 JPY" — the new home currency (CHF)
+    // first, matching the "1 home = ? foreign" direction used everywhere
+    // else. Stored internally as the reciprocal: "1 CNY = 0.125 CHF" and
+    // "1 JPY = ~0.005882 CHF".
+    await tester.enterText(find.byKey(const Key('directRateField_CNY')), '8');
+    await tester.enterText(find.byKey(const Key('directRateField_JPY')), '170');
     // The extra direct-rate fields (each with its own market-rate helper)
     // push the confirm button beyond the ListView sliver's layout cache
     // extent, where it has no geometry yet — ensureVisible can't locate an
@@ -206,10 +215,10 @@ void main() {
 
     final reloaded = await repo.getTrip('t1');
     expect(reloaded!.homeCurrency, 'CHF');
-    expect(reloaded.totalBudget.major, closeTo(20000 * 0.13, 0.01));
+    expect(reloaded.totalBudget.major, closeTo(20000 * (1 / 8), 0.01));
     final rates = await repo.getExchangeRates('t1');
     final jpyRate = rates.firstWhere((r) => r.fromCurrency == 'JPY');
-    expect(jpyRate.rate, closeTo(0.0062, 0.0001),
+    expect(jpyRate.rate, closeTo(1 / 170, 0.0001),
         reason: 'must use the direct JPY rate typed in, not one derived via CNY');
   });
 

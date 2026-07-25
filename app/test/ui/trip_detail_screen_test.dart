@@ -418,7 +418,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('CHF').last);
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('directRateField_EUR')), '0.95');
+    // "1 CHF = 1 EUR" — the new home currency (CHF) first.
+    await tester.enterText(find.byKey(const Key('directRateField_EUR')), '1');
     await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
     await tester.pumpAndSettle();
 
@@ -429,7 +430,7 @@ void main() {
     // own recorded currency — so check the *summary card* specifically,
     // not "no EUR text anywhere on the page."
     expect(find.byType(ExchangeRateSettingsScreen), findsNothing);
-    expect(find.text('CHF 950.00'), findsOneWidget); // 1000 EUR * 0.95
+    expect(find.text('CHF 1,000.00'), findsOneWidget); // 1000 EUR * 1
     var reloaded = await repo.getTrip('t1');
     expect(reloaded!.homeCurrency, 'CHF');
 
@@ -444,7 +445,7 @@ void main() {
     await tester.tap(find.byKey(const Key('saveExpenseButton')));
     await tester.pumpAndSettle();
 
-    expect(find.text('CHF 950.00'), findsOneWidget, reason: 'budget must still read in CHF');
+    expect(find.text('CHF 1,000.00'), findsOneWidget, reason: 'budget must still read in CHF');
     reloaded = await repo.getTrip('t1');
     expect(reloaded!.homeCurrency, 'CHF', reason: 'editing an unrelated expense field must not revert the home currency');
   });
@@ -504,12 +505,13 @@ void main() {
     expect(find.byKey(const Key('directRateField_CHF')), findsNothing,
         reason: 'CHF is becoming the home currency, it needs no rate to itself');
 
-    await tester.enterText(find.byKey(const Key('directRateField_EUR')), '0.95');
+    // "1 CHF = 1 EUR" — the new home currency (CHF) first.
+    await tester.enterText(find.byKey(const Key('directRateField_EUR')), '1');
     await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
     await tester.pumpAndSettle();
 
     expect(find.byType(ExchangeRateSettingsScreen), findsNothing);
-    expect(find.text('CHF 950.00'), findsOneWidget);
+    expect(find.text('CHF 1,000.00'), findsOneWidget);
     final reloaded = await repo.getTrip('t1');
     expect(reloaded!.homeCurrency, 'CHF');
     final rates = await repo.getExchangeRates('t1');
@@ -591,7 +593,8 @@ void main() {
     expect(find.byType(ExchangeRateSettingsScreen), findsOneWidget);
     expect(find.byKey(const Key('directRateField_CNY')), findsOneWidget);
 
-    await tester.enterText(find.byKey(const Key('directRateField_CNY')), '20');
+    // "1 JPY = 0.05 CNY" — the new home currency (JPY) first.
+    await tester.enterText(find.byKey(const Key('directRateField_CNY')), '0.05');
     await tester.tap(find.byKey(const Key('confirmChangeCurrencyButton')));
     await tester.pumpAndSettle();
 

@@ -149,18 +149,22 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
       _showChangeCurrencyError(l10n.errorSameCurrency);
       return;
     }
-    // One direct "1 currency = ? newCurrency" rate per currency actually in
-    // use in the trip — never derived by chaining through another currency,
-    // so e.g. a JPY expense gets its own real JPY->newCurrency rate instead
-    // of being funneled through the old home currency's rate.
+    // One direct rate per currency actually in use in the trip — never
+    // derived by chaining through another currency, so e.g. a JPY expense
+    // gets its own real JPY->newCurrency rate instead of being funneled
+    // through the old home currency's rate. Each field prompts "1
+    // newCurrency = ? currency" (the new home currency first, matching the
+    // "1 home = ? foreign" direction used everywhere else in the app), so
+    // the typed value is inverted to get "1 currency = ? newCurrency" for
+    // TripRepository.changeHomeCurrency.
     final rates = <String, double>{};
     for (final currency in requiredCurrencies) {
-      final rate = double.tryParse(_directRateControllerFor(currency).text);
-      if (rate == null || rate <= 0) {
+      final typed = double.tryParse(_directRateControllerFor(currency).text);
+      if (typed == null || typed <= 0) {
         _showChangeCurrencyError(l10n.errorPositiveRate);
         return;
       }
-      rates[currency] = rate;
+      rates[currency] = 1 / typed;
     }
     setState(() => _changeCurrencyError = null);
     await widget.repository.changeHomeCurrency(
@@ -265,14 +269,19 @@ class _ExchangeRateSettingsScreenState extends State<ExchangeRateSettingsScreen>
                           key: Key('directRateField_$currency'),
                           controller: _directRateControllerFor(currency),
                           decoration: InputDecoration(
-                            labelText: l10n.oldToNewRateLabel(currency, _newHomeCurrency),
+                            // "1 newHomeCurrency = ? currency" — the new
+                            // home currency first, matching the "1 home =
+                            // ? foreign" direction used everywhere else in
+                            // the app (see _confirmChangeCurrency for the
+                            // corresponding inversion when storing this).
+                            labelText: l10n.oldToNewRateLabel(_newHomeCurrency, currency),
                           ),
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         ),
                         MarketRateHelper(
                           key: ValueKey('market-rate-$currency-$_newHomeCurrency'),
-                          fromCurrency: currency,
-                          toCurrency: _newHomeCurrency,
+                          fromCurrency: _newHomeCurrency,
+                          toCurrency: currency,
                           targetController: _directRateControllerFor(currency),
                           liveRateService: _liveRateService,
                         ),
