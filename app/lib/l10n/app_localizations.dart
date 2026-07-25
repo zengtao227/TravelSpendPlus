@@ -628,6 +628,12 @@ abstract class AppLocalizations {
   /// **'Date'**
   String get csvHeaderDate;
 
+  /// No description provided for @csvHeaderEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get csvHeaderEndDate;
+
   /// No description provided for @csvHeaderCategory.
   ///
   /// In en, this message translates to:
@@ -646,6 +652,12 @@ abstract class AppLocalizations {
   /// **'Description'**
   String get csvHeaderDescription;
 
+  /// No description provided for @csvHeaderLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get csvHeaderLocation;
+
   /// No description provided for @csvHeaderAmount.
   ///
   /// In en, this message translates to:
@@ -663,6 +675,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Amount (home currency)'**
   String get csvHeaderAmountInHomeCurrency;
+
+  /// No description provided for @location.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get location;
+
+  /// No description provided for @locationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. a city'**
+  String get locationHint;
 }
 
 class _AppLocalizationsDelegate

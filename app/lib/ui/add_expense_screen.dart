@@ -115,7 +115,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   late String _currency;
   late final TextEditingController _descriptionController;
   final _exchangeRateController = TextEditingController();
+  late final TextEditingController _locationController;
   late DateTime _date;
+  late DateTime _endDate;
   late ExpenseStatus _status;
   List<ExchangeRate> _existingRates = [];
   List<String> _customCategories = [];
@@ -134,7 +136,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         TextEditingController(text: existing != null ? existing.amount.major.toString() : '');
     _currency = existing?.amount.currencyCode ?? widget.trip.homeCurrency;
     _descriptionController = TextEditingController(text: existing?.description ?? '');
+    _locationController = TextEditingController(text: existing?.location ?? '');
     _date = civilDate(existing?.date ?? DateTime.now());
+    // Defaults to the same single day as _date — most expenses don't span
+    // more than one, and the picker only needs to be touched for the ones
+    // that do (e.g. a multi-night hotel stay).
+    _endDate = civilDate(existing?.endDate ?? _date);
     _status = existing?.status ?? ExpenseStatus.actual;
     _loadRates();
     _loadCategories();
@@ -177,6 +184,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
+    _locationController.dispose();
     _exchangeRateController.dispose();
     super.dispose();
   }
@@ -193,7 +201,25 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (picked != null) setState(() => _date = civilDate(picked));
+    if (picked == null) return;
+    setState(() {
+      _date = civilDate(picked);
+      // Keep endDate a valid single-day span by default when the start
+      // date moves past it — Expense rejects endDate before date, and a
+      // user picking a new start date isn't necessarily also thinking
+      // about the end date they set earlier.
+      if (_endDate.isBefore(_date)) _endDate = _date;
+    });
+  }
+
+  Future<void> _pickEndDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate,
+      firstDate: _date,
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) setState(() => _endDate = civilDate(picked));
   }
 
   Future<void> _save() async {
@@ -256,6 +282,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       amountInHomeCurrency: amountInHomeCurrency,
       description: _descriptionController.text.trim(),
       date: _date,
+      endDate: _endDate,
+      location: _locationController.text.trim(),
       status: _status,
       includeInSplit: true,
       paidBy: existing?.paidBy ?? participant,
@@ -381,10 +409,24 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               decoration: InputDecoration(labelText: l10n.description),
             ),
             const SizedBox(height: 12),
+            TextFormField(
+              key: const Key('expenseLocationField'),
+              controller: _locationController,
+              decoration:
+                  InputDecoration(labelText: l10n.location, hintText: l10n.locationHint),
+            ),
+            const SizedBox(height: 12),
             ListTile(
+              key: const Key('expenseDateField'),
               title: Text(l10n.date),
               subtitle: Text(formatDate(context, _date)),
               onTap: _pickDate,
+            ),
+            ListTile(
+              key: const Key('expenseEndDateField'),
+              title: Text(l10n.endDate),
+              subtitle: Text(formatDate(context, _endDate)),
+              onTap: _pickEndDate,
             ),
             const SizedBox(height: 12),
             SegmentedButton<ExpenseStatus>(

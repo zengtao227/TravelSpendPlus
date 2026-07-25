@@ -16,6 +16,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(30.00, 'EUR'),
       description: 'Dinner',
       date: DateTime(2026, 1, 3),
+      endDate: DateTime(2026, 1, 3),
+      location: '',
       status: status,
       includeInSplit: includeInSplit,
       paidBy: alice,
@@ -43,6 +45,8 @@ void main() {
         amountInHomeCurrency: Money.fromMajor(30.00, 'EUR'),
         description: 'Dinner',
         date: DateTime(2026, 1, 3),
+        endDate: DateTime(2026, 1, 3),
+        location: '',
         status: ExpenseStatus.actual,
         includeInSplit: true,
         paidBy: alice,
@@ -85,5 +89,60 @@ void main() {
       actualAmountInHomeCurrency: Money.fromMajor(35.00, 'EUR'),
     );
     expect(actual.amount, Money.fromMajor(35.00, 'EUR'));
+  });
+
+  test('an endDate before date throws — the amount always counts once, on date, so an end '
+      'before the start would just be a contradiction, not a shorter span', () {
+    expect(
+      () => Expense(
+        id: 'e1',
+        tripId: 't1',
+        category: 'Food',
+        amount: Money.fromMajor(30.00, 'EUR'),
+        amountInHomeCurrency: Money.fromMajor(30.00, 'EUR'),
+        description: 'Dinner',
+        date: DateTime(2026, 1, 3),
+        endDate: DateTime(2026, 1, 2),
+        location: '',
+        status: ExpenseStatus.actual,
+        includeInSplit: true,
+        paidBy: alice,
+        paidFor: [alice],
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('endDate equal to date (the ordinary single-day case) constructs fine', () {
+    final e = makeExpense();
+    expect(e.endDate, e.date);
+  });
+
+  test('endDate after date (a multi-day expense, e.g. a hotel stay) constructs fine', () {
+    final e = Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'Lodging',
+      amount: Money.fromMajor(500.00, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(500.00, 'EUR'),
+      description: 'Hotel',
+      date: DateTime(2026, 1, 3),
+      endDate: DateTime(2026, 1, 10),
+      location: 'Paris',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    );
+    expect(e.endDate, DateTime(2026, 1, 10));
+    expect(e.location, 'Paris');
+  });
+
+  test('copyWith can override endDate and location independently', () {
+    final e = makeExpense();
+    final updated = e.copyWith(endDate: DateTime(2026, 1, 5), location: 'Tokyo');
+    expect(updated.endDate, DateTime(2026, 1, 5));
+    expect(updated.location, 'Tokyo');
+    expect(updated.date, e.date, reason: 'date itself must stay untouched');
   });
 }

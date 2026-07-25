@@ -107,10 +107,14 @@
   "deleteExpense": "Delete expense",
   "deleteExpenseConfirm": "Delete this expense? This can't be undone.",
   "csvHeaderDate": "Date",
+  "csvHeaderEndDate": "End date",
   "csvHeaderCategory": "Category",
   "csvHeaderStatus": "Status",
   "csvHeaderDescription": "Description",
+  "csvHeaderLocation": "Location",
   "csvHeaderAmount": "Amount",
   "csvHeaderCurrency": "Currency",
-  "csvHeaderAmountInHomeCurrency": "Amount (home currency)"
+  "csvHeaderAmountInHomeCurrency": "Amount (home currency)",
+  "location": "Location",
+  "locationHint": "e.g. a city"
 }

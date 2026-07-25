@@ -16,6 +16,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(amount, 'EUR'),
       description: category,
       date: DateTime(2026, 1, 2),
+      endDate: DateTime(2026, 1, 2),
+      location: '',
       status: status,
       includeInSplit: status == ExpenseStatus.actual,
       paidBy: alice,

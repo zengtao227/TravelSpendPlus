@@ -16,7 +16,11 @@ import 'trip.dart';
 /// key) still imports fine — `tripBundleFromJson` defaults it to an empty
 /// list — this bump only blocks a v2 (or later) backup from being read by
 /// an app that doesn't know about the newer field yet.
-const int kBackupSchemaVersion = 2;
+///
+/// v3 added `endDate` and `location` to each expense. An older backup
+/// missing either key still imports fine — `endDate` defaults to the
+/// expense's own `date`, `location` defaults to `''`.
+const int kBackupSchemaVersion = 3;
 
 class UnsupportedBackupVersionException implements Exception {
   final int foundVersion;
@@ -82,6 +86,8 @@ Map<String, dynamic> tripBundleToJson(TripBundle bundle) {
               'amountInHomeCurrencyMinorUnits': e.amountInHomeCurrency.minorUnits,
               'description': e.description,
               'date': dateToBackupString(e.date),
+              'endDate': dateToBackupString(e.endDate),
+              'location': e.location,
               'status': e.status == ExpenseStatus.actual ? 'actual' : 'planned',
               'includeInSplit': e.includeInSplit,
               'paidById': e.paidBy.id,
@@ -128,6 +134,12 @@ TripBundle tripBundleFromJson(Map<String, dynamic> json) {
       ),
       description: raw['description'] as String,
       date: dateFromBackupString(raw['date'] as String),
+      // Absent in a pre-v3 backup — default to the same day (endDate) and
+      // no location, matching how a pre-migration DB row reads too.
+      endDate: raw['endDate'] != null
+          ? dateFromBackupString(raw['endDate'] as String)
+          : dateFromBackupString(raw['date'] as String),
+      location: raw['location'] as String? ?? '',
       status: raw['status'] == 'actual' ? ExpenseStatus.actual : ExpenseStatus.planned,
       includeInSplit: raw['includeInSplit'] as bool,
       paidBy: participantsById[raw['paidById'] as String]!,
@@ -186,9 +198,11 @@ String expensesToCsv(
   for (final e in expenses) {
     rows.add([
       dateToBackupString(e.date),
+      dateToBackupString(e.endDate),
       categoryLabel(e.category),
       statusLabel(e.status),
       e.description,
+      e.location,
       e.amount.major.toStringAsFixed(2),
       e.amount.currencyCode,
       e.amountInHomeCurrency.major.toStringAsFixed(2),

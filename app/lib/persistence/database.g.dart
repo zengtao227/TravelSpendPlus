@@ -781,6 +781,29 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _endDateMeta = const VerificationMeta(
+    'endDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endDate = GeneratedColumn<DateTime>(
+    'end_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _locationMeta = const VerificationMeta(
+    'location',
+  );
+  @override
+  late final GeneratedColumn<String> location = GeneratedColumn<String>(
+    'location',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -839,6 +862,8 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     amountInHomeCurrencyMinorUnits,
     description,
     date,
+    endDate,
+    location,
     status,
     includeInSplit,
     paidById,
@@ -929,6 +954,18 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     } else if (isInserting) {
       context.missing(_dateMeta);
     }
+    if (data.containsKey('end_date')) {
+      context.handle(
+        _endDateMeta,
+        endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
+      );
+    }
+    if (data.containsKey('location')) {
+      context.handle(
+        _locationMeta,
+        location.isAcceptableOrUnknown(data['location']!, _locationMeta),
+      );
+    }
     if (data.containsKey('status')) {
       context.handle(
         _statusMeta,
@@ -1008,6 +1045,14 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}date'],
       )!,
+      endDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}end_date'],
+      ),
+      location: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}location'],
+      )!,
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -1042,6 +1087,8 @@ class Expense extends DataClass implements Insertable<Expense> {
   final int amountInHomeCurrencyMinorUnits;
   final String description;
   final DateTime date;
+  final DateTime? endDate;
+  final String location;
   final String status;
   final bool includeInSplit;
   final String paidById;
@@ -1055,6 +1102,8 @@ class Expense extends DataClass implements Insertable<Expense> {
     required this.amountInHomeCurrencyMinorUnits,
     required this.description,
     required this.date,
+    this.endDate,
+    required this.location,
     required this.status,
     required this.includeInSplit,
     required this.paidById,
@@ -1073,6 +1122,10 @@ class Expense extends DataClass implements Insertable<Expense> {
     );
     map['description'] = Variable<String>(description);
     map['date'] = Variable<DateTime>(date);
+    if (!nullToAbsent || endDate != null) {
+      map['end_date'] = Variable<DateTime>(endDate);
+    }
+    map['location'] = Variable<String>(location);
     map['status'] = Variable<String>(status);
     map['include_in_split'] = Variable<bool>(includeInSplit);
     map['paid_by_id'] = Variable<String>(paidById);
@@ -1090,6 +1143,10 @@ class Expense extends DataClass implements Insertable<Expense> {
       amountInHomeCurrencyMinorUnits: Value(amountInHomeCurrencyMinorUnits),
       description: Value(description),
       date: Value(date),
+      endDate: endDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDate),
+      location: Value(location),
       status: Value(status),
       includeInSplit: Value(includeInSplit),
       paidById: Value(paidById),
@@ -1113,6 +1170,8 @@ class Expense extends DataClass implements Insertable<Expense> {
       ),
       description: serializer.fromJson<String>(json['description']),
       date: serializer.fromJson<DateTime>(json['date']),
+      endDate: serializer.fromJson<DateTime?>(json['endDate']),
+      location: serializer.fromJson<String>(json['location']),
       status: serializer.fromJson<String>(json['status']),
       includeInSplit: serializer.fromJson<bool>(json['includeInSplit']),
       paidById: serializer.fromJson<String>(json['paidById']),
@@ -1133,6 +1192,8 @@ class Expense extends DataClass implements Insertable<Expense> {
       ),
       'description': serializer.toJson<String>(description),
       'date': serializer.toJson<DateTime>(date),
+      'endDate': serializer.toJson<DateTime?>(endDate),
+      'location': serializer.toJson<String>(location),
       'status': serializer.toJson<String>(status),
       'includeInSplit': serializer.toJson<bool>(includeInSplit),
       'paidById': serializer.toJson<String>(paidById),
@@ -1149,6 +1210,8 @@ class Expense extends DataClass implements Insertable<Expense> {
     int? amountInHomeCurrencyMinorUnits,
     String? description,
     DateTime? date,
+    Value<DateTime?> endDate = const Value.absent(),
+    String? location,
     String? status,
     bool? includeInSplit,
     String? paidById,
@@ -1163,6 +1226,8 @@ class Expense extends DataClass implements Insertable<Expense> {
         amountInHomeCurrencyMinorUnits ?? this.amountInHomeCurrencyMinorUnits,
     description: description ?? this.description,
     date: date ?? this.date,
+    endDate: endDate.present ? endDate.value : this.endDate,
+    location: location ?? this.location,
     status: status ?? this.status,
     includeInSplit: includeInSplit ?? this.includeInSplit,
     paidById: paidById ?? this.paidById,
@@ -1187,6 +1252,8 @@ class Expense extends DataClass implements Insertable<Expense> {
           ? data.description.value
           : this.description,
       date: data.date.present ? data.date.value : this.date,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      location: data.location.present ? data.location.value : this.location,
       status: data.status.present ? data.status.value : this.status,
       includeInSplit: data.includeInSplit.present
           ? data.includeInSplit.value
@@ -1211,6 +1278,8 @@ class Expense extends DataClass implements Insertable<Expense> {
           )
           ..write('description: $description, ')
           ..write('date: $date, ')
+          ..write('endDate: $endDate, ')
+          ..write('location: $location, ')
           ..write('status: $status, ')
           ..write('includeInSplit: $includeInSplit, ')
           ..write('paidById: $paidById, ')
@@ -1229,6 +1298,8 @@ class Expense extends DataClass implements Insertable<Expense> {
     amountInHomeCurrencyMinorUnits,
     description,
     date,
+    endDate,
+    location,
     status,
     includeInSplit,
     paidById,
@@ -1247,6 +1318,8 @@ class Expense extends DataClass implements Insertable<Expense> {
               this.amountInHomeCurrencyMinorUnits &&
           other.description == this.description &&
           other.date == this.date &&
+          other.endDate == this.endDate &&
+          other.location == this.location &&
           other.status == this.status &&
           other.includeInSplit == this.includeInSplit &&
           other.paidById == this.paidById &&
@@ -1262,6 +1335,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
   final Value<int> amountInHomeCurrencyMinorUnits;
   final Value<String> description;
   final Value<DateTime> date;
+  final Value<DateTime?> endDate;
+  final Value<String> location;
   final Value<String> status;
   final Value<bool> includeInSplit;
   final Value<String> paidById;
@@ -1276,6 +1351,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     this.amountInHomeCurrencyMinorUnits = const Value.absent(),
     this.description = const Value.absent(),
     this.date = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.location = const Value.absent(),
     this.status = const Value.absent(),
     this.includeInSplit = const Value.absent(),
     this.paidById = const Value.absent(),
@@ -1291,6 +1368,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     required int amountInHomeCurrencyMinorUnits,
     required String description,
     required DateTime date,
+    this.endDate = const Value.absent(),
+    this.location = const Value.absent(),
     required String status,
     required bool includeInSplit,
     required String paidById,
@@ -1317,6 +1396,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Expression<int>? amountInHomeCurrencyMinorUnits,
     Expression<String>? description,
     Expression<DateTime>? date,
+    Expression<DateTime>? endDate,
+    Expression<String>? location,
     Expression<String>? status,
     Expression<bool>? includeInSplit,
     Expression<String>? paidById,
@@ -1333,6 +1414,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
         'amount_in_home_currency_minor_units': amountInHomeCurrencyMinorUnits,
       if (description != null) 'description': description,
       if (date != null) 'date': date,
+      if (endDate != null) 'end_date': endDate,
+      if (location != null) 'location': location,
       if (status != null) 'status': status,
       if (includeInSplit != null) 'include_in_split': includeInSplit,
       if (paidById != null) 'paid_by_id': paidById,
@@ -1350,6 +1433,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Value<int>? amountInHomeCurrencyMinorUnits,
     Value<String>? description,
     Value<DateTime>? date,
+    Value<DateTime?>? endDate,
+    Value<String>? location,
     Value<String>? status,
     Value<bool>? includeInSplit,
     Value<String>? paidById,
@@ -1366,6 +1451,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
           amountInHomeCurrencyMinorUnits ?? this.amountInHomeCurrencyMinorUnits,
       description: description ?? this.description,
       date: date ?? this.date,
+      endDate: endDate ?? this.endDate,
+      location: location ?? this.location,
       status: status ?? this.status,
       includeInSplit: includeInSplit ?? this.includeInSplit,
       paidById: paidById ?? this.paidById,
@@ -1403,6 +1490,12 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     if (date.present) {
       map['date'] = Variable<DateTime>(date.value);
     }
+    if (endDate.present) {
+      map['end_date'] = Variable<DateTime>(endDate.value);
+    }
+    if (location.present) {
+      map['location'] = Variable<String>(location.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -1434,6 +1527,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
           )
           ..write('description: $description, ')
           ..write('date: $date, ')
+          ..write('endDate: $endDate, ')
+          ..write('location: $location, ')
           ..write('status: $status, ')
           ..write('includeInSplit: $includeInSplit, ')
           ..write('paidById: $paidById, ')
@@ -3019,6 +3114,8 @@ typedef $$ExpensesTableCreateCompanionBuilder =
       required int amountInHomeCurrencyMinorUnits,
       required String description,
       required DateTime date,
+      Value<DateTime?> endDate,
+      Value<String> location,
       required String status,
       required bool includeInSplit,
       required String paidById,
@@ -3035,6 +3132,8 @@ typedef $$ExpensesTableUpdateCompanionBuilder =
       Value<int> amountInHomeCurrencyMinorUnits,
       Value<String> description,
       Value<DateTime> date,
+      Value<DateTime?> endDate,
+      Value<String> location,
       Value<String> status,
       Value<bool> includeInSplit,
       Value<String> paidById,
@@ -3122,6 +3221,16 @@ class $$ExpensesTableFilterComposer
 
   ColumnFilters<DateTime> get date => $composableBuilder(
     column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get location => $composableBuilder(
+    column: $table.location,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3231,6 +3340,16 @@ class $$ExpensesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get location => $composableBuilder(
+    column: $table.location,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -3331,6 +3450,12 @@ class $$ExpensesTableAnnotationComposer
   GeneratedColumn<DateTime> get date =>
       $composableBuilder(column: $table.date, builder: (column) => column);
 
+  GeneratedColumn<DateTime> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumn<String> get location =>
+      $composableBuilder(column: $table.location, builder: (column) => column);
+
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
@@ -3428,6 +3553,8 @@ class $$ExpensesTableTableManager
                     const Value.absent(),
                 Value<String> description = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
+                Value<DateTime?> endDate = const Value.absent(),
+                Value<String> location = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> includeInSplit = const Value.absent(),
                 Value<String> paidById = const Value.absent(),
@@ -3442,6 +3569,8 @@ class $$ExpensesTableTableManager
                 amountInHomeCurrencyMinorUnits: amountInHomeCurrencyMinorUnits,
                 description: description,
                 date: date,
+                endDate: endDate,
+                location: location,
                 status: status,
                 includeInSplit: includeInSplit,
                 paidById: paidById,
@@ -3458,6 +3587,8 @@ class $$ExpensesTableTableManager
                 required int amountInHomeCurrencyMinorUnits,
                 required String description,
                 required DateTime date,
+                Value<DateTime?> endDate = const Value.absent(),
+                Value<String> location = const Value.absent(),
                 required String status,
                 required bool includeInSplit,
                 required String paidById,
@@ -3472,6 +3603,8 @@ class $$ExpensesTableTableManager
                 amountInHomeCurrencyMinorUnits: amountInHomeCurrencyMinorUnits,
                 description: description,
                 date: date,
+                endDate: endDate,
+                location: location,
                 status: status,
                 includeInSplit: includeInSplit,
                 paidById: paidById,

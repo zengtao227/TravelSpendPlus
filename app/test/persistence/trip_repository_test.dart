@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:travelspendplus/domain/backup.dart';
+import 'package:travelspendplus/domain/civil_date.dart';
 import 'package:travelspendplus/domain/money.dart';
 import 'package:travelspendplus/domain/participant.dart';
 import 'package:travelspendplus/domain/trip.dart';
@@ -66,6 +67,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(30.00, 'EUR'),
       description: 'Dinner',
       date: DateTime(2026, 1, 2),
+      endDate: DateTime(2026, 1, 2),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: alice,
@@ -80,6 +83,55 @@ void main() {
     expect(loaded.first.paidBy, alice);
     expect(loaded.first.paidFor.map((p) => p.id).toSet(), {'p1', 'p2'});
     expect(loaded.first.status, ExpenseStatus.actual);
+  });
+
+  test('addExpense then getExpenses round-trips a multi-day expense with a location', () async {
+    await repo.createTrip(makeTrip());
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'Lodging',
+      amount: Money.fromMajor(700.00, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(700.00, 'EUR'),
+      description: 'Hotel',
+      date: DateTime(2026, 1, 2),
+      endDate: DateTime(2026, 1, 9),
+      location: 'Paris',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+
+    final loaded = (await repo.getExpenses('t1')).single;
+    expect(loaded.date, civilDate(DateTime(2026, 1, 2)));
+    expect(loaded.endDate, civilDate(DateTime(2026, 1, 9)));
+    expect(loaded.location, 'Paris');
+  });
+
+  test('a legacy row with no stored endDate/location (predating those columns) reads back '
+      'with endDate defaulting to date and location defaulting to empty', () async {
+    await repo.createTrip(makeTrip());
+    // Insert directly via the Companion without endDate/location — both are
+    // optional columns, simulating a row written before this app added them.
+    await db.into(db.expenses).insert(ExpensesCompanion.insert(
+          id: 'e-legacy',
+          tripId: 't1',
+          category: 'Food',
+          amountMinorUnits: 1000,
+          amountCurrency: 'EUR',
+          amountInHomeCurrencyMinorUnits: 1000,
+          description: 'legacy row',
+          date: DateTime(2026, 1, 2),
+          status: 'actual',
+          includeInSplit: true,
+          paidById: 'p1',
+          paidForIds: 'p1',
+        ));
+
+    final loaded = (await repo.getExpenses('t1')).single;
+    expect(loaded.endDate, loaded.date);
+    expect(loaded.location, '');
   });
 
   test('a stored row with an empty paidForIds (e.g. legacy data predating '
@@ -119,6 +171,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(30.00, 'EUR'),
       description: 'Dinner',
       date: DateTime(2026, 1, 2),
+      endDate: DateTime(2026, 1, 2),
+      location: '',
       status: ExpenseStatus.planned,
       includeInSplit: false,
       paidBy: alice,
@@ -217,6 +271,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
       description: 'Dinner',
       date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 6),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: alice,
@@ -296,6 +352,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
       description: 'Dinner',
       date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 6),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: alice,
@@ -309,6 +367,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(210, 'EUR'), // 200 * 1.05
       description: 'Hotel',
       date: DateTime(2026, 10, 7),
+      endDate: DateTime(2026, 10, 7),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: alice,
@@ -361,6 +421,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
       description: 'Dinner',
       date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 6),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: alice,
@@ -401,6 +463,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
       description: 'Dinner',
       date: DateTime(2026, 1, 3),
+      endDate: DateTime(2026, 1, 3),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: alice,
@@ -414,6 +478,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(6.5, 'EUR'), // 1000 JPY * 0.0065
       description: 'Souvenirs',
       date: DateTime(2026, 1, 4),
+      endDate: DateTime(2026, 1, 4),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: alice,
@@ -472,6 +538,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
       description: 'Dinner',
       date: DateTime(2026, 1, 3),
+      endDate: DateTime(2026, 1, 3),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: alice,
@@ -550,6 +618,8 @@ void main() {
         amountInHomeCurrency: Money.fromMajor(6, 'EUR'),
         description: 'Ramen',
         date: DateTime(2026, 1, 2),
+        endDate: DateTime(2026, 1, 2),
+        location: '',
         status: ExpenseStatus.actual,
         includeInSplit: true,
         paidBy: alice,

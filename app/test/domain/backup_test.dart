@@ -28,6 +28,8 @@ void main() {
         amountInHomeCurrency: Money.fromMajor(500, 'CNY'),
         description: 'Dinner, with a comma',
         date: DateTime.utc(2026, 10, 6),
+        endDate: DateTime.utc(2026, 10, 8),
+        location: 'Kyoto',
         status: ExpenseStatus.actual,
         includeInSplit: true,
         paidBy: alice,
@@ -60,6 +62,8 @@ void main() {
     expect(e.amountInHomeCurrency, Money.fromMajor(500, 'CNY'));
     expect(e.description, 'Dinner, with a comma');
     expect(e.date, DateTime.utc(2026, 10, 6));
+    expect(e.endDate, DateTime.utc(2026, 10, 8));
+    expect(e.location, 'Kyoto');
     expect(e.status, ExpenseStatus.actual);
     expect(e.paidBy.id, 'p1');
     expect(e.paidFor.map((p) => p.id).toSet(), {'p1', 'p2'});
@@ -89,6 +93,21 @@ void main() {
 
     final restored = tripBundleFromJson(json);
     expect(restored.customCategories, isEmpty);
+  });
+
+  test('tripBundleFromJson defaults an expense\'s endDate to its date and location to empty '
+      'when both keys are absent (a pre-v3 backup, made before those fields existed)', () {
+    final json = tripBundleToJson(
+      TripBundle(trip: makeTrip(), expenses: [makeExpense()], exchangeRates: const []),
+    );
+    final expenseJson = (json['expenses'] as List).single as Map<String, dynamic>;
+    expenseJson.remove('endDate');
+    expenseJson.remove('location');
+
+    final restored = tripBundleFromJson(json);
+    final e = restored.expenses.single;
+    expect(e.endDate, e.date);
+    expect(e.location, '');
   });
 
   test('a planned expense and a whole-number exchange rate round-trip correctly '
@@ -146,6 +165,8 @@ void main() {
           amountInHomeCurrency: Money.fromMajor(amountMajor * 0.05, 'CNY'),
           description: description,
           date: DateTime.utc(2026, 10, 6),
+          endDate: DateTime.utc(2026, 10, 6),
+          location: '',
           status: ExpenseStatus.actual,
           includeInSplit: true,
           paidBy: alice,
@@ -154,7 +175,17 @@ void main() {
 
     String label(String key) => key == 'food' ? 'Food' : key;
     String status(ExpenseStatus s) => s == ExpenseStatus.actual ? 'Actual' : 'Planned';
-    const headers = ['Date', 'Category', 'Status', 'Description', 'Amount', 'Currency', 'In CNY'];
+    const headers = [
+      'Date',
+      'End Date',
+      'Category',
+      'Status',
+      'Description',
+      'Location',
+      'Amount',
+      'Currency',
+      'In CNY',
+    ];
 
     test('produces a header row plus one row per expense', () {
       final csv = expensesToCsv(
@@ -165,8 +196,8 @@ void main() {
       );
       final lines = csv.trim().split('\r\n');
       expect(lines, hasLength(2));
-      expect(lines[0], 'Date,Category,Status,Description,Amount,Currency,In CNY');
-      expect(lines[1], '2026-10-06,Food,Actual,Ramen,1000.00,JPY,50.00');
+      expect(lines[0], 'Date,End Date,Category,Status,Description,Location,Amount,Currency,In CNY');
+      expect(lines[1], '2026-10-06,2026-10-06,Food,Actual,Ramen,,1000.00,JPY,50.00');
     });
 
     test('escapes a description containing a comma', () {

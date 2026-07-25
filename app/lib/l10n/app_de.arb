@@ -94,10 +94,14 @@
   "deleteExpense": "Ausgabe löschen",
   "deleteExpenseConfirm": "Diese Ausgabe löschen? Das kann nicht rückgängig gemacht werden.",
   "csvHeaderDate": "Datum",
+  "csvHeaderEndDate": "Enddatum",
   "csvHeaderCategory": "Kategorie",
   "csvHeaderStatus": "Status",
   "csvHeaderDescription": "Beschreibung",
+  "csvHeaderLocation": "Ort",
   "csvHeaderAmount": "Betrag",
   "csvHeaderCurrency": "Währung",
-  "csvHeaderAmountInHomeCurrency": "Betrag (Heimatwährung)"
+  "csvHeaderAmountInHomeCurrency": "Betrag (Heimatwährung)",
+  "location": "Ort",
+  "locationHint": "z. B. eine Stadt"
 }

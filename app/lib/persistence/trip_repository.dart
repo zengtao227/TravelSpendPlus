@@ -128,6 +128,10 @@ class TripRepository {
         ),
         description: row.description,
         date: civilDate(row.date.toUtc()),
+        // Pre-migration rows have no stored end date — a single-day expense
+        // ending on its own start day is the correct fallback.
+        endDate: civilDate((row.endDate ?? row.date).toUtc()),
+        location: row.location,
         status: row.status == 'actual' ? ExpenseStatus.actual : ExpenseStatus.planned,
         includeInSplit: row.includeInSplit,
         paidBy: participantsById[row.paidById]!,
@@ -146,6 +150,8 @@ class TripRepository {
           amountInHomeCurrencyMinorUnits: expense.amountInHomeCurrency.minorUnits,
           description: expense.description,
           date: civilDate(expense.date),
+          endDate: Value(civilDate(expense.endDate)),
+          location: Value(expense.location),
           status: expense.status == ExpenseStatus.actual ? 'actual' : 'planned',
           includeInSplit: expense.includeInSplit,
           paidById: expense.paidBy.id,
@@ -162,6 +168,8 @@ class TripRepository {
         amountInHomeCurrencyMinorUnits: Value(expense.amountInHomeCurrency.minorUnits),
         description: Value(expense.description),
         date: Value(civilDate(expense.date)),
+        endDate: Value(civilDate(expense.endDate)),
+        location: Value(expense.location),
         status: Value(expense.status == ExpenseStatus.actual ? 'actual' : 'planned'),
         includeInSplit: Value(expense.includeInSplit),
         paidById: Value(expense.paidBy.id),

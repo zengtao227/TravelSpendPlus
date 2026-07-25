@@ -40,6 +40,12 @@ class Expenses extends Table {
   IntColumn get amountInHomeCurrencyMinorUnits => integer()();
   TextColumn get description => text()();
   DateTimeColumn get date => dateTime()();
+  // Nullable purely for pre-migration rows: every row this app writes
+  // itself always has a concrete value (defaulting to [date] for an
+  // ordinary single-day expense) — see TripRepository.getExpenses, which
+  // falls back to [date] when this is null.
+  DateTimeColumn get endDate => dateTime().nullable()();
+  TextColumn get location => text().withDefault(const Constant(''))();
   TextColumn get status => text()(); // 'planned' | 'actual'
   BoolColumn get includeInSplit => boolean()();
   TextColumn get paidById => text().references(Participants, #id)();
@@ -96,7 +102,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -117,6 +123,10 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 4) {
             await m.createTable(tripCategories);
+          }
+          if (from < 5) {
+            await m.addColumn(expenses, expenses.endDate);
+            await m.addColumn(expenses, expenses.location);
           }
         },
       );

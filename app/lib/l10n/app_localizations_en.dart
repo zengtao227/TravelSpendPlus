@@ -319,6 +319,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get csvHeaderDate => 'Date';
 
   @override
+  String get csvHeaderEndDate => 'End date';
+
+  @override
   String get csvHeaderCategory => 'Category';
 
   @override
@@ -328,6 +331,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get csvHeaderDescription => 'Description';
 
   @override
+  String get csvHeaderLocation => 'Location';
+
+  @override
   String get csvHeaderAmount => 'Amount';
 
   @override
@@ -335,4 +341,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get csvHeaderAmountInHomeCurrency => 'Amount (home currency)';
+
+  @override
+  String get location => 'Location';
+
+  @override
+  String get locationHint => 'e.g. a city';
 }

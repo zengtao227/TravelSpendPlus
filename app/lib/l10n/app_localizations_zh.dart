@@ -293,6 +293,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get csvHeaderDate => '日期';
 
   @override
+  String get csvHeaderEndDate => '结束日期';
+
+  @override
   String get csvHeaderCategory => '类别';
 
   @override
@@ -302,6 +305,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get csvHeaderDescription => '备注';
 
   @override
+  String get csvHeaderLocation => '地点';
+
+  @override
   String get csvHeaderAmount => '金额';
 
   @override
@@ -309,4 +315,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get csvHeaderAmountInHomeCurrency => '折合本位币金额';
+
+  @override
+  String get location => '地点';
+
+  @override
+  String get locationHint => '比如城市';
 }

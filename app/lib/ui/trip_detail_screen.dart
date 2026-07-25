@@ -122,9 +122,11 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
         expenses,
         headers: [
           l10n.csvHeaderDate,
+          l10n.csvHeaderEndDate,
           l10n.csvHeaderCategory,
           l10n.csvHeaderStatus,
           l10n.csvHeaderDescription,
+          l10n.csvHeaderLocation,
           l10n.csvHeaderAmount,
           l10n.csvHeaderCurrency,
           l10n.csvHeaderAmountInHomeCurrency,
@@ -499,7 +501,9 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                     title: Text(expense.description.isEmpty
                         ? categoryLabel(context, expense.category)
                         : expense.description),
-                    subtitle: Text(categoryLabel(context, expense.category)),
+                    subtitle: Text(expense.location.isEmpty
+                        ? categoryLabel(context, expense.category)
+                        : '${categoryLabel(context, expense.category)} · ${expense.location}'),
                     trailing: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,

@@ -88,10 +88,14 @@
   "deleteExpense": "删除支出",
   "deleteExpenseConfirm": "确定要删除这笔支出吗？删除后无法恢复。",
   "csvHeaderDate": "日期",
+  "csvHeaderEndDate": "结束日期",
   "csvHeaderCategory": "类别",
   "csvHeaderStatus": "状态",
   "csvHeaderDescription": "备注",
+  "csvHeaderLocation": "地点",
   "csvHeaderAmount": "金额",
   "csvHeaderCurrency": "币种",
-  "csvHeaderAmountInHomeCurrency": "折合本位币金额"
+  "csvHeaderAmountInHomeCurrency": "折合本位币金额",
+  "location": "地点",
+  "locationHint": "比如城市"
 }

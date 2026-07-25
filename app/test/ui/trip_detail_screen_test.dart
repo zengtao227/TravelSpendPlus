@@ -22,6 +22,16 @@ void main() {
   setUp(() {
     db = AppDatabase.memory();
     repo = TripRepository(db);
+
+    // AddExpenseScreen (opened from several of these tests, in create or
+    // edit mode) is taller than the default 800x600 test viewport now that
+    // it has location and end-date fields too — fix the viewport once here
+    // instead of scrolling to the save button in every affected test.
+    final view = TestWidgetsFlutterBinding.ensureInitialized().platformDispatcher.views.first;
+    view.physicalSize = const Size(1080, 2400);
+    view.devicePixelRatio = 1.0;
+    addTearDown(view.resetPhysicalSize);
+    addTearDown(view.resetDevicePixelRatio);
   });
 
   tearDown(() async => db.close());
@@ -122,6 +132,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
       description: 'Visa fee',
       date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
@@ -218,6 +230,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
       description: 'Dinner',
       date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
@@ -231,6 +245,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(3200, 'CNY'),
       description: 'Taxi',
       date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
@@ -266,6 +282,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
       description: 'Visa fee',
       date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
@@ -276,6 +294,59 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(PieChart), findsOneWidget);
     expect(find.text('Visa fee'), findsOneWidget);
+  });
+
+  testWidgets('an expense with a location shows "category · location" in its row, but a '
+      'location-less one just shows the category, matching every other test\'s expectations',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime.now().subtract(const Duration(days: 2)),
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'lodging',
+      amount: Money.fromMajor(700, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(700, 'CNY'),
+      description: 'Hotel',
+      date: DateTime.now(),
+      endDate: DateTime.now().add(const Duration(days: 3)),
+      location: 'Kyoto',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e2',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(50, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(50, 'CNY'),
+      description: 'Snack',
+      date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('住宿 · Kyoto'), findsOneWidget);
+    // "餐饮" also appears in the category-breakdown legend above the expense
+    // list, so this can't be findsOneWidget — just confirm the plain
+    // (no "· location") subtitle rendered somewhere, i.e. the row itself.
+    expect(find.widgetWithText(ListTile, '餐饮'), findsOneWidget);
   });
 
   testWidgets('tapping "mark as spent" on a planned expense converts it to actual',
@@ -297,6 +368,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(3200, 'CNY'),
       description: 'Flight',
       date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
       status: ExpenseStatus.planned,
       includeInSplit: true,
       paidBy: me,
@@ -358,6 +431,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(2800, 'CNY'),
       description: 'Kyoto guesthouse',
       date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
       status: ExpenseStatus.planned,
       includeInSplit: true,
       paidBy: me,
@@ -400,6 +475,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
       description: 'Dinner',
       date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
@@ -473,6 +550,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
       description: 'Dinner',
       date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
@@ -486,6 +565,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(210, 'EUR'),
       description: 'Hotel',
       date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
@@ -541,6 +622,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(100, 'CNY'),
       description: 'Dinner',
       date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
@@ -622,6 +705,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
       description: 'Dinner',
       date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 6),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
@@ -662,6 +747,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
       description: 'Dinner',
       date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 6),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
@@ -699,6 +786,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
       description: 'Dinner',
       date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 6),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
@@ -780,6 +869,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
       description: 'Dinner',
       date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 6),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,

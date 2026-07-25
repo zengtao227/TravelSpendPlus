@@ -31,6 +31,18 @@ void main() {
       participants: [const Participant(id: 'p1', name: 'Me')],
     );
     await repo.createTrip(trip);
+
+    // The form (category, amount, currency, description, location, date,
+    // end date, status, save button — plus an exchange-rate field and its
+    // market-rate helper when a foreign currency needs one) is taller than
+    // the default 800x600 test viewport. Every test in this file eventually
+    // taps the save button, so fix the viewport once here instead of
+    // scrolling to it individually in each test.
+    final view = TestWidgetsFlutterBinding.ensureInitialized().platformDispatcher.views.first;
+    view.physicalSize = const Size(1080, 2400);
+    view.devicePixelRatio = 1.0;
+    addTearDown(view.resetPhysicalSize);
+    addTearDown(view.resetDevicePixelRatio);
   });
 
   tearDown(() async => db.close());
@@ -67,6 +79,25 @@ void main() {
     expect(expenses.first.status, ExpenseStatus.actual);
     expect(expenses.first.paidBy.id, 'p1');
     expect(expenses.first.paidFor.map((p) => p.id).toList(), ['p1']);
+    expect(expenses.first.location, '', reason: 'left untouched, location defaults to empty');
+    expect(expenses.first.endDate, expenses.first.date,
+        reason: 'left untouched, endDate defaults to the same single day as date');
+  });
+
+  testWidgets('filling in a location persists it on the expense', (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('住宿').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '700');
+    await tester.enterText(find.byKey(const Key('expenseLocationField')), 'Paris');
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    final expenses = await repo.getExpenses('t1');
+    expect(expenses.single.location, 'Paris');
   });
 
   testWidgets('choosing Planned status saves a planned expense', (tester) async {
@@ -294,6 +325,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(2800, 'CNY'),
       description: 'Kyoto guesthouse',
       date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 9),
+      location: 'Kyoto',
       status: ExpenseStatus.planned,
       includeInSplit: true,
       paidBy: me,
@@ -308,6 +341,7 @@ void main() {
     expect(find.text('住宿'), findsOneWidget); // pre-selected category label
     expect(find.text('2800.0'), findsOneWidget); // amount field
     expect(find.text('Kyoto guesthouse'), findsOneWidget);
+    expect(find.text('Kyoto'), findsOneWidget); // pre-filled location field
     expect(find.text('保存修改'), findsOneWidget); // save button says "save changes", not "记一笔的保存"
   });
 
@@ -322,6 +356,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(2800, 'CNY'),
       description: 'Kyoto guesthouse',
       date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 6),
+      location: '',
       status: ExpenseStatus.planned,
       includeInSplit: true,
       paidBy: me,
@@ -360,6 +396,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(500, 'CNY'),
       description: 'Flight',
       date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 6),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
@@ -398,6 +436,8 @@ void main() {
       amountInHomeCurrency: Money.fromMajor(500, 'CNY'),
       description: 'Flight',
       date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 6),
+      location: '',
       status: ExpenseStatus.actual,
       includeInSplit: true,
       paidBy: me,
