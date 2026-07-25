@@ -211,4 +211,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get spentTotal => 'Spent';
+
+  @override
+  String get backupAll => 'Full backup';
+
+  @override
+  String get restoreFromBackup => 'Restore from backup';
+
+  @override
+  String importSuccess(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Restored $count trips',
+      one: 'Restored 1 trip',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get errorImportParseFailed =>
+      'This file couldn\'t be read as a TravelSpendPlus backup';
+
+  @override
+  String get errorImportUnsupportedVersion =>
+      'This backup was created by a newer version of the app — please update first';
+
+  @override
+  String get errorExportFailed => 'Export failed — please try again';
 }

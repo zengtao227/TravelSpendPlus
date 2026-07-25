@@ -1,16 +1,30 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
 
+import '../domain/backup.dart';
 import '../domain/budget_calculator.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
 import 'create_trip_screen.dart';
+import 'file_io.dart' as file_io;
 import 'formatting.dart';
 import 'trip_detail_screen.dart';
 
 class TripListScreen extends StatefulWidget {
   final TripRepository repository;
-  const TripListScreen({super.key, required this.repository});
+  final Future<String> Function(String filename, String content) writeTempFile;
+  final Future<void> Function(String path, {String? subject}) shareFile;
+  final Future<String?> Function() pickJsonFile;
+
+  const TripListScreen({
+    super.key,
+    required this.repository,
+    this.writeTempFile = file_io.writeTempFile,
+    this.shareFile = file_io.shareFile,
+    this.pickJsonFile = file_io.pickJsonFile,
+  });
 
   @override
   State<TripListScreen> createState() => _TripListScreenState();
@@ -18,6 +32,7 @@ class TripListScreen extends StatefulWidget {
 
 class _TripListScreenState extends State<TripListScreen> {
   late Future<List<Trip>> _future;
+  String? _importError;
 
   @override
   void initState() {
@@ -29,11 +44,58 @@ class _TripListScreenState extends State<TripListScreen> {
         _future = widget.repository.getAllTrips();
       });
 
+  Future<void> _exportAll() async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final json = await widget.repository.exportAllTripsToJson();
+      final content = const JsonEncoder.withIndent('  ').convert(json);
+      final path = await widget.writeTempFile(
+        'travelspendplus_backup_${DateTime.now().millisecondsSinceEpoch}.json',
+        content,
+      );
+      await widget.shareFile(path, subject: l10n.backupAll);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.errorExportFailed)));
+    }
+  }
+
+  Future<void> _importAll() async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _importError = null);
+    final content = await widget.pickJsonFile(); // returns file content, not a path — see file_io.dart
+    if (content == null) return; // user cancelled
+    try {
+      final json = jsonDecode(content) as Map<String, dynamic>;
+      final count = await widget.repository.importAllTripsFromJson(json);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.importSuccess(count))));
+      _refresh();
+    } on UnsupportedBackupVersionException {
+      if (!mounted) return;
+      setState(() => _importError = l10n.errorImportUnsupportedVersion);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _importError = l10n.errorImportParseFailed);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.myTrips)),
+      appBar: AppBar(
+        title: Text(l10n.myTrips),
+        actions: [
+          IconButton(
+            key: const Key('backupAllButton'),
+            icon: const Icon(Icons.backup),
+            tooltip: l10n.backupAll,
+            onPressed: _exportAll,
+          ),
+        ],
+      ),
       body: FutureBuilder<List<Trip>>(
         future: _future,
         builder: (context, snapshot) {
@@ -42,10 +104,30 @@ class _TripListScreenState extends State<TripListScreen> {
           }
           final trips = snapshot.data ?? [];
           if (trips.isEmpty) {
-            return Center(child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(l10n.noTripsYet, textAlign: TextAlign.center),
-            ));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(l10n.noTripsYet, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    TextButton.icon(
+                      key: const Key('restoreFromBackupButton'),
+                      icon: const Icon(Icons.restore),
+                      label: Text(l10n.restoreFromBackup),
+                      onPressed: _importAll,
+                    ),
+                    if (_importError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(_importError!,
+                            style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                      ),
+                  ],
+                ),
+              ),
+            );
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),

@@ -471,6 +471,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Spent'**
   String get spentTotal;
+
+  /// No description provided for @backupAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Full backup'**
+  String get backupAll;
+
+  /// No description provided for @restoreFromBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from backup'**
+  String get restoreFromBackup;
+
+  /// No description provided for @importSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Restored 1 trip} other{Restored {count} trips}}'**
+  String importSuccess(int count);
+
+  /// No description provided for @errorImportParseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This file couldn\'t be read as a TravelSpendPlus backup'**
+  String get errorImportParseFailed;
+
+  /// No description provided for @errorImportUnsupportedVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup was created by a newer version of the app — please update first'**
+  String get errorImportUnsupportedVersion;
+
+  /// No description provided for @errorExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed — please try again'**
+  String get errorExportFailed;
 }
 
 class _AppLocalizationsDelegate
