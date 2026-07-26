@@ -11,6 +11,7 @@ import 'package:travelspendplus/domain/expense.dart';
 import 'package:travelspendplus/domain/exchange_rate.dart';
 import 'package:travelspendplus/persistence/database.dart' hide Trip, Participant, Expense;
 import 'package:travelspendplus/persistence/trip_repository.dart';
+import 'package:travelspendplus/services/expense_photo_store.dart';
 import 'package:travelspendplus/services/trip_photo_store.dart';
 
 import '../test_helpers/fake_path_provider.dart';
@@ -26,6 +27,7 @@ void main() {
     photoTempDir = await Directory.systemTemp.createTemp('trip_repository_test');
     FakePathProviderPlatform.install(photoTempDir.path);
     TripPhotoStore.resetForTesting();
+    ExpensePhotoStore.resetForTesting();
   });
 
   tearDown(() async {
@@ -618,6 +620,73 @@ void main() {
     expect(remaining!.name, 'Korea');
   });
 
+  test('deleteExpense removes the expense\'s stored photo', () async {
+    await repo.createTrip(makeTrip());
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(30, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
+      description: 'Dinner',
+      date: DateTime(2026, 1, 3),
+      endDate: DateTime(2026, 1, 3),
+      location: '',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+    await ExpensePhotoStore.saveFromPath('e1', await makeSourceJpeg());
+    expect(await ExpensePhotoStore.hasPhoto('e1'), isTrue);
+
+    await repo.deleteExpense('e1');
+
+    expect(await ExpensePhotoStore.hasPhoto('e1'), isFalse);
+  });
+
+  test('deleteTrip removes every one of its expenses\' stored photos, not just the trip\'s own',
+      () async {
+    await repo.createTrip(makeTrip());
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(30, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
+      description: 'Dinner',
+      date: DateTime(2026, 1, 3),
+      endDate: DateTime(2026, 1, 3),
+      location: '',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e2',
+      tripId: 't1',
+      category: 'transport',
+      amount: Money.fromMajor(10, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(10, 'EUR'),
+      description: 'Bus',
+      date: DateTime(2026, 1, 4),
+      endDate: DateTime(2026, 1, 4),
+      location: '',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+    await ExpensePhotoStore.saveFromPath('e1', await makeSourceJpeg());
+    await ExpensePhotoStore.saveFromPath('e2', await makeSourceJpeg());
+
+    await repo.deleteTrip('t1');
+
+    expect(await ExpensePhotoStore.hasPhoto('e1'), isFalse);
+    expect(await ExpensePhotoStore.hasPhoto('e2'), isFalse);
+  });
+
   test('addCustomCategory then getCustomCategories round-trips, and adding the same name again '
       'does not duplicate it', () async {
     await repo.createTrip(makeTrip());
@@ -709,6 +778,41 @@ void main() {
 
       expect(await TripPhotoStore.hasPhoto(trip.id), isTrue);
       final restoredBytes = await (await TripPhotoStore.photoFile(trip.id)).readAsBytes();
+      expect(restoredBytes, originalBytes);
+
+      await freshDb.close();
+    });
+
+    test('exportAllTripsToJson then importAllTripsFromJson round-trips an expense\'s photo',
+        () async {
+      final trip = makeTrip();
+      await repo.createTrip(trip);
+      await repo.addExpense(Expense(
+        id: 'e1',
+        tripId: trip.id,
+        category: 'food',
+        amount: Money.fromMajor(30, 'EUR'),
+        amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
+        description: 'Dinner',
+        date: DateTime(2026, 1, 3),
+        endDate: DateTime(2026, 1, 3),
+        location: '',
+        status: ExpenseStatus.actual,
+        includeInSplit: true,
+        paidBy: alice,
+        paidFor: [alice],
+      ));
+      await ExpensePhotoStore.saveFromPath('e1', await makeSourceJpeg());
+      final originalBytes = await (await ExpensePhotoStore.photoFile('e1')).readAsBytes();
+
+      final json = await repo.exportAllTripsToJson();
+
+      final freshDb = AppDatabase.memory();
+      final freshRepo = TripRepository(freshDb);
+      await freshRepo.importAllTripsFromJson(json);
+
+      expect(await ExpensePhotoStore.hasPhoto('e1'), isTrue);
+      final restoredBytes = await (await ExpensePhotoStore.photoFile('e1')).readAsBytes();
       expect(restoredBytes, originalBytes);
 
       await freshDb.close();

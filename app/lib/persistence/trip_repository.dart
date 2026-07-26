@@ -7,6 +7,7 @@ import '../domain/participant.dart';
 import '../domain/trip.dart';
 import '../domain/expense.dart';
 import '../domain/exchange_rate.dart';
+import '../services/expense_photo_store.dart';
 import '../services/trip_photo_store.dart';
 import 'database.dart' hide Trip, Participant, Expense;
 
@@ -184,6 +185,9 @@ class TripRepository {
 
   Future<void> deleteExpense(String expenseId) async {
     await (_db.delete(_db.expenses)..where((e) => e.id.equals(expenseId))).go();
+    // Not part of a DB transaction (it's not a DB operation) — mirrors
+    // deleteTrip's TripPhotoStore.delete call below.
+    await ExpensePhotoStore.delete(expenseId);
   }
 
   Future<List<ExchangeRate>> getExchangeRates(String tripId) async {
@@ -328,7 +332,17 @@ class TripRepository {
   /// leave orphaned Participants/Expenses/TripExchangeRates/TripCategories
   /// rows behind.
   Future<void> deleteTrip(String tripId) async {
+    late List<String> expenseIds;
     await _db.transaction(() async {
+      // Captured in the same transaction, immediately before the DELETE
+      // below — needed afterward to clean up each expense's photo file
+      // (not itself a DB operation, so it can't be part of this
+      // transaction), and must not be snapshotted outside the transaction
+      // or a concurrent insert could be deleted here without its id ever
+      // having been captured.
+      expenseIds = (await (_db.select(_db.expenses)..where((e) => e.tripId.equals(tripId))).get())
+          .map((row) => row.id)
+          .toList();
       await (_db.delete(_db.expenses)..where((e) => e.tripId.equals(tripId))).go();
       await (_db.delete(_db.tripExchangeRates)..where((r) => r.tripId.equals(tripId))).go();
       await (_db.delete(_db.tripCategories)..where((c) => c.tripId.equals(tripId))).go();
@@ -341,6 +355,9 @@ class TripRepository {
     // (or vice versa: a failed file delete never leaves the trip row in
     // place with a wrongly-deleted photo).
     await TripPhotoStore.delete(tripId);
+    for (final expenseId in expenseIds) {
+      await ExpensePhotoStore.delete(expenseId);
+    }
   }
 
   Future<List<String>> getCustomCategories(String tripId) async {
@@ -367,12 +384,19 @@ class TripRepository {
     final trips = await getAllTrips();
     final bundles = <TripBundle>[];
     for (final trip in trips) {
+      final expenses = await getExpenses(trip.id);
+      final expensePhotos = <String, String>{};
+      for (final expense in expenses) {
+        final photo = await ExpensePhotoStore.readBase64(expense.id);
+        if (photo != null) expensePhotos[expense.id] = photo;
+      }
       bundles.add(TripBundle(
         trip: trip,
-        expenses: await getExpenses(trip.id),
+        expenses: expenses,
         exchangeRates: await getExchangeRates(trip.id),
         customCategories: await getCustomCategories(trip.id),
         photoBase64: await TripPhotoStore.readBase64(trip.id),
+        expensePhotosBase64: expensePhotos,
       ));
     }
     return backupToJson(bundles);
@@ -399,6 +423,10 @@ class TripRepository {
       }
       for (final expense in bundle.expenses) {
         await addExpense(expense);
+        final photo = bundle.expensePhotosBase64[expense.id];
+        if (photo != null) {
+          await ExpensePhotoStore.writeBase64(expense.id, photo);
+        }
       }
     }
     return bundles.length;
