@@ -150,8 +150,15 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     }
     if (_pickedPhotoPath != null) {
       await TripPhotoStore.saveFromPath(tripId, _pickedPhotoPath!);
+      // TripPhotoStore always writes to the same <tripId>.jpg path, so
+      // Flutter's global ImageCache (keyed by file path, not content) would
+      // otherwise keep serving the previous photo's decoded bytes for this
+      // trip's avatar/header after a replace — same bug already fixed for
+      // ExpensePhotoStore in add_expense_screen.dart.
+      imageCache.evict(FileImage(await TripPhotoStore.photoFile(tripId)));
     } else if (_removeExistingPhoto) {
       await TripPhotoStore.delete(tripId);
+      imageCache.evict(FileImage(await TripPhotoStore.photoFile(tripId)));
     }
     if (mounted) Navigator.pop(context, true);
   }
