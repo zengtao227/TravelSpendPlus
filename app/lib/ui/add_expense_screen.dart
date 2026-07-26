@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
 
@@ -9,6 +12,7 @@ import '../domain/expense_category.dart';
 import '../domain/money.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
+import '../services/expense_photo_store.dart';
 import '../services/live_rate_service.dart';
 import 'currency_field.dart';
 import 'formatting.dart';
@@ -19,13 +23,15 @@ class AddExpenseScreen extends StatefulWidget {
   final TripRepository repository;
   final Expense? existingExpense;
   final LiveRateService? liveRateService;
-  const AddExpenseScreen({
+  final Future<XFile?> Function() pickImage;
+  AddExpenseScreen({
     super.key,
     required this.trip,
     required this.repository,
     this.existingExpense,
     this.liveRateService,
-  });
+    Future<XFile?> Function()? pickImage,
+  }) : pickImage = pickImage ?? (() => ImagePicker().pickImage(source: ImageSource.gallery));
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -124,6 +130,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   List<String> _customCategories = [];
   String? _categoryError;
   late final LiveRateService _liveRateService;
+  String? _pickedPhotoPath;
+  bool _removeExistingPhoto = false;
+  File? _existingPhotoFile;
 
   bool get _isEditing => widget.existingExpense != null;
 
@@ -147,6 +156,75 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     _status = existing?.status ?? ExpenseStatus.actual;
     _loadRates();
     _loadCategories();
+    if (existing != null) _loadExistingPhoto(existing.id);
+  }
+
+  Future<void> _loadExistingPhoto(String expenseId) async {
+    final has = await ExpensePhotoStore.hasPhoto(expenseId);
+    if (!has) return;
+    final file = await ExpensePhotoStore.photoFile(expenseId);
+    if (mounted) setState(() => _existingPhotoFile = file);
+  }
+
+  Future<void> _pickPhoto() async {
+    final picked = await widget.pickImage();
+    if (picked == null) return;
+    setState(() {
+      _pickedPhotoPath = picked.path;
+      _removeExistingPhoto = false;
+    });
+  }
+
+  void _clearPhoto() {
+    setState(() {
+      _pickedPhotoPath = null;
+      _removeExistingPhoto = true;
+    });
+  }
+
+  bool get _showsPhoto =>
+      _pickedPhotoPath != null || (_existingPhotoFile != null && !_removeExistingPhoto);
+
+  Widget _buildPhotoPicker() {
+    final showsPhoto = _showsPhoto;
+    ImageProvider? imageProvider;
+    if (_pickedPhotoPath != null) {
+      imageProvider = FileImage(File(_pickedPhotoPath!));
+    } else if (_existingPhotoFile != null && !_removeExistingPhoto) {
+      imageProvider = FileImage(_existingPhotoFile!);
+    }
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        GestureDetector(
+          key: const Key('expensePhotoPicker'),
+          onTap: _pickPhoto,
+          child: CircleAvatar(
+            radius: 44,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            foregroundImage: imageProvider,
+            child: showsPhoto
+                ? null
+                : Icon(Icons.add_a_photo_outlined,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+        ),
+        if (showsPhoto)
+          Positioned(
+            right: -4,
+            top: -4,
+            child: GestureDetector(
+              key: const Key('removeExpensePhotoButton'),
+              onTap: _clearPhoto,
+              child: CircleAvatar(
+                radius: 12,
+                backgroundColor: Theme.of(context).colorScheme.error,
+                child: const Icon(Icons.close, size: 16, color: Colors.white),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   Future<void> _loadRates() async {
@@ -297,6 +375,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     } else {
       await widget.repository.addExpense(expense);
     }
+    if (_pickedPhotoPath != null) {
+      await ExpensePhotoStore.saveFromPath(expense.id, _pickedPhotoPath!);
+    } else if (_removeExistingPhoto) {
+      await ExpensePhotoStore.delete(expense.id);
+    }
     if (mounted) Navigator.pop(context, true);
   }
 
@@ -310,6 +393,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            Center(child: _buildPhotoPicker()),
+            const SizedBox(height: 16),
             // A plain (fully-reactive) DropdownButton, not
             // DropdownButtonFormField — the latter's FormFieldState only
             // reads `initialValue` once and never re-syncs to an externally

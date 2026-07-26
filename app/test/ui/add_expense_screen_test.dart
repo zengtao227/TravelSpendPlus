@@ -482,4 +482,13 @@ void main() {
             'expense was originally recorded at (500*2=1000), not the current 0.04 rate (which '
             'would give 800)');
   });
+
+  testWidgets('with no stored photo, the picker shows the add-photo icon, not a remove button',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.add_a_photo_outlined), findsOneWidget);
+    expect(find.byKey(const Key('removeExpensePhotoButton')), findsNothing);
+  });
 }
