@@ -14,6 +14,7 @@ import 'package:travelspendplus/persistence/database.dart' hide Trip, Participan
 import 'package:travelspendplus/persistence/trip_repository.dart';
 import 'package:travelspendplus/ui/add_expense_screen.dart';
 import 'package:travelspendplus/ui/exchange_rate_settings_screen.dart';
+import 'package:travelspendplus/services/expense_photo_store.dart';
 import 'package:travelspendplus/services/trip_photo_store.dart';
 import 'package:travelspendplus/ui/trip_detail_screen.dart';
 
@@ -35,6 +36,7 @@ void main() {
     photoTempDir = await Directory.systemTemp.createTemp('trip_detail_screen_test');
     FakePathProviderPlatform.install(photoTempDir.path);
     TripPhotoStore.resetForTesting();
+    ExpensePhotoStore.resetForTesting();
 
     // AddExpenseScreen (opened from several of these tests, in create or
     // edit mode) is taller than the default 800x600 test viewport now that
@@ -278,6 +280,40 @@ void main() {
     expect(find.text('交通'), findsWidgets);
     expect(find.textContaining('300.00'), findsWidgets);
     expect(find.textContaining('3,200.00'), findsWidgets);
+  });
+
+  testWidgets('an expense with no stored photo shows its category icon in the list row',
+      (tester) async {
+    await repo.createTrip(Trip(
+      id: 't1',
+      name: 'Japan',
+      startDate: DateTime.now().subtract(const Duration(days: 2)),
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      homeCurrency: 'CNY',
+      totalBudget: Money.fromMajor(20000, 'CNY'),
+      participants: [me],
+    ));
+    await repo.addExpense(Expense(
+      id: 'e1',
+      tripId: 't1',
+      category: 'food',
+      amount: Money.fromMajor(300, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+      description: 'Dinner',
+      date: DateTime.now(),
+      endDate: DateTime.now(),
+      location: '',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    ));
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+
+    // categoryIcon('food') (app/lib/ui/formatting.dart) returns Icons.restaurant.
+    expect(find.byIcon(Icons.restaurant), findsOneWidget);
   });
 
   testWidgets(

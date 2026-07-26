@@ -15,6 +15,7 @@ import '../domain/expense.dart';
 import '../domain/money.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
+import '../services/expense_photo_store.dart';
 import '../services/trip_photo_store.dart';
 import 'add_expense_screen.dart';
 import 'create_trip_screen.dart';
@@ -41,6 +42,37 @@ class _TripPhotoAvatar extends StatelessWidget {
           builder: (context, fileSnapshot) {
             if (!fileSnapshot.hasData) return const SizedBox.shrink();
             return CircleAvatar(radius: 32, backgroundImage: FileImage(fileSnapshot.data!));
+          },
+        );
+      },
+    );
+  }
+}
+
+// A small round avatar for one expense list row: shows the expense's
+// stored photo if it has one, the category icon otherwise. Mirrors
+// _TripPhotoAvatar's hasPhoto-then-photoFile FutureBuilder shape, just
+// falling back to the category icon instead of a zero-size box.
+class _ExpenseLeadingAvatar extends StatelessWidget {
+  final Expense expense;
+  const _ExpenseLeadingAvatar({required this.expense});
+
+  Widget _categoryIconAvatar() => CircleAvatar(
+        backgroundColor: AppColors.mutedText.withValues(alpha: 0.15),
+        child: Icon(categoryIcon(expense.category), color: AppColors.mutedText),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: ExpensePhotoStore.hasPhoto(expense.id),
+      builder: (context, snapshot) {
+        if (snapshot.data != true) return _categoryIconAvatar();
+        return FutureBuilder<File>(
+          future: ExpensePhotoStore.photoFile(expense.id),
+          builder: (context, fileSnapshot) {
+            if (!fileSnapshot.hasData) return _categoryIconAvatar();
+            return CircleAvatar(backgroundImage: FileImage(fileSnapshot.data!));
           },
         );
       },
@@ -591,10 +623,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       ));
                       _refresh();
                     },
-                    leading: CircleAvatar(
-                      backgroundColor: AppColors.mutedText.withValues(alpha: 0.15),
-                      child: Icon(categoryIcon(expense.category), color: AppColors.mutedText),
-                    ),
+                    leading: _ExpenseLeadingAvatar(expense: expense),
                     title: Text(expense.description.isEmpty
                         ? categoryLabel(context, expense.category)
                         : expense.description),
