@@ -377,8 +377,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     }
     if (_pickedPhotoPath != null) {
       await ExpensePhotoStore.saveFromPath(expense.id, _pickedPhotoPath!);
+      // ExpensePhotoStore always writes to the same <expenseId>.jpg path, so
+      // Flutter's global ImageCache (keyed by file path, not content) would
+      // otherwise keep serving the previous photo's decoded bytes for this
+      // expense's thumbnail/preview after a replace — confirmed on-device:
+      // without this, swapping to a different photo silently kept showing
+      // the old one.
+      imageCache.evict(FileImage(await ExpensePhotoStore.photoFile(expense.id)));
     } else if (_removeExistingPhoto) {
       await ExpensePhotoStore.delete(expense.id);
+      imageCache.evict(FileImage(await ExpensePhotoStore.photoFile(expense.id)));
     }
     if (mounted) Navigator.pop(context, true);
   }
