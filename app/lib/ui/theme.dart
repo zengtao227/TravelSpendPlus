@@ -4,10 +4,15 @@ import 'package:flutter/material.dart';
 /// real-data mockup on 2026-07-24 — see
 /// docs/superpowers/specs/2026-07-24-travelspendplus-ui-design.md section 四.
 /// Light mode only in this plan (dark mode explicitly deferred).
+///
+/// `gold` and the last three `categoryChartColors` entries were revised on
+/// 2026-08-03 for color-weak (anomalous trichromacy) legibility — the
+/// originals collapsed pairwise under simulated moderate red-/green-weak
+/// vision. See docs/superpowers/specs/2026-08-03-color-accessibility-audit.md.
 class AppColors {
   static const coral = Color(0xFFE0693F); // primary / CTA
   static const teal = Color(0xFF2A9D8F); // secondary / "actual" status
-  static const gold = Color(0xFFDDA63A); // "planned" status
+  static const gold = Color(0xFF8C6D1F); // "planned" status
   static const cream = Color(0xFFFBF6EF); // page background
   static const charcoal = Color(0xFF2B241D); // primary text
   static const mutedText = Color(0xFF8A7F70); // secondary text
@@ -20,9 +25,9 @@ class AppColors {
     coral,
     teal,
     gold,
-    Color(0xFF6D8B96), // dusty blue
-    Color(0xFF8AA17E), // sage
-    Color(0xFFB08968), // warm taupe
+    Color(0xFF274672), // navy
+    Color(0xFF8C9A3E), // moss
+    Color(0xFF8A3E74), // plum
     Color(0xFF9B7EDE), // lavender
   ];
 }

@@ -1,0 +1,405 @@
+<title>TravelSpendPlus 色弱可读性对比</title>
+<style>
+  :root {
+    --bg: #FBF6EF;
+    --bg-panel: #FFFFFF;
+    --ink: #2B241D;
+    --ink-soft: #6B6153;
+    --ink-faint: #948A7A;
+    --line: #E8DCC9;
+    --line-soft: #F0E6D6;
+    --accent: #3D5A66;
+    --accent-soft: #DCE7E9;
+    --bad: #B5432E;
+    --bad-bg: #F7E6E1;
+    --ok: #3D7A5C;
+    --ok-bg: #E4EFE6;
+    --warn: #97671D;
+    --warn-bg: #F5EAD6;
+    --shadow: 0 1px 2px rgba(43,36,29,0.06), 0 6px 20px rgba(43,36,29,0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1B1712;
+      --bg-panel: #24201A;
+      --ink: #F1E9DC;
+      --ink-soft: #BBB0A0;
+      --ink-faint: #86796A;
+      --line: #3A3327;
+      --line-soft: #2E2920;
+      --accent: #8FB4BF;
+      --accent-soft: #26383D;
+      --bad: #E08A76;
+      --bad-bg: #3A231E;
+      --ok: #8FCBA9;
+      --ok-bg: #1E332A;
+      --warn: #E0B36D;
+      --warn-bg: #3A2E18;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1B1712; --bg-panel: #24201A; --ink: #F1E9DC; --ink-soft: #BBB0A0; --ink-faint: #86796A;
+    --line: #3A3327; --line-soft: #2E2920; --accent: #8FB4BF; --accent-soft: #26383D;
+    --bad: #E08A76; --bad-bg: #3A231E; --ok: #8FCBA9; --ok-bg: #1E332A; --warn: #E0B36D; --warn-bg: #3A2E18;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+  :root[data-theme="light"] {
+    --bg: #FBF6EF; --bg-panel: #FFFFFF; --ink: #2B241D; --ink-soft: #6B6153; --ink-faint: #948A7A;
+    --line: #E8DCC9; --line-soft: #F0E6D6; --accent: #3D5A66; --accent-soft: #DCE7E9;
+    --bad: #B5432E; --bad-bg: #F7E6E1; --ok: #3D7A5C; --ok-bg: #E4EFE6; --warn: #97671D; --warn-bg: #F5EAD6;
+    --shadow: 0 1px 2px rgba(43,36,29,0.06), 0 6px 20px rgba(43,36,29,0.05);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, "PingFang SC", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  header.page-head { margin-bottom: 36px; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 600; margin: 0 0 10px;
+  }
+  h1 { font-size: 28px; margin: 0 0 8px; text-wrap: balance; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-soft); font-size: 15px; max-width: 62ch; margin: 0; }
+
+  .verdict-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px; margin: 28px 0 44px;
+  }
+  .verdict-card {
+    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px; box-shadow: var(--shadow);
+  }
+  .verdict-card .num { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .verdict-card .lbl { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+  .verdict-card.bad .num { color: var(--bad); }
+  .verdict-card.ok .num { color: var(--ok); }
+
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 18px; margin: 0 0 6px; display: flex; align-items: baseline; gap: 10px;
+  }
+  h2 .tag {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 5px;
+  }
+  h2 .tag.bad { color: var(--bad); background: var(--bad-bg); }
+  h2 .tag.ok { color: var(--ok); background: var(--ok-bg); }
+  .section-note { color: var(--ink-soft); font-size: 13.5px; margin: 0 0 20px; max-width: 74ch; }
+
+  /* pie comparison grid */
+  .pie-grid {
+    display: grid;
+    grid-template-columns: 120px repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .pie-grid > * { background: var(--bg-panel); }
+  .pie-grid .corner { background: var(--bg); }
+  .pie-grid .col-head {
+    padding: 12px 10px; text-align: center; font-size: 12.5px; font-weight: 600; color: var(--ink-soft);
+    background: var(--bg);
+  }
+  .pie-grid .row-head {
+    padding: 14px 12px; font-size: 12.5px; font-weight: 700; color: var(--ink);
+    display: flex; align-items: center; background: var(--bg);
+  }
+  .pie-cell { padding: 20px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .pie {
+    width: 92px; height: 92px; border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+  }
+  .pie-legend { display: flex; flex-wrap: wrap; gap: 4px 8px; justify-content: center; max-width: 170px; }
+  .dot-lbl { display: flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--ink-soft); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+  /* swatch strip */
+  .swatch-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 760px) { .swatch-compare { grid-template-columns: 1fr; } }
+  .swatch-panel {
+    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: var(--shadow);
+  }
+  .swatch-panel .panel-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .swatch-panel .panel-sub { font-size: 12px; color: var(--ink-faint); margin-bottom: 14px; }
+  .swatch-list { display: flex; flex-direction: column; gap: 8px; }
+  .swatch-row { display: flex; align-items: center; gap: 10px; }
+  .swatch-chip { width: 28px; height: 28px; border-radius: 7px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); }
+  .swatch-name { font-size: 12.5px; font-weight: 600; width: 76px; flex: none; }
+  .swatch-hex {
+    font-family: "SF Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 11.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums;
+  }
+
+  /* distance table */
+  table.dist {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+  }
+  table.dist th, table.dist td {
+    padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--line-soft);
+  }
+  table.dist th {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-faint);
+    background: var(--bg); font-weight: 700;
+  }
+  table.dist td.num { font-variant-numeric: tabular-nums; font-family: "SF Mono", ui-monospace, monospace; }
+  table.dist tr:last-child td { border-bottom: none; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+  .pill.bad { color: var(--bad); background: var(--bad-bg); }
+  .pill.warn { color: var(--warn); background: var(--warn-bg); }
+  .pill.ok { color: var(--ok); background: var(--ok-bg); }
+  .tablewrap { overflow-x: auto; }
+
+  /* status legend mini compare */
+  .status-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;
+  }
+  .status-card {
+    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .status-card .title { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 12px; }
+  .status-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+  .status-item:last-child { margin-bottom: 0; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+
+  footer.methodology {
+    border-top: 1px solid var(--line); padding-top: 20px; margin-top: 60px;
+    font-size: 12.5px; color: var(--ink-faint); max-width: 78ch;
+  }
+  footer.methodology p { margin: 0 0 8px; }
+  footer.methodology code {
+    font-family: "SF Mono", ui-monospace, monospace; background: var(--line-soft);
+    padding: 1px 5px; border-radius: 4px; font-size: 11.5px;
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="page-head">
+    <p class="eyebrow">TravelSpendPlus · 配色无障碍复核</p>
+    <h1>7 色分类图表在色弱视觉下的可辨识度</h1>
+    <p class="sub">
+      针对 <code style="font-family: ui-monospace, monospace; font-size: 13px;">theme.dart</code> 里 <code style="font-family: ui-monospace, monospace; font-size: 13px;">categoryChartColors</code>
+      饼图配色，模拟中度红色弱 / 绿色弱视觉（非全色盲），对比原色板与修改候选色板的区分度。
+    </p>
+  </header>
+
+  <div class="verdict-row">
+    <div class="verdict-card bad">
+      <div class="num">18–35</div>
+      <div class="lbl">原色板最差色对距离（越低越难分辨，&lt;60 视为难辨）</div>
+    </div>
+    <div class="verdict-card ok">
+      <div class="num">50–56</div>
+      <div class="lbl">候选色板最差色对距离，同一模拟条件下</div>
+    </div>
+    <div class="verdict-card">
+      <div class="num">teal / dustyBlue</div>
+      <div class="lbl">原色板里最先"撞色"的一对</div>
+    </div>
+    <div class="verdict-card">
+      <div class="num">3 处</div>
+      <div class="lbl">受影响位置：分类饼图、消费明细图例、gold 文字对比度</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>饼图实际观感对比 <span class="tag bad">原色板</span></h2>
+    <p class="section-note">
+      用一笔典型 7 类消费（餐饮 28% / 住宿 22% / 交通 16% / 购物 13% / 活动 10% / 其他 7% / 杂项 4%）铺色，横向对比正常视觉、
+      中度红色弱、中度绿色弱三种情况下，切片颜色能否对应回图例。
+    </p>
+    <div class="pie-grid" id="pieGridOriginal"></div>
+  </section>
+
+  <section>
+    <h2>饼图实际观感对比 <span class="tag ok">候选色板</span></h2>
+    <p class="section-note">
+      同一份数据、同一顺序，仅替换 <code style="font-family: ui-monospace, monospace;">gold / dustyBlue / sage / warmTaupe</code> 四个色相，
+      并把明度拉开，色相区分让位给明度区分。
+    </p>
+    <div class="pie-grid" id="pieGridCandidate"></div>
+  </section>
+
+  <section>
+    <h2>色板逐色对比</h2>
+    <p class="section-note">左：现在 theme.dart 里的 7 色。右：候选替换色。coral / teal / lavender 保留不动。</p>
+    <div class="swatch-compare">
+      <div class="swatch-panel">
+        <div class="panel-title">原色板（正常视觉下的 HEX）</div>
+        <div class="panel-sub">categoryChartColors，当前顺序</div>
+        <div class="swatch-list" id="swatchOriginal"></div>
+      </div>
+      <div class="swatch-panel">
+        <div class="panel-title">候选色板</div>
+        <div class="panel-sub">gold 同时修复了 2.0:1 的对比度问题</div>
+        <div class="swatch-list" id="swatchCandidate"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>最难分辨的色对：原色板 vs 候选色板</h2>
+    <p class="section-note">中度色弱模拟（severity 0.3 / 0.5），欧氏距离 &lt;60 记为难辨，&lt;30 记为几乎同色。</p>
+    <div class="tablewrap">
+      <table class="dist" id="distTable"></table>
+    </div>
+  </section>
+
+  <section>
+    <h2>消费汇总图例：actual / planned / remaining</h2>
+    <p class="section-note">
+      每个点旁边都跟着文字标签，所以这里不是硬故障；仍列出是因为 teal 与 mutedText 在色弱下会明显靠近。
+    </p>
+    <div class="status-grid" id="statusGrid"></div>
+  </section>
+
+  <footer class="methodology">
+    <p><strong>方法</strong>：用 Machado et al. (2009) 的红/绿色弱变换矩阵，在 identity 和满色盲矩阵之间按 severity 线性插值（0.3 = 轻度，0.5 = 中度），
+      比全色盲（severity 1.0）更贴近实际"色弱"人群。色差用模拟后 sRGB 的欧氏距离衡量，仅用于同一套方法下的相对比较，不是色度学精确值。</p>
+    <p>候选色板未落地到代码，等你从这页选定方向后再改 <code>app/lib/ui/theme.dart</code>。</p>
+  </footer>
+
+</div>
+
+<script>
+const CATS = ["coral","teal","gold","c4","c5","c6","lavender"];
+const NAMES_ORIGINAL = { coral:"coral", teal:"teal", gold:"gold", c4:"dustyBlue", c5:"sage", c6:"warmTaupe", lavender:"lavender" };
+const NAMES_CANDIDATE = { coral:"coral", teal:"teal", gold:"gold", c4:"navy", c5:"moss", c6:"plum", lavender:"lavender" };
+const PERCENTS = [28, 22, 16, 13, 10, 7, 4];
+const LABELS_CN = ["餐饮","住宿","交通","购物","活动","其他","杂项"];
+
+const DATA = {
+  original: {
+    normal:        { coral:"#E0693F", teal:"#2A9D8F", gold:"#DDA63A", c4:"#6D8B96", c5:"#8AA17E", c6:"#B08968", lavender:"#9B7EDE" },
+    protanomaly_5: { coral:"#BB733D", teal:"#70988F", gold:"#CDA733", c4:"#798A96", c5:"#989E7D", c6:"#A38A67", lavender:"#8287E0" },
+    deuteranomaly_5:{ coral:"#C6823E", teal:"#659390", gold:"#D3AE3C", c4:"#768896", c5:"#969D7F", c6:"#A78F68", lavender:"#8486DD" },
+  },
+  candidate: {
+    normal:        { coral:"#E0693F", teal:"#2A9D8F", gold:"#8C6D1F", c4:"#274672", c5:"#8C9A3E", c6:"#8A3E74", lavender:"#9B7EDE" },
+    protanomaly_5: { coral:"#BB733D", teal:"#70988F", gold:"#846D19", c4:"#2D4873", c5:"#989639", c6:"#6D4975", lavender:"#8287E0" },
+    deuteranomaly_5:{ coral:"#C6823E", teal:"#659390", gold:"#877121", c4:"#284472", c5:"#989741", c6:"#745073", lavender:"#8486DD" },
+  },
+  status_original: {
+    normal:        { actual:"#2A9D8F", planned:"#DDA63A", remaining:"#8A7F70" },
+    protanomaly_5: { actual:"#70988F", planned:"#CDA733", remaining:"#877F70" },
+    deuteranomaly_5:{ actual:"#659390", planned:"#D3AE3C", remaining:"#888070" },
+  }
+};
+
+const DIST_ROWS = [
+  ["teal vs dustyBlue", "原", "护/红弱 sev0.5", "18.1", "bad"],
+  ["teal vs dustyBlue", "原", "绿弱 sev0.5", "21.1", "bad"],
+  ["sage vs warmTaupe", "原", "红弱 sev0.5", "31.7", "bad"],
+  ["sage vs warmTaupe", "原", "绿弱 sev0.5", "31.8", "bad"],
+  ["coral vs gold", "原", "绿弱 sev0.5", "45.9", "warn"],
+  ["gold vs moss", "候选", "红弱 sev0.5", "56.0", "ok"],
+  ["gold vs moss", "候选", "绿弱 sev0.5", "53.0", "warn"],
+  ["navy vs plum", "候选", "红弱 sev0.5", "64.0", "ok"],
+  ["coral vs gold", "候选", "绿弱 sev0.5", "71.0", "ok"],
+  ["全体最差色对", "原", "红弱 sev0.3~0.5", "18–31", "bad"],
+  ["全体最差色对", "候选", "红弱 sev0.3~0.5", "53–56", "ok"],
+];
+
+function conicGradient(colorMap) {
+  let acc = 0;
+  const stops = CATS.map((key, i) => {
+    const from = acc;
+    acc += PERCENTS[i];
+    return `${colorMap[key]} ${from}% ${acc}%`;
+  });
+  return `conic-gradient(${stops.join(", ")})`;
+}
+
+function legendFor(colorMap, nameMap) {
+  return CATS.map((key, i) =>
+    `<span class="dot-lbl"><span class="dot" style="background:${colorMap[key]}"></span>${LABELS_CN[i]}</span>`
+  ).join("");
+}
+
+function buildPieGrid(elId, palette, nameMap) {
+  const el = document.getElementById(elId);
+  const cols = [
+    { key: "normal", label: "正常视觉" },
+    { key: "protanomaly_5", label: "红色弱 (中度)" },
+    { key: "deuteranomaly_5", label: "绿色弱 (中度)" },
+  ];
+  let html = `<div class="corner"></div>`;
+  cols.forEach(c => html += `<div class="col-head">${c.label}</div>`);
+  html += `<div class="row-head">分类饼图</div>`;
+  cols.forEach(c => {
+    const map = palette[c.key];
+    html += `<div class="pie-cell">
+      <div class="pie" style="background:${conicGradient(map)}"></div>
+      <div class="pie-legend">${legendFor(map, nameMap)}</div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function buildSwatchList(elId, palette, nameMap) {
+  const el = document.getElementById(elId);
+  const map = palette.normal;
+  el.innerHTML = CATS.map((key, i) => `
+    <div class="swatch-row">
+      <div class="swatch-chip" style="background:${map[key]}"></div>
+      <div class="swatch-name">${nameMap[key]}</div>
+      <div class="swatch-hex">${map[key]} · ${LABELS_CN[i]}</div>
+    </div>
+  `).join("");
+}
+
+function buildDistTable() {
+  const el = document.getElementById("distTable");
+  let html = `<thead><tr><th>色对</th><th>色板</th><th>模拟条件</th><th>距离</th><th>判定</th></tr></thead><tbody>`;
+  DIST_ROWS.forEach(([pair, which, cond, dist, sev]) => {
+    const pillLabel = sev === "bad" ? "难辨" : sev === "warn" ? "临界" : "可辨";
+    html += `<tr>
+      <td>${pair}</td>
+      <td>${which}</td>
+      <td>${cond}</td>
+      <td class="num">${dist}</td>
+      <td><span class="pill ${sev}">${pillLabel}</span></td>
+    </tr>`;
+  });
+  html += `</tbody>`;
+  el.innerHTML = html;
+}
+
+function buildStatusGrid() {
+  const el = document.getElementById("statusGrid");
+  const conds = [
+    { key: "normal", label: "正常视觉" },
+    { key: "protanomaly_5", label: "红色弱 (中度)" },
+    { key: "deuteranomaly_5", label: "绿色弱 (中度)" },
+  ];
+  el.innerHTML = conds.map(c => {
+    const m = DATA.status_original[c.key];
+    return `<div class="status-card">
+      <div class="title">${c.label}</div>
+      <div class="status-item"><span class="status-dot" style="background:${m.actual}"></span>已花费 actual</div>
+      <div class="status-item"><span class="status-dot" style="background:${m.planned}"></span>计划中 planned</div>
+      <div class="status-item"><span class="status-dot" style="background:${m.remaining}"></span>剩余 remaining</div>
+    </div>`;
+  }).join("");
+}
+
+buildPieGrid("pieGridOriginal", DATA.original, NAMES_ORIGINAL);
+buildPieGrid("pieGridCandidate", DATA.candidate, NAMES_CANDIDATE);
+buildSwatchList("swatchOriginal", DATA.original, NAMES_ORIGINAL);
+buildSwatchList("swatchCandidate", DATA.candidate, NAMES_CANDIDATE);
+buildDistTable();
+buildStatusGrid();
+</script>
