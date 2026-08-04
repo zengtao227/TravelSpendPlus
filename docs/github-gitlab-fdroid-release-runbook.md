@@ -38,17 +38,30 @@ the distributed APK with the F-Droid key.
 - Local F-Droid recipe copy:
   `docs/fdroid/com.zengtao.travelspendplus.yml`
 - Mirror workflow: `.github/workflows/mirror-to-gitlab.yml`
-- Current submitted release candidate: `1.0.1+13`
-- Release tag: `v1.0.1+13`
-- Tagged source commit: `6c9d3c551838cf08b85cab70df56f24ac3c35460`
+- Current submitted release candidate: `1.0.1+14`
+- Release tag: `v1.0.1+14`
+- Tagged source commit: `a591b78dc537d0d11811ca35365ee3b55b5a9760`
 - Current F-Droid submission:
   `https://gitlab.com/fdroid/fdroiddata/-/merge_requests/44806`
 
-As of 2026-08-04, the F-Droid MR is open. Local `fdroidserver 2.4.2` parsing,
-lint, metadata normalization, and automatic update detection passed. The GitLab
-pipeline shows zero jobs because GitLab requested account identity verification;
-this is an external CI-start restriction, not a metadata test failure. F-Droid
-maintainers have been asked to trigger authoritative upstream CI.
+As of 2026-08-04, the F-Droid MR is open. `v1.0.1+13` (commit `6c9d3c5...`) was
+the originally submitted candidate; it does not contain `fastlane/.../icon.png`
+because that file was only added to `main` after the tag (tags are immutable,
+so it could not be backfilled). `v1.0.1+14` is a versionCode-only bump that
+includes the icon and syncs the local recipe doc with metadata fixes already
+applied on the MR (`AutoUpdateMode`, dropped duplicate `Summary`/`Description`,
+`--enforce-lockfile`). The `fdroiddata` MR's `Builds` entry must be updated to
+point at `1.0.1+14` before it is representative of what should ship. Local
+`fdroidserver 2.4.2` parsing, lint, metadata normalization, and automatic
+update detection passed for `1.0.1+13`; re-verify after retargeting to
+`1.0.1+14`. The GitLab fork pipeline initially showed zero jobs because GitLab
+requested account identity verification (not a metadata test failure); after
+fixing an unrelated `AutoUpdateMode` schema-validation failure, a full pipeline
+(9/9 jobs, including `fdroid build`) has since passed against the
+`1.0.1+13`/commit-`6c9d3c5` metadata still on the MR at that time. The MR has
+not yet been retargeted to `1.0.1+14`/commit-`a591b78`, so that specific
+combination has not itself been through CI yet — do so and re-check before
+treating it as validated.
 
 ## 3. One-time configuration
 
@@ -330,9 +343,14 @@ the official build environment is available.
 The recipe currently uses:
 
 ```yaml
-AutoUpdateMode: Version v%v+%c
+AutoUpdateMode: Version
 UpdateCheckMode: Tags
 ```
+
+`AutoUpdateMode` briefly used the invalid value `Version v%v+%c`, which fails
+fdroidserver's schema regex (`^(None|Version( \+.+)?)$`); it was corrected to
+plain `Version` since `UpdateCheckData` already resolves the version from
+`pubspec.yaml`. Do not reintroduce a `%v`/`%c` template into this field.
 
 For a normal future release:
 
