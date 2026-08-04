@@ -49,9 +49,12 @@ control and must never commit keystore files or passwords.
 ## F-Droid
 
 Store metadata is maintained under
-[`fastlane/metadata/android/`](fastlane/metadata/android/). A draft F-Droid
-build recipe and the release checklist are available in [`docs/fdroid/`](docs/fdroid/)
-and [`docs/fdroid-release-checklist.md`](docs/fdroid-release-checklist.md).
+[`fastlane/metadata/android/`](fastlane/metadata/android/). A project copy of
+the submitted F-Droid build recipe and the release checklist are available in
+[`docs/fdroid/`](docs/fdroid/) and
+[`docs/fdroid-release-checklist.md`](docs/fdroid-release-checklist.md). The
+complete GitHub-to-GitLab-to-F-Droid operating procedure is documented in the
+[`release runbook`](docs/github-gitlab-fdroid-release-runbook.md).
 
 ## Repository Policy
 
