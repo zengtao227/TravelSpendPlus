@@ -41,7 +41,10 @@ class _TripPhotoAvatar extends StatelessWidget {
           future: TripPhotoStore.photoFile(tripId),
           builder: (context, fileSnapshot) {
             if (!fileSnapshot.hasData) return const SizedBox.shrink();
-            return CircleAvatar(radius: 32, backgroundImage: FileImage(fileSnapshot.data!));
+            return CircleAvatar(
+              radius: 32,
+              backgroundImage: FileImage(fileSnapshot.data!),
+            );
           },
         );
       },
@@ -58,9 +61,9 @@ class _ExpenseLeadingAvatar extends StatelessWidget {
   const _ExpenseLeadingAvatar({required this.expense});
 
   Widget _categoryIconAvatar() => CircleAvatar(
-        backgroundColor: AppColors.mutedText.withValues(alpha: 0.15),
-        child: Icon(categoryIcon(expense.category), color: AppColors.mutedText),
-      );
+    backgroundColor: AppColors.mutedText.withValues(alpha: 0.15),
+    child: Icon(categoryIcon(expense.category), color: AppColors.mutedText),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -130,13 +133,15 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   // throws in that case. Matches the design spec's own rule that the
   // currency switch is view-only and resets on navigating away.
   void _refresh() => setState(() {
-        _future = _load();
-        _viewCurrency = null;
-      });
+    _future = _load();
+    _viewCurrency = null;
+  });
 
   Future<void> _markAsSpent(Expense expense) async {
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController(text: expense.amount.major.toString());
+    final controller = TextEditingController(
+      text: expense.amount.major.toString(),
+    );
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -147,13 +152,21 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             Text(l10n.markAsSpentPrompt),
             TextField(
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.confirm)),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.confirm),
+          ),
         ],
       ),
     );
@@ -161,7 +174,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     controller.dispose();
     if (confirmed != true) return;
     final newAmountMajor = double.tryParse(enteredText) ?? expense.amount.major;
-    final newAmount = Money.fromMajor(newAmountMajor, expense.amount.currencyCode);
+    final newAmount = Money.fromMajor(
+      newAmountMajor,
+      expense.amount.currencyCode,
+    );
     final ratio = expense.amount.minorUnits == 0
         ? 1.0
         : newAmount.minorUnits / expense.amount.minorUnits;
@@ -169,10 +185,12 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       minorUnits: (expense.amountInHomeCurrency.minorUnits * ratio).round(),
       currencyCode: expense.amountInHomeCurrency.currencyCode,
     );
-    await widget.repository.updateExpense(expense.convertToActual(
-      actualAmount: newAmount,
-      actualAmountInHomeCurrency: newAmountInHome,
-    ));
+    await widget.repository.updateExpense(
+      expense.convertToActual(
+        actualAmount: newAmount,
+        actualAmountInHomeCurrency: newAmountInHome,
+      ),
+    );
     _refresh();
   }
 
@@ -193,15 +211,18 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           l10n.csvHeaderAmountInHomeCurrency,
         ],
         categoryLabel: (key) => categoryLabel(context, key),
-        statusLabel: (status) =>
-            status == ExpenseStatus.actual ? l10n.statusActual : l10n.statusPlanned,
+        statusLabel: (status) => status == ExpenseStatus.actual
+            ? l10n.statusActual
+            : l10n.statusPlanned,
       );
       final safeName = trip.name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
       final path = await widget.writeTempFile('${safeName}_expenses.csv', csv);
       await widget.shareFile(path, subject: trip.name);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.errorExportFailed)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.errorExportFailed)));
     }
   }
 
@@ -220,7 +241,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       builder: (context) => AlertDialog(
         content: Text(l10n.setAsHomeCurrencyPrompt(value)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.viewOnly)),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.viewOnly),
+          ),
           TextButton(
             key: const Key('confirmSetAsHomeCurrencyButton'),
             onPressed: () => Navigator.pop(context, true),
@@ -230,13 +254,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       ),
     );
     if (wantsToChange != true || !mounted) return;
-    await Navigator.push(context, MaterialPageRoute(
-      builder: (_) => ExchangeRateSettingsScreen(
-        trip: trip,
-        repository: widget.repository,
-        initialNewHomeCurrency: value,
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ExchangeRateSettingsScreen(
+          trip: trip,
+          repository: widget.repository,
+          initialNewHomeCurrency: value,
+        ),
       ),
-    ));
+    );
     _refresh();
   }
 
@@ -248,7 +275,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
         title: Text(l10n.deleteTrip),
         content: Text(l10n.deleteTripConfirm(trip.name)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
           TextButton(
             key: const Key('confirmDeleteTripButton'),
             onPressed: () => Navigator.pop(context, true),
@@ -274,38 +304,52 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             builder: (context, snapshot) {
               if (!snapshot.hasData) return const SizedBox.shrink();
               final trip = snapshot.data!.trip;
-              return Row(children: [
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () async {
-                    await Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => CreateTripScreen(repository: widget.repository, existingTrip: trip),
-                    ));
-                    _refresh();
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.currency_exchange),
-                  onPressed: () async {
-                    await Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => ExchangeRateSettingsScreen(trip: trip, repository: widget.repository),
-                    ));
-                    _refresh();
-                  },
-                ),
-                IconButton(
-                  key: const Key('exportTripCsvButton'),
-                  icon: const Icon(Icons.ios_share),
-                  tooltip: l10n.exportTripCsv,
-                  onPressed: () => _exportCsv(trip, snapshot.data!.expenses),
-                ),
-                IconButton(
-                  key: const Key('deleteTripButton'),
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: l10n.deleteTrip,
-                  onPressed: () => _deleteTrip(trip),
-                ),
-              ]);
+              return Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CreateTripScreen(
+                            repository: widget.repository,
+                            existingTrip: trip,
+                          ),
+                        ),
+                      );
+                      _refresh();
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.currency_exchange),
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ExchangeRateSettingsScreen(
+                            trip: trip,
+                            repository: widget.repository,
+                          ),
+                        ),
+                      );
+                      _refresh();
+                    },
+                  ),
+                  IconButton(
+                    key: const Key('exportTripCsvButton'),
+                    icon: const Icon(Icons.ios_share),
+                    tooltip: l10n.exportTripCsv,
+                    onPressed: () => _exportCsv(trip, snapshot.data!.expenses),
+                  ),
+                  IconButton(
+                    key: const Key('deleteTripButton'),
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: l10n.deleteTrip,
+                    onPressed: () => _deleteTrip(trip),
+                  ),
+                ],
+              );
             },
           ),
         ],
@@ -319,7 +363,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           final data = snapshot.data!;
           final trip = data.trip;
           final expenses = data.expenses;
-          final summary = BudgetCalculator.summarize(trip: trip, expenses: expenses);
+          final summary = BudgetCalculator.summarize(
+            trip: trip,
+            expenses: expenses,
+          );
           final breakdown = CategoryBreakdownCalculator.breakdown(
             expenses: expenses,
             homeCurrency: trip.homeCurrency,
@@ -333,6 +380,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             }
             return categoryLabel(context, key);
           }
+
           final displayCurrency = _viewCurrency ?? trip.homeCurrency;
 
           Money display(Money amount) => displayCurrency == amount.currencyCode
@@ -354,7 +402,9 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           Widget budgetTimingWidget;
           if (startOfToday.isBefore(trip.startDate)) {
             final days = trip.startDate.difference(startOfToday).inDays;
-            budgetTimingWidget = Chip(label: Text(l10n.daysUntilDeparture(days)));
+            budgetTimingWidget = Chip(
+              label: Text(l10n.daysUntilDeparture(days)),
+            );
           } else if (startOfToday.isAfter(trip.endDate)) {
             budgetTimingWidget = Chip(label: Text(l10n.tripFinished));
           } else if (trip.totalBudget.minorUnits == 0) {
@@ -363,7 +413,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             budgetTimingWidget = const SizedBox.shrink();
           } else {
             final daily = BudgetCalculator.remainingDailyBudget(
-                trip: trip, expenses: expenses, asOf: now);
+              trip: trip,
+              expenses: expenses,
+              asOf: now,
+            );
             budgetTimingWidget = daily == null
                 ? const SizedBox.shrink()
                 : Text(l10n.dailyBudgetRemaining(formatMoney(display(daily))));
@@ -371,7 +424,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           // Independent of totalBudget — meaningful even when no budget was
           // set, unlike remainingDailyBudget above.
           final averageDailySpend = BudgetCalculator.averageDailySpendSoFar(
-              trip: trip, expenses: expenses, asOf: now);
+            trip: trip,
+            expenses: expenses,
+            asOf: now,
+          );
 
           return ListView(
             // Extra bottom padding so the last expense row can scroll clear
@@ -386,7 +442,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(trip.name, style: Theme.of(context).textTheme.headlineSmall),
+                        Text(
+                          trip.name,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
                         Text(
                           '${formatDate(context, trip.startDate)} - ${formatDate(context, trip.endDate)} '
                           '(${l10n.tripLengthDays(trip.totalDays)})',
@@ -403,100 +462,177 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: _bigStat(context, l10n.totalSpentLabel,
-                        formatMoney(display(summary.actualTotal)), AppColors.teal),
+                    child: _bigStat(
+                      context,
+                      l10n.totalSpentLabel,
+                      formatMoney(display(summary.actualTotal)),
+                      AppColors.teal,
+                    ),
                   ),
                   if (averageDailySpend != null)
                     Expanded(
-                      child: _bigStat(context, l10n.avgPerDayLabel,
-                          formatMoney(display(averageDailySpend)), AppColors.coral),
+                      child: _bigStat(
+                        context,
+                        l10n.avgPerDayLabel,
+                        formatMoney(display(averageDailySpend)),
+                        AppColors.coral,
+                      ),
                     ),
                 ],
               ),
               const SizedBox(height: 8),
               budgetTimingWidget,
               const SizedBox(height: 12),
-              Builder(builder: (context) {
-                final hasBudget = trip.totalBudget.minorUnits != 0;
-                final currencyDropdown = DropdownButton<String>(
-                  value: displayCurrency,
-                  underline: const SizedBox.shrink(),
-                  items: {
-                    trip.homeCurrency,
-                    ...data.rates.map((r) => r.fromCurrency),
-                  }.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                  onChanged: (value) {
-                    if (value != null) _onViewCurrencyChanged(value, trip);
-                  },
-                );
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // With budget tracking off, there's no meaningful
-                        // "total budget" number to show — the currency
-                        // dropdown (still needed as the entry point for
-                        // viewing in / switching the home currency) moves
-                        // up on its own instead of sitting beside a
-                        // misleading "0.00".
-                        if (hasBudget) ...[
-                          Text(l10n.totalBudget,
-                              style: TextStyle(fontSize: 11, color: AppColors.mutedText)),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(formatMoney(display(summary.totalBudget)),
-                                  style: Theme.of(context).textTheme.headlineMedium),
-                              currencyDropdown,
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                        ] else
-                          Align(alignment: Alignment.centerRight, child: currencyDropdown),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Builder(
+                builder: (context) {
+                  final hasBudget = trip.totalBudget.minorUnits != 0;
+                  final currencyDropdown = DropdownButton<String>(
+                    value: displayCurrency,
+                    underline: const SizedBox.shrink(),
+                    items:
+                        {
+                              trip.homeCurrency,
+                              ...data.rates.map((r) => r.fromCurrency),
+                            }
+                            .map(
+                              (c) => DropdownMenuItem(value: c, child: Text(c)),
+                            )
+                            .toList(),
+                    onChanged: (value) {
+                      if (value != null) _onViewCurrencyChanged(value, trip);
+                    },
+                  );
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _legendItem(context, AppColors.teal, l10n.actualLabel, display(summary.actualTotal)),
-                            _legendItem(context, AppColors.gold, l10n.plannedLabel, display(summary.plannedTotal)),
-                            if (hasBudget)
-                              _legendItem(context, AppColors.mutedText, l10n.remainingLabel, display(summary.remaining)),
+                            // With budget tracking off, there's no meaningful
+                            // "total budget" number to show — the currency
+                            // dropdown (still needed as the entry point for
+                            // viewing in / switching the home currency) moves
+                            // up on its own instead of sitting beside a
+                            // misleading "0.00".
+                            if (hasBudget) ...[
+                              Text(
+                                l10n.totalBudget,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.mutedText,
+                                ),
+                              ),
+                              if (constraints.maxWidth < 400) ...[
+                                Text(
+                                  formatMoney(display(summary.totalBudget)),
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineMedium,
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: currencyDropdown,
+                                ),
+                              ] else
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      formatMoney(display(summary.totalBudget)),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.headlineMedium,
+                                    ),
+                                    currencyDropdown,
+                                  ],
+                                ),
+                              const SizedBox(height: 8),
+                            ] else
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: currencyDropdown,
+                              ),
+                            Wrap(
+                              spacing: 16,
+                              runSpacing: 8,
+                              children: [
+                                _legendItem(
+                                  context,
+                                  AppColors.teal,
+                                  l10n.actualLabel,
+                                  display(summary.actualTotal),
+                                ),
+                                _legendItem(
+                                  context,
+                                  AppColors.gold,
+                                  l10n.plannedLabel,
+                                  display(summary.plannedTotal),
+                                ),
+                                if (hasBudget)
+                                  _legendItem(
+                                    context,
+                                    AppColors.mutedText,
+                                    l10n.remainingLabel,
+                                    display(summary.remaining),
+                                  ),
+                              ],
+                            ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                },
+              ),
               const SizedBox(height: 16),
               if (breakdown.isNotEmpty) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final heading = Text(
                       _breakdownDimension == BreakdownDimension.category
                           ? l10n.spendingByCategory
                           : l10n.spendingByLocation,
                       style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    SegmentedButton<BreakdownDimension>(
+                    );
+                    final dimensionSwitch = SegmentedButton<BreakdownDimension>(
                       key: const Key('breakdownDimensionSwitch'),
                       showSelectedIcon: false,
-                      style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                      style: const ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                      ),
                       segments: [
                         ButtonSegment(
-                            value: BreakdownDimension.category,
-                            label: Text(l10n.groupByCategory)),
+                          value: BreakdownDimension.category,
+                          label: Text(l10n.groupByCategory),
+                        ),
                         ButtonSegment(
-                            value: BreakdownDimension.location,
-                            label: Text(l10n.groupByLocation)),
+                          value: BreakdownDimension.location,
+                          label: Text(l10n.groupByLocation),
+                        ),
                       ],
                       selected: {_breakdownDimension},
                       onSelectionChanged: (selection) =>
                           setState(() => _breakdownDimension = selection.first),
-                    ),
-                  ],
+                    );
+
+                    if (constraints.maxWidth < 520) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          heading,
+                          const SizedBox(height: 8),
+                          dimensionSwitch,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [heading, dimensionSwitch],
+                    );
+                  },
                 ),
                 const SizedBox(height: 8),
                 // Slices carry only the percentage — category name and exact
@@ -509,24 +645,33 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                     SizedBox(
                       width: 120,
                       height: 120,
-                      child: PieChart(PieChartData(sections: [
-                        for (var i = 0; i < breakdown.length; i++)
-                          PieChartSectionData(
-                            value: breakdown[i].total.major,
-                            title: '${breakdown[i].percentage.toStringAsFixed(0)}%',
-                            radius: 50,
-                            titleStyle: const TextStyle(
-                                fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
-                            // Cycle by the breakdown's own position, not a
-                            // lookup into the fixed 6-key list — a custom
-                            // category isn't in kExpenseCategoryKeys at all,
-                            // and indexOf's -1 for those would have colored
-                            // every custom category identically instead of
-                            // cycling through the palette.
-                            color: AppColors.categoryChartColors[
-                                i % AppColors.categoryChartColors.length],
-                          ),
-                      ])),
+                      child: PieChart(
+                        PieChartData(
+                          sections: [
+                            for (var i = 0; i < breakdown.length; i++)
+                              PieChartSectionData(
+                                value: breakdown[i].total.major,
+                                title:
+                                    '${breakdown[i].percentage.toStringAsFixed(0)}%',
+                                radius: 50,
+                                titleStyle: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                // Cycle by the breakdown's own position, not a
+                                // lookup into the fixed 6-key list — a custom
+                                // category isn't in kExpenseCategoryKeys at all,
+                                // and indexOf's -1 for those would have colored
+                                // every custom category identically instead of
+                                // cycling through the palette.
+                                color:
+                                    AppColors.categoryChartColors[i %
+                                        AppColors.categoryChartColors.length],
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -543,14 +688,19 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                                     height: 8,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: AppColors.categoryChartColors[
-                                          i % AppColors.categoryChartColors.length],
+                                      color:
+                                          AppColors.categoryChartColors[i %
+                                              AppColors
+                                                  .categoryChartColors
+                                                  .length],
                                     ),
                                   ),
                                   const SizedBox(width: 6),
                                   Expanded(
-                                    child: Text(sliceLabel(breakdown[i].category),
-                                        style: const TextStyle(fontSize: 12)),
+                                    child: Text(
+                                      sliceLabel(breakdown[i].category),
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
                                   ),
                                   // breakdown[i].total is always in the trip's home
                                   // currency (CategoryBreakdownCalculator sums each
@@ -559,9 +709,13 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                                   // view-currency switcher as the summary card above,
                                   // instead of always showing the home currency
                                   // regardless of what's selected.
-                                  Text(formatMoney(display(breakdown[i].total)),
-                                      style: const TextStyle(
-                                          fontSize: 12, fontWeight: FontWeight.w600)),
+                                  Text(
+                                    formatMoney(display(breakdown[i].total)),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -576,7 +730,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 24),
                   child: Center(child: Text(l10n.noExpensesYet)),
                 ),
-              Text(l10n.expenses, style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                l10n.expenses,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               for (final expense in expenses)
                 Dismissible(
                   key: ValueKey(expense.id),
@@ -585,7 +742,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                     color: Theme.of(context).colorScheme.error,
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Icon(Icons.delete_outline, color: Colors.white),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.white,
+                    ),
                   ),
                   confirmDismiss: (_) async {
                     final l10n = AppLocalizations.of(context)!;
@@ -596,8 +756,9 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                         content: Text(l10n.deleteExpenseConfirm),
                         actions: [
                           TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: Text(l10n.cancel)),
+                            onPressed: () => Navigator.pop(context, false),
+                            child: Text(l10n.cancel),
+                          ),
                           TextButton(
                             key: const Key('confirmDeleteExpenseButton'),
                             onPressed: () => Navigator.pop(context, true),
@@ -614,22 +775,29 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   },
                   child: ListTile(
                     onTap: () async {
-                      await Navigator.push(context, MaterialPageRoute(
-                        builder: (_) => AddExpenseScreen(
-                          trip: trip,
-                          repository: widget.repository,
-                          existingExpense: expense,
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AddExpenseScreen(
+                            trip: trip,
+                            repository: widget.repository,
+                            existingExpense: expense,
+                          ),
                         ),
-                      ));
+                      );
                       _refresh();
                     },
                     leading: _ExpenseLeadingAvatar(expense: expense),
-                    title: Text(expense.description.isEmpty
-                        ? categoryLabel(context, expense.category)
-                        : expense.description),
-                    subtitle: Text(expense.location.isEmpty
-                        ? categoryLabel(context, expense.category)
-                        : '${categoryLabel(context, expense.category)} · ${expense.location}'),
+                    title: Text(
+                      expense.description.isEmpty
+                          ? categoryLabel(context, expense.category)
+                          : expense.description,
+                    ),
+                    subtitle: Text(
+                      expense.location.isEmpty
+                          ? categoryLabel(context, expense.category)
+                          : '${categoryLabel(context, expense.category)} · ${expense.location}',
+                    ),
                     trailing: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -643,10 +811,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                            child: Text(l10n.markAsSpent, style: const TextStyle(fontSize: 11)),
+                            child: Text(
+                              l10n.markAsSpent,
+                              style: const TextStyle(fontSize: 11),
+                            ),
                           )
                         else
-                          Text(l10n.actualLabel, style: const TextStyle(fontSize: 11)),
+                          Text(
+                            l10n.actualLabel,
+                            style: const TextStyle(fontSize: 11),
+                          ),
                       ],
                     ),
                   ),
@@ -661,9 +835,15 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           if (!snapshot.hasData) return const SizedBox.shrink();
           return FloatingActionButton(
             onPressed: () async {
-              await Navigator.push(context, MaterialPageRoute(
-                builder: (_) => AddExpenseScreen(trip: snapshot.data!.trip, repository: widget.repository),
-              ));
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AddExpenseScreen(
+                    trip: snapshot.data!.trip,
+                    repository: widget.repository,
+                  ),
+                ),
+              );
               _refresh();
             },
             child: const Icon(Icons.add),
@@ -673,32 +853,54 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     );
   }
 
-  Widget _bigStat(BuildContext context, String label, String value, Color color) {
+  Widget _bigStat(
+    BuildContext context,
+    String label,
+    String value,
+    Color color,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedText)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColors.mutedText),
+        ),
         Text(
           value,
-          style: Theme.of(context)
-              .textTheme
-              .headlineSmall
-              ?.copyWith(color: color, fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
   }
 
-  Widget _legendItem(BuildContext context, Color color, String label, Money amount) {
+  Widget _legendItem(
+    BuildContext context,
+    Color color,
+    String label,
+    Money amount,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-          const SizedBox(width: 4),
-          Text(label, style: const TextStyle(fontSize: 11)),
-        ]),
-        Text(formatMoney(amount), style: const TextStyle(fontWeight: FontWeight.bold)),
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 4),
+            Text(label, style: const TextStyle(fontSize: 11)),
+          ],
+        ),
+        Text(
+          formatMoney(amount),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
       ],
     );
   }

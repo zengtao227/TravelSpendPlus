@@ -1,0 +1,14 @@
+TravelSpendPlus is a trip expense tracker for recording planned and actual
+spending in one place.
+
+Create a trip with dates, a home currency, and an optional budget. Add planned
+or actual expenses, assign categories, and review totals and category-based
+breakdowns. Expenses in other currencies can be recorded with an exchange
+rate, including an optional live reference rate.
+
+The app is designed for direct, local expense tracking without requiring an
+account. Trip data is stored by the app on the device. Network access is used
+when requesting the optional live exchange-rate feature.
+
+TravelSpendPlus is open-source software released under the MIT License. Its
+source code and build configuration can be inspected and built independently.

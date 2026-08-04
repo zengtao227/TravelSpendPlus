@@ -1,17 +1,23 @@
-# travelspendplus
+# TravelSpendPlus Flutter App
 
-A new Flutter project.
+This directory contains the Flutter application for TravelSpendPlus. The
+canonical project documentation, release instructions, and license are in the
+[repository root](../README.md).
 
-## Getting Started
+## Development
 
-This project is a starting point for a Flutter application.
+```sh
+flutter pub get
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Verification and Android Build
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```sh
+flutter analyze
+flutter test
+flutter build apk --release
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The public Android project intentionally contains no private release keystore.
+F-Droid builds and signs its own APK from the tagged source.

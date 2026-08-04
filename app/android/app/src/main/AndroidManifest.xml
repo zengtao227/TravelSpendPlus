@@ -4,7 +4,7 @@
          the app otherwise runs fully offline. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="travelspendplus"
+        android:label="TravelSpendPlus"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

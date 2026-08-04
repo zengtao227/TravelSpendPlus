@@ -1,0 +1,56 @@
+Categories:
+  - Money
+License: MIT
+AuthorName: zengtao227
+
+# GitHub remains the canonical development repository. GitLab is the public
+# source mirror used by the F-Droid submission workflow.
+SourceCode: https://gitlab.com/zengtao227/TravelSpendPlus
+IssueTracker: https://github.com/zengtao227/TravelSpendPlus/issues
+
+AutoName: TravelSpendPlus
+Summary: Track trip budgets and planned or actual expenses by category
+Description: |-
+  TravelSpendPlus records planned and actual expenses for a trip.
+
+  Trips can have dates, a home currency, and an optional total budget. Expenses
+  can be grouped by built-in or custom categories, and category breakdowns help
+  compare spending. Exchange rates can be entered manually or requested from
+  the optional live reference-rate service.
+
+  The app is designed for direct, local expense tracking without an account.
+  It is open-source software released under the MIT License.
+
+RepoType: git
+Repo: https://gitlab.com/zengtao227/TravelSpendPlus.git
+
+Builds:
+  # TODO: Replace this disabled entry with the first immutable release created
+  # after the F-Droid readiness changes. Do not reuse versionCode 12.
+  - versionName: 1.0.0
+    versionCode: 12
+    commit: e580b3a2aefd45e9c12534fb6228c18b16b08388
+    disable: This tag predates the license, metadata, and release-signing cleanup
+    subdir: app
+    output: build/app/outputs/flutter-apk/app-release.apk
+    srclibs:
+      - flutter@stable
+    rm:
+      - app/ios
+      - app/linux
+      - app/macos
+      - app/web
+      - app/windows
+    prebuild:
+      - git -C $$flutter$$ checkout -f 84fc5cbb223bc12f83d65b647ff8a56caf779ffd
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - $$flutter$$/bin/flutter config --no-analytics
+      - $$flutter$$/bin/flutter pub get
+    scandelete:
+      - app/.pub-cache
+    build:
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - $$flutter$$/bin/flutter build apk --release
+
+AutoUpdateMode: None
+UpdateCheckMode: None

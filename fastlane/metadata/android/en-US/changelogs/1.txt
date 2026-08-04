@@ -1,0 +1,1 @@
+Initial release with trip budgets, planned and actual expenses, category tracking, and exchange-rate support.

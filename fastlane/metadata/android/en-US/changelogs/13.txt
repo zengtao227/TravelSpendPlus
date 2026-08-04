@@ -1,0 +1,1 @@
+Prepare the app for its first F-Droid release, add clearer project documentation, and remove an obsolete SQLite packaging dependency.

@@ -1,0 +1,62 @@
+name: Mirror to GitLab
+
+# Configure these repository secrets in GitHub under
+# Settings > Secrets and variables > Actions:
+# - GITLAB_USERNAME: any non-empty GitLab username for HTTPS authentication
+# - GITLAB_TOKEN: a GitLab access token with write_repository scope
+# - GITLAB_REPO: the GitLab path without a scheme or .git, for example
+#   zengtao227/TravelSpendPlus
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gitlab-mirror
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    env:
+      GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+      GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+      GITLAB_REPO: ${{ secrets.GITLAB_REPO }}
+
+    steps:
+      - name: Check out the GitHub repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate mirror configuration
+        shell: bash
+        run: |
+          if [[ -z "$GITLAB_USERNAME" || -z "$GITLAB_TOKEN" || -z "$GITLAB_REPO" ]]; then
+            echo "::error::Configure GITLAB_USERNAME, GITLAB_TOKEN, and GITLAB_REPO."
+            exit 1
+          fi
+
+          if [[ "$GITLAB_REPO" == http* || "$GITLAB_REPO" == *.git ]]; then
+            echo "::error::GITLAB_REPO must be a namespace/project path without a scheme or .git suffix."
+            exit 1
+          fi
+
+      - name: Mirror GitHub branches and tags
+        shell: bash
+        run: |
+          git remote add gitlab "https://${GITLAB_USERNAME}:${GITLAB_TOKEN}@gitlab.com/${GITLAB_REPO}.git"
+          git fetch --force --prune origin \
+            "+refs/heads/*:refs/remotes/github/*" \
+            "+refs/tags/*:refs/tags/*"
+          git push --force --prune gitlab \
+            "refs/remotes/github/*:refs/heads/*"
+          git push --force --prune gitlab \
+            "refs/tags/*:refs/tags/*"
