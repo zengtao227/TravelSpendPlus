@@ -50,18 +50,17 @@ because that file was only added to `main` after the tag (tags are immutable,
 so it could not be backfilled). `v1.0.1+14` is a versionCode-only bump that
 includes the icon and syncs the local recipe doc with metadata fixes already
 applied on the MR (`AutoUpdateMode`, dropped duplicate `Summary`/`Description`,
-`--enforce-lockfile`). The `fdroiddata` MR's `Builds` entry must be updated to
-point at `1.0.1+14` before it is representative of what should ship. Local
+`--enforce-lockfile`). The `fdroiddata` MR's `Builds` entry has been updated to
+point at `1.0.1+14`/commit-`a591b78` (was `1.0.1+13`/commit-`6c9d3c5`). Local
 `fdroidserver 2.4.2` parsing, lint, metadata normalization, and automatic
-update detection passed for `1.0.1+13`; re-verify after retargeting to
-`1.0.1+14`. The GitLab fork pipeline initially showed zero jobs because GitLab
-requested account identity verification (not a metadata test failure); after
-fixing an unrelated `AutoUpdateMode` schema-validation failure, a full pipeline
-(9/9 jobs, including `fdroid build`) has since passed against the
-`1.0.1+13`/commit-`6c9d3c5` metadata still on the MR at that time. The MR has
-not yet been retargeted to `1.0.1+14`/commit-`a591b78`, so that specific
-combination has not itself been through CI yet — do so and re-check before
-treating it as validated.
+update detection passed for `1.0.1+13`; re-verify against `1.0.1+14`. The
+GitLab fork pipeline initially showed zero jobs because GitLab requested
+account identity verification (not a metadata test failure); after fixing an
+unrelated `AutoUpdateMode` schema-validation failure, a full pipeline (9/9
+jobs, including `fdroid build`) passed against the `1.0.1+13`/commit-`6c9d3c5`
+metadata that was on the MR at that time. A follow-up pipeline for the
+`1.0.1+14` retarget was triggered right after — check its result before
+treating `1.0.1+14` as CI-validated.
 
 ## 3. One-time configuration
 
