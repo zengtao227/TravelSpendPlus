@@ -7,23 +7,23 @@
 
 ## Acceptance Criteria
 
-- [ ] `app/pubspec.yaml` declares `version: 1.0.1+13` and changelog `13.txt`
+- [x] `app/pubspec.yaml` declares `version: 1.0.1+13` and changelog `13.txt`
   describes the release.
-- [ ] The Android application ID remains `com.zengtao.travelspendplus`.
-- [ ] No release build uses the Android debug signing key.
-- [ ] The direct `sqlite3_flutter_libs` dependency is removed or its continued
+- [x] The Android application ID remains `com.zengtao.travelspendplus`.
+- [x] No release build uses the Android debug signing key.
+- [x] The direct `sqlite3_flutter_libs` dependency is removed or its continued
   use is justified with F-Droid-compatible evidence.
-- [ ] Two to four representative, redistributable Android screenshots exist in
+- [x] Two to four representative, redistributable Android screenshots exist in
   fastlane metadata.
-- [ ] Flutter analysis, tests, and the release build pass.
-- [ ] Intentional release files are committed and pushed to GitHub `main`
+- [x] Flutter analysis, tests, and the release build pass.
+- [x] Intentional release files are committed and pushed to GitHub `main`
   without overwriting unrelated user changes.
-- [ ] GitLab `main` and tag `v1.0.1+13` resolve to the same commits as GitHub.
-- [ ] A GitHub Release exists for `v1.0.1+13`; any attached upstream APK is
+- [x] GitLab `main` and tag `v1.0.1+13` resolve to the same commits as GitHub.
+- [x] A GitHub Release exists for `v1.0.1+13`; any attached upstream APK is
   release-signed, never debug-signed or unsigned.
-- [ ] F-Droid metadata names the immutable release commit and passes available
+- [x] F-Droid metadata names the immutable release commit and passes available
   metadata/build checks.
-- [ ] A submission is opened against F-Droid `fdroiddata`, or the exact external
+- [x] A submission is opened against F-Droid `fdroiddata`, or the exact external
   authorization/credential/reviewer blocker is recorded.
 
 ## Verification
@@ -47,23 +47,33 @@
 
 ## Manual Checks
 
-- [ ] Screenshots show real app UI without personal or fabricated sensitive
+- [x] Screenshots show real app UI without personal or fabricated sensitive
   data and render correctly.
-- [ ] GitHub Actions mirror secrets are configured without exposing their
+- [x] GitHub Actions mirror secrets are configured without exposing their
   values.
-- [ ] GitHub Release notes and F-Droid descriptions are accurate and avoid
+- [x] GitHub Release notes and F-Droid descriptions are accurate and avoid
   unsupported privacy claims.
-- [ ] F-Droid submission status and reviewer findings are recorded accurately.
+- [x] F-Droid submission status and reviewer findings are recorded accurately.
 
 ## Result
 
-- Status: PARTIAL
+- Status: PARTIAL — repository release work is complete; F-Droid review is external.
 - Evidence:
-  - Baseline `1.0.0+12` analysis, 233 tests, and unsigned release build passed
-    before the version bump.
-  - GitHub and GitLab baseline main/tag refs matched on 2026-08-03.
+  - `flutter analyze`: PASS with no issues.
+  - `flutter test`: PASS, 234 tests.
+  - `flutter build apk --release`: PASS, 65.9 MB unsigned APK.
+  - APK package/version: `com.zengtao.travelspendplus`, `1.0.1`, code `13`.
+  - Upstream APK signature: v2/v3 PASS; SHA-256
+    `4f681a930728bb1156660f1b2bd9e2195ed4216a934fde3a5d1c619dd669758e`.
+  - GitHub Actions mirror runs for `main` and `v1.0.1+13`: PASS.
+  - GitHub and GitLab release tag both resolve to
+    `6c9d3c551838cf08b85cab70df56f24ac3c35460`.
+  - GitHub Release published with verified signed APK.
+  - F-Droid submission opened as `fdroid/fdroiddata!44806`.
+  - Official `fdroidserver 2.4.2` parser, `fdroid lint`, and update-check
+    simulation: PASS; the update rule found `1.0.1 (13)` at the release commit.
 - Remaining risks:
-  - GitHub/GitLab/F-Droid credentials and repository permissions have not yet
-    been confirmed.
-  - The SQLite native dependency and screenshot automation still require
-    inspection.
+  - GitLab refused to start fork/MR CI jobs until account identity verification;
+    the MR asks F-Droid maintainers to trigger authoritative upstream CI.
+  - F-Droid reviewers must independently accept the dependency scan and build.
+  - The upstream private signing key requires a separate secure backup.

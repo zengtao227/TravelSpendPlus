@@ -14,9 +14,9 @@ F-Droid workflow and must not receive independent development commits.
 - GitHub source: `https://github.com/zengtao227/TravelSpendPlus`
 - GitLab mirror: `https://gitlab.com/zengtao227/TravelSpendPlus`
 
-The current tag predates the license, release metadata, and signing cleanup in
-this change. Do not submit build `12` as the first F-Droid build. Publish a new
-version code and immutable tag after this change is merged.
+Release `v1.0.1+13` includes the license, release metadata, dependency cleanup,
+and release-signing correction. Build `12` predates that work and remains
+excluded from the first F-Droid submission.
 
 ## Before Publishing a Release
 
@@ -35,8 +35,8 @@ version code and immutable tag after this change is merged.
   `fastlane/metadata/android/en-US/images/phoneScreenshots/`.
 - [x] Add a changelog named `<versionCode>.txt`; the filename must exactly match
   the numeric Android version code.
-- [ ] Commit all release-readiness changes before creating the release tag.
-- [ ] Create an immutable tag using the established `v<versionName>+<versionCode>`
+- [x] Commit all release-readiness changes before creating the release tag.
+- [x] Create an immutable tag using the established `v<versionName>+<versionCode>`
   convention.
 
 ## Upstream APK Signing
@@ -98,19 +98,24 @@ GitLab the new development source.
 
 ## First F-Droid Submission
 
-1. Confirm the GitLab mirror is public and synchronized.
-2. Update `docs/fdroid/com.zengtao.travelspendplus.yml`:
-   - Replace the disabled build with the first post-readiness version name,
-     version code, and full 40-character commit hash.
-   - Confirm the Flutter revision and output APK path against an isolated build.
-3. Copy the metadata file into a fork of the F-Droid `fdroiddata` repository at
-   `metadata/com.zengtao.travelspendplus.yml`.
-4. Run `fdroid rewritemeta com.zengtao.travelspendplus`, `fdroid lint
-   com.zengtao.travelspendplus`, and an isolated `fdroid build` where possible.
-5. Submit a merge request to the F-Droid `fdroiddata` project. The simpler but
-   usually slower alternative is an issue in the F-Droid Submission Queue.
-6. Respond to dependency scanner and reproducibility review findings without
-   adding binary exceptions unless their necessity and licensing are proven.
+Current submission: `https://gitlab.com/fdroid/fdroiddata/-/merge_requests/44806`.
+GitLab blocked fork CI before starting any jobs because it requested account
+identity verification. The merge request records this and asks F-Droid
+maintainers to trigger the authoritative upstream pipeline, as directed by the
+official inclusion template.
+
+- [x] Confirm the GitLab mirror is public and synchronized.
+- [x] Point the build recipe to version `1.0.1`, code `13`, and release commit
+  `6c9d3c551838cf08b85cab70df56f24ac3c35460`.
+- [x] Copy the metadata into a public `fdroiddata` fork at
+  `metadata/com.zengtao.travelspendplus.yml`.
+- [x] Pass the official fdroidserver parser, `fdroid lint`, and automatic update
+  simulation against the submitted metadata.
+- [ ] Complete the authoritative F-Droid CI and isolated build checks.
+- [x] Submit a merge request to the F-Droid `fdroiddata` project.
+- [ ] Respond to dependency scanner, CI, and reproducibility review findings
+  without adding binary exceptions unless their necessity and licensing are
+  proven.
 
 The GitLab mirror contains source branches and tags. GitHub Release assets such
 as APK attachments are not Git objects and are not copied by the mirror
