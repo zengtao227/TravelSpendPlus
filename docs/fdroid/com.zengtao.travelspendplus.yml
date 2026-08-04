@@ -7,25 +7,14 @@ IssueTracker: https://github.com/zengtao227/TravelSpendPlus/issues
 Changelog: https://github.com/zengtao227/TravelSpendPlus/releases
 
 AutoName: TravelSpendPlus
-Summary: Track trip budgets and planned or actual expenses by category
-Description: |-
-  TravelSpendPlus records planned and actual expenses for a trip.
-
-  Trips can have dates, a home currency, and an optional total budget. Expenses
-  can be grouped by built-in or custom categories, and category breakdowns help
-  compare spending. Exchange rates can be entered manually or requested from
-  the optional live reference-rate service.
-
-  The app is designed for direct, local expense tracking without an account.
-  It is open-source software released under the MIT License.
 
 RepoType: git
 Repo: https://gitlab.com/zengtao227/TravelSpendPlus.git
 
 Builds:
   - versionName: 1.0.1
-    versionCode: 13
-    commit: 6c9d3c551838cf08b85cab70df56f24ac3c35460
+    versionCode: 14
+    commit: PLACEHOLDER_RELEASE_COMMIT
     subdir: app
     output: build/app/outputs/flutter-apk/app-release.apk
     srclibs:
@@ -39,15 +28,15 @@ Builds:
     prebuild:
       - export PUB_CACHE=$(pwd)/.pub-cache
       - $$flutter$$/bin/flutter config --no-analytics
-      - $$flutter$$/bin/flutter pub get
+      - $$flutter$$/bin/flutter pub get --enforce-lockfile
     scandelete:
       - app/.pub-cache
     build:
       - export PUB_CACHE=$(pwd)/.pub-cache
       - $$flutter$$/bin/flutter build apk --release
 
-AutoUpdateMode: Version v%v+%c
+AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: app/pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
 CurrentVersion: 1.0.1
-CurrentVersionCode: 13
+CurrentVersionCode: 14

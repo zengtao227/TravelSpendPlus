@@ -1,0 +1,1 @@
+F-Droid packaging fix: add the missing fastlane store icon. No functional changes to the app itself.
