@@ -10,11 +10,12 @@ AutoName: TravelSpendPlus
 
 RepoType: git
 Repo: https://gitlab.com/zengtao227/TravelSpendPlus.git
+Binaries: https://github.com/zengtao227/TravelSpendPlus/releases/download/v%v+%c/TravelSpendPlus-%v+%c.apk
 
 Builds:
   - versionName: 1.0.1
-    versionCode: 14
-    commit: a591b78dc537d0d11811ca35365ee3b55b5a9760
+    versionCode: 15
+    commit: dfb3841b3d3182964ee728db8c230d28344376e0
     subdir: app
     output: build/app/outputs/flutter-apk/app-release.apk
     srclibs:
@@ -35,8 +36,10 @@ Builds:
       - export PUB_CACHE=$(pwd)/.pub-cache
       - $$flutter$$/bin/flutter build apk --release
 
+AllowedAPKSigningKeys: b458e23e5a27335f9f72e8daee04eeb2ad8cdb1280325802950be170a2a33603
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: app/pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
 CurrentVersion: 1.0.1
-CurrentVersionCode: 14
+CurrentVersionCode: 15

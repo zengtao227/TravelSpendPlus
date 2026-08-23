@@ -23,6 +23,14 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
+
+    buildTypes {
+        release {
+            // F-Droid reproducible builds run from a different checkout path.
+            // AGP VCS metadata embeds that path in the APK, so exclude it.
+            vcsInfo.include = false
+        }
+    }
 }
 
 kotlin {
