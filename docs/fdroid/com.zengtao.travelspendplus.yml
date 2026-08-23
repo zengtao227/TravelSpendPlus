@@ -10,7 +10,8 @@ AutoName: TravelSpendPlus
 
 RepoType: git
 Repo: https://gitlab.com/zengtao227/TravelSpendPlus.git
-Binaries: https://github.com/zengtao227/TravelSpendPlus/releases/download/v%v+%c/TravelSpendPlus-%v+%c.apk
+Binaries: 
+  https://github.com/zengtao227/TravelSpendPlus/releases/download/v%v+%c/TravelSpendPlus-%v+%c.apk
 
 Builds:
   - versionName: 1.0.1
