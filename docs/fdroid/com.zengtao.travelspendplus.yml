@@ -14,8 +14,8 @@ Binaries: https://github.com/zengtao227/TravelSpendPlus/releases/download/v%v+%c
 
 Builds:
   - versionName: 1.0.1
-    versionCode: 15
-    commit: dfb3841b3d3182964ee728db8c230d28344376e0
+    versionCode: 16
+    commit: 53cc62d4c68e18be2324f08690eabd271028f91b
     subdir: app
     output: build/app/outputs/flutter-apk/app-release.apk
     srclibs:
@@ -42,4 +42,4 @@ AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: app/pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
 CurrentVersion: 1.0.1
-CurrentVersionCode: 15
+CurrentVersionCode: 16
