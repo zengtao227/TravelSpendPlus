@@ -1,0 +1,1 @@
+F-Droid packaging update: build the upstream APK in the same Linux source path as F-Droid for reproducible binary matching. No functional changes to the app.
