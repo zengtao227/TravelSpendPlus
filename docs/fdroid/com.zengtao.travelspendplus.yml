@@ -10,15 +10,14 @@ AutoName: TravelSpendPlus
 
 RepoType: git
 Repo: https://gitlab.com/zengtao227/TravelSpendPlus.git
-Binaries: 
-  https://github.com/zengtao227/TravelSpendPlus/releases/download/v%v+%c/TravelSpendPlus-%v+%c.apk
+Binaries: https://github.com/zengtao227/TravelSpendPlus/releases/download/v%v/TravelSpendPlus-%v+%c.apk
 
 Builds:
-  - versionName: 1.0.1
-    versionCode: 16
-    commit: 53cc62d4c68e18be2324f08690eabd271028f91b
+  - versionName: 1.0.2
+    versionCode: 171
+    commit: 52f3f50769f67b288ddd47260c17f9026063646a
     subdir: app
-    output: build/app/outputs/flutter-apk/app-release.apk
+    output: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
     srclibs:
       - flutter@3.44.7
     rm:
@@ -35,12 +34,62 @@ Builds:
       - app/.pub-cache
     build:
       - export PUB_CACHE=$(pwd)/.pub-cache
-      - $$flutter$$/bin/flutter build apk --release
+      - $$flutter$$/bin/flutter build apk --release --split-per-abi --target-platform="android-arm"
+
+  - versionName: 1.0.2
+    versionCode: 172
+    commit: 52f3f50769f67b288ddd47260c17f9026063646a
+    subdir: app
+    output: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+    srclibs:
+      - flutter@3.44.7
+    rm:
+      - app/ios
+      - app/linux
+      - app/macos
+      - app/web
+      - app/windows
+    prebuild:
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - $$flutter$$/bin/flutter config --no-analytics
+      - $$flutter$$/bin/flutter pub get --enforce-lockfile
+    scandelete:
+      - app/.pub-cache
+    build:
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - $$flutter$$/bin/flutter build apk --release --split-per-abi --target-platform="android-arm64"
+
+  - versionName: 1.0.2
+    versionCode: 173
+    commit: 52f3f50769f67b288ddd47260c17f9026063646a
+    subdir: app
+    output: build/app/outputs/flutter-apk/app-x86_64-release.apk
+    srclibs:
+      - flutter@3.44.7
+    rm:
+      - app/ios
+      - app/linux
+      - app/macos
+      - app/web
+      - app/windows
+    prebuild:
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - $$flutter$$/bin/flutter config --no-analytics
+      - $$flutter$$/bin/flutter pub get --enforce-lockfile
+    scandelete:
+      - app/.pub-cache
+    build:
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - $$flutter$$/bin/flutter build apk --release --split-per-abi --target-platform="android-x64"
 
 AllowedAPKSigningKeys: b458e23e5a27335f9f72e8daee04eeb2ad8cdb1280325802950be170a2a33603
 
 AutoUpdateMode: Version
-UpdateCheckMode: Tags
+UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
+VercodeOperation:
+  - '%c * 10 + 1'
+  - '%c * 10 + 2'
+  - '%c * 10 + 3'
 UpdateCheckData: app/pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
-CurrentVersion: 1.0.1
-CurrentVersionCode: 16
+CurrentVersion: 1.0.2
+CurrentVersionCode: 173
