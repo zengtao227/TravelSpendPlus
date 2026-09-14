@@ -11,9 +11,9 @@ second release process.
 GitHub (development source of truth)
   ├─ push main ──> GitHub Actions ──> GitLab mirror main
   ├─ push tag  ──> GitHub Actions ──> GitLab mirror tag
-  └─ GitHub Release + optional signed upstream APK
+  └─ GitHub Release + signed per-ABI APKs
 
-GitLab mirror source/tag ──> F-Droid builds and signs its own APK
+GitLab mirror source/tag ──> F-Droid rebuilds each ABI ──> verifies the upstream APKs
 ```
 
 | Purpose | Location | Write policy |
@@ -23,9 +23,10 @@ GitLab mirror source/tag ──> F-Droid builds and signs its own APK
 | F-Droid package recipe | `fdroid/fdroiddata` | Change through an F-Droid merge request |
 
 The mirror contains Git branches and tags. GitHub Release attachments are not
-Git objects, are not mirrored, and must not be manually copied to GitLab for
-F-Droid. F-Droid checks out the source recipe, builds an unsigned APK, and signs
-the distributed APK with the F-Droid key.
+Git objects and are not mirrored. The F-Droid recipe uses reproducible-build
+verification: F-Droid rebuilds each ABI from the mirrored source and compares it
+with the corresponding developer-signed GitHub Release APK. On a match, F-Droid
+publishes the developer-signed APK rather than replacing its signing identity.
 
 ## 2. Fixed project facts
 
@@ -33,34 +34,22 @@ the distributed APK with the F-Droid key.
 - Android application ID: `com.zengtao.travelspendplus`
 - License: MIT
 - Default branch: `main`
-- Tag format: `v<versionName>+<versionCode>`
+- Tag format from `1.0.2` onward: `v<versionName>`
 - Fastlane metadata: `fastlane/metadata/android/en-US/`
 - Local F-Droid recipe copy:
   `docs/fdroid/com.zengtao.travelspendplus.yml`
 - Mirror workflow: `.github/workflows/mirror-to-gitlab.yml`
-- Current submitted release candidate: `1.0.1+14`
-- Release tag: `v1.0.1+14`
-- Tagged source commit: `a591b78dc537d0d11811ca35365ee3b55b5a9760`
+- Source release: `1.0.2+17`
+- ABI version-code mapping: `armeabi-v7a = base*10+1`, `arm64-v8a = base*10+2`,
+  `x86_64 = base*10+3`
+- For base code `17`, published Android version codes are `171`, `172`, `173`.
+- Release tag: `v1.0.2`
 - Current F-Droid submission:
   `https://gitlab.com/fdroid/fdroiddata/-/merge_requests/44806`
 
-As of 2026-08-04, the F-Droid MR is open. `v1.0.1+13` (commit `6c9d3c5...`) was
-the originally submitted candidate; it does not contain `fastlane/.../icon.png`
-because that file was only added to `main` after the tag (tags are immutable,
-so it could not be backfilled). `v1.0.1+14` is a versionCode-only bump that
-includes the icon and syncs the local recipe doc with metadata fixes already
-applied on the MR (`AutoUpdateMode`, dropped duplicate `Summary`/`Description`,
-`--enforce-lockfile`). The `fdroiddata` MR's `Builds` entry has been updated to
-point at `1.0.1+14`/commit-`a591b78` (was `1.0.1+13`/commit-`6c9d3c5`). Local
-`fdroidserver 2.4.2` parsing, lint, metadata normalization, and automatic
-update detection passed for `1.0.1+13`; re-verify against `1.0.1+14`. The
-GitLab fork pipeline initially showed zero jobs because GitLab requested
-account identity verification (not a metadata test failure); after fixing an
-unrelated `AutoUpdateMode` schema-validation failure, a full pipeline (9/9
-jobs, including `fdroid build`) passed against the `1.0.1+13`/commit-`6c9d3c5`
-metadata that was on the MR at that time. A follow-up pipeline for the
-`1.0.1+14` retarget was triggered right after — check its result before
-treating `1.0.1+14` as CI-validated.
+Legacy tags such as `v1.0.1+16` remain immutable. The tag convention changes at
+`1.0.2` so the reproducible-binary URL can use `%v` for the release tag and
+`%c` for each ABI-specific APK. Do not move or replace any legacy tag.
 
 ## 3. One-time configuration
 
@@ -82,8 +71,9 @@ enable a bidirectional workflow and never treat GitLab as the source of truth.
 
 ### Upstream GitHub APK signing
 
-This signing identity is only for optional APKs attached to GitHub Releases.
-It is unrelated to the key F-Droid uses for its repository APK.
+This signing identity is required for the reproducible-build APKs attached to
+GitHub Releases. F-Droid verifies those APKs against its own source rebuilds and,
+on a match, preserves this signing identity for the published package.
 
 - Keystore:
   `/Users/zengtao/Library/Application Support/TravelSpendPlus/release.keystore`
@@ -129,28 +119,34 @@ work.
 
 ### Step 2 — Choose a new version
 
-- Increment `versionName` using semantic versioning.
-- Increment the positive integer `versionCode`; never reuse a code.
-- Construct the tag as `v<versionName>+<versionCode>`.
-- Confirm the tag and version code do not already exist.
+- Increment `versionName` using semantic versioning; from `1.0.2` onward every
+  release gets a new versionName because the GitHub Release tag is `v<versionName>`.
+- Increment the positive source/base `versionCode`; never reuse a code.
+- Published Android version codes are `base*10+1`, `base*10+2`, and `base*10+3`
+  for `armeabi-v7a`, `arm64-v8a`, and `x86_64` respectively.
+- Construct the tag as `v<versionName>` and confirm it does not already exist.
 
-Example for a hypothetical next release only:
+Example for a hypothetical release with source code `18`:
 
 ```text
-pubspec version: 1.0.2+14
-tag: v1.0.2+14
-changelog: fastlane/metadata/android/en-US/changelogs/14.txt
+pubspec version: 1.0.3+18
+tag: v1.0.3
+APK version codes: 181, 182, 183
+changelogs: 181.txt, 182.txt, 183.txt
 ```
 
-Do not blindly use that example if a newer version already exists.
+Legacy `v<versionName>+<versionCode>` tags remain immutable but are no longer
+used for new releases.
 
 ### Step 3 — Update release-owned files
 
 Update all of the following in one release commit:
 
-1. `app/pubspec.yaml`: `version: <versionName>+<versionCode>`.
-2. `app/lib/version.dart`: keep `kAppVersion` exactly synchronized.
-3. `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`.
+1. `app/pubspec.yaml`: `version: <versionName>+<baseVersionCode>`.
+2. `app/lib/version.dart`: keep `kAppVersion` exactly synchronized with the
+   source/base version.
+3. Add identical Fastlane changelogs for the three published Android version
+   codes: `<base*10+1>.txt`, `<base*10+2>.txt`, `<base*10+3>.txt`.
 4. Store descriptions/screenshots only when the user-visible behavior changed.
 5. Any code or documentation intended to be part of the tagged source.
 
@@ -190,7 +186,7 @@ cd app
 flutter pub get
 flutter analyze
 flutter test
-flutter build apk --release
+flutter build apk --release --split-per-abi
 cd ..
 ```
 
@@ -198,18 +194,21 @@ Required evidence:
 
 - analysis exits successfully with no issues;
 - all tests pass;
-- the APK exists at
-  `app/build/app/outputs/flutter-apk/app-release.apk`;
-- Android package, version name, and version code match the intended release.
+- the three APKs exist at
+  `app/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk`,
+  `app-arm64-v8a-release.apk`, and `app-x86_64-release.apk`;
+- all three APKs have the intended versionName and Android version codes
+  `base*10+1`, `base*10+2`, and `base*10+3` respectively.
 
-Use Android build tools to inspect the artifact:
+Use Android build tools to inspect every artifact, for example:
 
 ```sh
-aapt dump badging app/build/app/outputs/flutter-apk/app-release.apk
-apksigner verify --verbose app/build/app/outputs/flutter-apk/app-release.apk
+aapt dump badging app/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+apksigner verify --verbose app/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
 ```
 
-The public build is expected to be unsigned. It must not be debug-signed.
+Repeat for `arm64-v8a` and `x86_64`. The source build output is expected to be
+unsigned and must not be debug-signed.
 
 ### Step 6 — Commit and push GitHub `main`
 
@@ -242,29 +241,30 @@ a release blocker.
 ### Step 8 — Create and mirror the immutable tag
 
 ```sh
-git tag -a "v<versionName>+<versionCode>" -m "TravelSpendPlus <versionName>"
-git push origin "v<versionName>+<versionCode>"
-git rev-list -n 1 "v<versionName>+<versionCode>"
+git tag -a "v<versionName>" -m "TravelSpendPlus <versionName>"
+git push origin "v<versionName>"
+git rev-list -n 1 "v<versionName>"
 ```
 
 Wait for the tag-triggered mirror workflow. Compare the tag and its peeled
 commit on both hosts:
 
 ```sh
-git ls-remote https://github.com/zengtao227/TravelSpendPlus.git "refs/tags/v<versionName>+<versionCode>*"
-git ls-remote https://gitlab.com/zengtao227/TravelSpendPlus.git "refs/tags/v<versionName>+<versionCode>*"
+git ls-remote https://github.com/zengtao227/TravelSpendPlus.git "refs/tags/v<versionName>*"
+git ls-remote https://gitlab.com/zengtao227/TravelSpendPlus.git "refs/tags/v<versionName>*"
 ```
 
 The F-Droid `Builds.commit` value must be the full 40-character source commit,
 not the annotated tag-object hash. Never move the tag after publication. A
 later docs-only commit on `main` is allowed but must not retag the release.
 
-### Step 9 — Optionally sign an upstream GitHub APK
+### Step 9 — Sign the three upstream GitHub APKs
 
-F-Droid does not need this artifact. If publishing an upstream APK, work on a
-copy outside the repository and keep the public build configuration unsigned.
-Locate `zipalign` and `apksigner` in the installed Android SDK build-tools
-directory, then use a release-specific temporary directory.
+Reproducible F-Droid verification requires one developer-signed reference APK
+for each ABI. Work on copies outside the repository and keep the public build
+configuration unsigned. Locate `zipalign` and `apksigner` in the installed
+Android SDK build-tools directory, then use a release-specific temporary
+directory.
 
 Retrieve the password from Keychain without printing it, export it only for the
 signing process, and clear it afterwards:
@@ -286,23 +286,34 @@ shasum -a 256 <aligned-apk>
 unset RELEASE_STORE_PASSWORD
 ```
 
-The certificate fingerprint must match the value in section 3. Do not publish
-an unsigned or debug-signed APK as the upstream release asset.
+Repeat for all three ABIs and rename the verified signed outputs to:
+
+```text
+TravelSpendPlus-<versionName>+<base*10+1>.apk
+TravelSpendPlus-<versionName>+<base*10+2>.apk
+TravelSpendPlus-<versionName>+<base*10+3>.apk
+```
+
+The certificate fingerprint must match the value in section 3 for every APK.
+Do not publish an unsigned or debug-signed APK as a release asset.
 
 ### Step 10 — Publish the GitHub Release
 
-Create factual release notes from the changelog and attach only the verified
-signed APK when one is being offered:
+Create factual release notes from the changelog and attach all three verified
+signed APKs:
 
 ```sh
-gh release create "v<versionName>+<versionCode>" <signed-apk> \
+gh release create "v<versionName>" \
+  TravelSpendPlus-<versionName>+<base*10+1>.apk \
+  TravelSpendPlus-<versionName>+<base*10+2>.apk \
+  TravelSpendPlus-<versionName>+<base*10+3>.apk \
   --title "TravelSpendPlus <versionName>" \
   --notes "<concise factual release notes>"
-gh release view "v<versionName>+<versionCode>"
+gh release view "v<versionName>"
 ```
 
-Do not create a GitLab Release solely for F-Droid and do not upload this APK to
-GitLab as part of the mirror workflow.
+Do not create a GitLab Release solely for F-Droid and do not upload these APKs
+to GitLab as part of the mirror workflow.
 
 ## 6. F-Droid metadata workflow
 
@@ -343,7 +354,11 @@ The recipe currently uses:
 
 ```yaml
 AutoUpdateMode: Version
-UpdateCheckMode: Tags
+UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
+VercodeOperation:
+  - '%c * 10 + 1'
+  - '%c * 10 + 2'
+  - '%c * 10 + 3'
 ```
 
 `AutoUpdateMode` briefly used the invalid value `Version v%v+%c`, which fails
@@ -360,8 +375,9 @@ For a normal future release:
 5. Submit a focused `fdroiddata` MR only if the automatic update fails or the
    build recipe itself must change.
 
-Do not edit the official F-Droid metadata merely to upload the GitHub APK;
-F-Droid always builds from source.
+Do not edit the official F-Droid metadata merely to upload GitHub APKs. F-Droid
+always rebuilds from source; the GitHub APKs are reference binaries used to
+verify reproducibility and preserve the developer signing identity.
 
 ## 7. Divergence and failure handling
 
@@ -399,9 +415,9 @@ A release is operationally complete only when all of these are true:
 - Flutter analysis, tests, and release build pass;
 - GitHub and GitLab `main` point to the same release commit;
 - the immutable tag exists on both hosts and resolves to the same source commit;
-- any GitHub APK is release-signed and fingerprint-verified;
-- the GitHub Release is published with accurate notes;
-- F-Droid metadata recognizes the same version/code/commit;
+- all three ABI APKs are release-signed and fingerprint-verified;
+- the GitHub Release is published with accurate notes and all three APKs;
+- F-Droid metadata recognizes the same version, three ABI codes, and commit;
 - F-Droid review status and external blockers are reported honestly;
 - the private signing key remains outside Git and has a secure backup;
 - the worktree is clean or contains only clearly identified user-owned work.

@@ -1,0 +1,1 @@
+F-Droid packaging update: add per-ABI APK builds and ABI-specific Android version codes. No functional changes to the app.

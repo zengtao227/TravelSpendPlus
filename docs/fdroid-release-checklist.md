@@ -8,15 +8,16 @@ F-Droid workflow and must not receive independent development commits.
 - Application ID: `com.zengtao.travelspendplus`
 - License: MIT
 - Flutter project directory: `app/`
-- Release candidate version: `1.0.1+13`
-- Release candidate tag: `v1.0.1+13`
+- Source release version: `1.0.2+17`
+- Published Android version codes: `171`, `172`, `173`
+- Release tag: `v1.0.2`
 - Pinned Flutter revision: `84fc5cbb223bc12f83d65b647ff8a56caf779ffd`
 - GitHub source: `https://github.com/zengtao227/TravelSpendPlus`
 - GitLab mirror: `https://gitlab.com/zengtao227/TravelSpendPlus`
 
-Release `v1.0.1+13` includes the license, release metadata, dependency cleanup,
-and release-signing correction. Build `12` predates that work and remains
-excluded from the first F-Droid submission.
+Legacy `v1.0.1+<code>` tags remain immutable. From `1.0.2` onward releases use
+`v<versionName>` tags plus ABI-specific Android version codes so F-Droid can
+verify three reproducible split APKs against one GitHub Release.
 
 ## Before Publishing a Release
 
@@ -25,7 +26,8 @@ excluded from the first F-Droid submission.
   `com.zengtao.travelspendplus`.
 - [x] Confirm release builds do not use the debug signing configuration.
 - [x] Run `flutter pub get`, `flutter analyze`, and `flutter test` from `app/`.
-- [x] Run `flutter build apk --release` and locate the unsigned release APK.
+- [ ] Run `flutter build apk --release --split-per-abi` and locate all three
+  unsigned ABI release APKs.
 - [x] Review direct and transitive dependencies for non-free libraries,
   downloaded executables, and prebuilt native binaries.
 - [x] Confirm `sqlite3_flutter_libs` remains absent. The project uses
@@ -33,18 +35,17 @@ excluded from the first F-Droid submission.
   plugin.
 - [x] Add representative Android screenshots under
   `fastlane/metadata/android/en-US/images/phoneScreenshots/`.
-- [x] Add a changelog named `<versionCode>.txt`; the filename must exactly match
-  the numeric Android version code.
-- [x] Commit all release-readiness changes before creating the release tag.
-- [x] Create an immutable tag using the established `v<versionName>+<versionCode>`
-  convention.
+- [x] Add changelogs for all three published Android version codes
+  (`base*10+1`, `base*10+2`, `base*10+3`).
+- [ ] Commit all release-readiness changes before creating the release tag.
+- [ ] Create an immutable `v<versionName>` tag only after the split build passes.
 
 ## Upstream APK Signing
 
-F-Droid builds and signs its own APK, so this identity applies only to APKs
-attached to upstream GitHub Releases. The private key and password must remain
-outside Git. Back up the key before publishing the first signed APK; losing it
-prevents future upstream APKs from updating existing installations.
+The F-Droid recipe uses reproducible builds, so this identity must sign all
+three ABI APKs attached to each GitHub Release. F-Droid rebuilds them from
+source and publishes the developer-signed APKs only after they match. The
+private key and password must remain outside Git.
 
 - Key alias: `travelspendplus`
 - Certificate subject: `CN=TravelSpendPlus, O=zengtao227`
@@ -117,31 +118,31 @@ official inclusion template.
   without adding binary exceptions unless their necessity and licensing are
   proven.
 
-The GitLab mirror contains source branches and tags. GitHub Release assets such
-as APK attachments are not Git objects and are not copied by the mirror
-workflow. A normal F-Droid submission does not require those APKs because
-F-Droid builds and signs the app from source.
+The GitLab mirror contains source branches and tags. GitHub Release APKs are not
+Git objects and are not copied by the mirror workflow. They must remain on
+GitHub because the F-Droid recipe downloads them as reproducible-build reference
+binaries and verifies them against its source builds.
 
 ## Updating After Acceptance
 
-1. Change the version in `app/pubspec.yaml`; never reuse a version code.
-2. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`.
-3. Run analysis, tests, and the release build.
-4. Commit to GitHub and create the matching immutable tag.
-5. Verify the tag reaches GitLab at the same commit.
-6. Add a new `Builds` entry to the F-Droid metadata using the full commit hash,
-   or enable a tested automatic update mode after the tag convention is stable.
+1. Bump both `versionName` and the source/base code in `app/pubspec.yaml`.
+2. Add changelogs for the three ABI version codes derived from that base code.
+3. Run analysis, tests, and `flutter build apk --release --split-per-abi`.
+4. Commit to GitHub and create the immutable `v<versionName>` tag.
+5. Sign and publish all three ABI APKs, then verify the tag reaches GitLab.
+6. Let the tested `VercodeOperation` auto-update create the three F-Droid build
+   entries, or update the existing MR manually while it is still under review.
 
 ## Common Failure Causes
 
-- The tag, `versionName`, and `versionCode` do not agree.
+- The `v<versionName>` tag, source/base code, or ABI-derived version codes do not agree.
 - The build recipe points to a branch or moving tag instead of a full commit.
 - A release build is signed with a debug key.
 - The repository or submodules are not publicly readable.
 - A dependency contains non-free code, tracking, ads, or unreviewed native
   binaries.
 - The selected Flutter/Gradle/JDK versions are unavailable or not pinned.
-- The declared APK output path differs from the actual unsigned build output.
+- Any declared ABI APK output path differs from the actual unsigned build output.
 - Fastlane descriptions exceed their limits or are stored in the wrong path.
 - A changelog filename does not match its Android version code.
 - Screenshots or other media have unclear redistribution rights.
