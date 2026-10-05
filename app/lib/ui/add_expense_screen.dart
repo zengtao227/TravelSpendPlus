@@ -125,6 +125,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   late DateTime _date;
   late DateTime _endDate;
   late bool _excludeFromBreakdown;
+  late bool _spreadAcrossDays;
   late ExpenseStatus _status;
   List<ExchangeRate> _existingRates = [];
   List<String> _customCategories = [];
@@ -153,6 +154,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     // that do (e.g. a multi-night hotel stay).
     _endDate = civilDate(existing?.endDate ?? _date);
     _excludeFromBreakdown = existing?.excludeFromBreakdown ?? false;
+    _spreadAcrossDays = existing?.spreadAcrossDays ?? false;
     _status = existing?.status ?? ExpenseStatus.actual;
     _loadRates();
     _loadCategories();
@@ -365,10 +367,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       endDate: _endDate,
       location: _locationController.text.trim(),
       excludeFromBreakdown: _excludeFromBreakdown,
+      spreadAcrossDays: _spreadAcrossDays,
       status: _status,
       includeInSplit: true,
       paidBy: existing?.paidBy ?? participant,
       paidFor: existing?.paidFor ?? [participant],
+      createdAt: existing?.createdAt,
     );
     if (_isEditing) {
       await widget.repository.updateExpense(expense);
@@ -396,172 +400,184 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(_isEditing ? l10n.editExpense : l10n.addExpense)),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Center(child: _buildPhotoPicker()),
-            const SizedBox(height: 16),
-            // A plain (fully-reactive) DropdownButton, not
-            // DropdownButtonFormField — the latter's FormFieldState only
-            // reads `initialValue` once and never re-syncs to an externally
-            // changed value, which broke the moment _category was updated
-            // programmatically (after adding a new category, the field kept
-            // showing the "+ Add category" placeholder as if still
-            // selected). Validation is done by hand in _save() instead of
-            // via a Form validator, matching the same manual-error-text
-            // pattern ExchangeRateSettingsScreen already uses.
-            InputDecorator(
-              decoration: InputDecoration(labelText: l10n.category, errorText: _categoryError),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  key: const Key('expenseCategoryField'),
-                  value: _category,
-                  isExpanded: true,
-                  items: [
-                    for (final key in kExpenseCategoryKeys)
-                      DropdownMenuItem(
-                        value: key,
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(categoryIcon(key), size: 18),
-                          const SizedBox(width: 8),
-                          Text(categoryLabel(context, key)),
-                        ]),
-                      ),
-                    for (final name in _customCategories)
-                      DropdownMenuItem(
-                        value: name,
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(categoryIcon(name), size: 18),
-                          const SizedBox(width: 8),
-                          Text(name),
-                        ]),
-                      ),
-                    // Defensive: an existing expense's category might not be
-                    // in either list above yet (e.g. edit mode, first build,
-                    // before _loadCategories's Future resolves) — without
-                    // this, `value: _category` pointing at an item that
-                    // isn't in `items` throws.
-                    if (_category != null &&
-                        !kExpenseCategoryKeys.contains(_category) &&
-                        !_customCategories.contains(_category))
-                      DropdownMenuItem(value: _category, child: Text(_category!)),
-                    DropdownMenuItem(value: _kAddCategorySentinel, child: Text(l10n.addCategory)),
-                  ],
-                  onChanged: (value) {
-                    if (value == _kAddCategorySentinel) {
-                      _promptAddCategory();
-                      return;
-                    }
-                    setState(() {
-                      _category = value;
-                      _categoryError = null;
-                    });
-                  },
+      body: SafeArea(
+        top: false,
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Center(child: _buildPhotoPicker()),
+              const SizedBox(height: 16),
+              // A plain (fully-reactive) DropdownButton, not
+              // DropdownButtonFormField — the latter's FormFieldState only
+              // reads `initialValue` once and never re-syncs to an externally
+              // changed value, which broke the moment _category was updated
+              // programmatically (after adding a new category, the field kept
+              // showing the "+ Add category" placeholder as if still
+              // selected). Validation is done by hand in _save() instead of
+              // via a Form validator, matching the same manual-error-text
+              // pattern ExchangeRateSettingsScreen already uses.
+              InputDecorator(
+                decoration: InputDecoration(labelText: l10n.category, errorText: _categoryError),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    key: const Key('expenseCategoryField'),
+                    value: _category,
+                    isExpanded: true,
+                    items: [
+                      for (final key in kExpenseCategoryKeys)
+                        DropdownMenuItem(
+                          value: key,
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(categoryIcon(key), size: 18),
+                            const SizedBox(width: 8),
+                            Text(categoryLabel(context, key)),
+                          ]),
+                        ),
+                      for (final name in _customCategories)
+                        DropdownMenuItem(
+                          value: name,
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(categoryIcon(name), size: 18),
+                            const SizedBox(width: 8),
+                            Text(name),
+                          ]),
+                        ),
+                      // Defensive: an existing expense's category might not be
+                      // in either list above yet (e.g. edit mode, first build,
+                      // before _loadCategories's Future resolves) — without
+                      // this, `value: _category` pointing at an item that
+                      // isn't in `items` throws.
+                      if (_category != null &&
+                          !kExpenseCategoryKeys.contains(_category) &&
+                          !_customCategories.contains(_category))
+                        DropdownMenuItem(value: _category, child: Text(_category!)),
+                      DropdownMenuItem(value: _kAddCategorySentinel, child: Text(l10n.addCategory)),
+                    ],
+                    onChanged: (value) {
+                      if (value == _kAddCategorySentinel) {
+                        _promptAddCategory();
+                        return;
+                      }
+                      setState(() {
+                        _category = value;
+                        _categoryError = null;
+                      });
+                    },
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              key: const Key('expenseAmountField'),
-              controller: _amountController,
-              decoration: InputDecoration(labelText: l10n.amount),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              validator: (value) {
-                final parsed = double.tryParse(value ?? '');
-                // Validate against the rounded minor-units value Money.fromMajor
-                // will actually store, not the raw double — otherwise a value
-                // like 0.001 passes here (0.001 > 0) but rounds to 0 cents.
-                return (parsed != null && (parsed * 100).round() > 0)
-                    ? null
-                    : l10n.errorPositiveAmount;
-              },
-            ),
-            const SizedBox(height: 12),
-            CurrencyDropdownField(
-              fieldKey: const Key('expenseCurrencyField'),
-              value: _currency,
-              label: l10n.currency,
-              onChanged: (value) => setState(() => _currency = value),
-            ),
-            if (_needsNewExchangeRate) ...[
               const SizedBox(height: 12),
               TextFormField(
-                key: const Key('expenseExchangeRateField'),
-                controller: _exchangeRateController,
-                decoration: InputDecoration(
-                  // "1 home = ? foreign" — the direction a traveler actually
-                  // thinks in when exchanging cash, not "1 foreign = ? home".
-                  labelText: l10n.exchangeRatePrompt(widget.trip.homeCurrency, _currency),
-                ),
+                key: const Key('expenseAmountField'),
+                controller: _amountController,
+                decoration: InputDecoration(labelText: l10n.amount),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {
                   final parsed = double.tryParse(value ?? '');
-                  return (parsed != null && parsed > 0) ? null : l10n.errorPositiveRate;
+                  // Validate against the rounded minor-units value Money.fromMajor
+                  // will actually store, not the raw double — otherwise a value
+                  // like 0.001 passes here (0.001 > 0) but rounds to 0 cents.
+                  return (parsed != null && (parsed * 100).round() > 0)
+                      ? null
+                      : l10n.errorPositiveAmount;
                 },
               ),
-              MarketRateHelper(
-                // Rekeyed per currency pair so a stale fetched rate from a
-                // previously-selected currency can't linger after the user
-                // changes it.
-                key: ValueKey('market-rate-${widget.trip.homeCurrency}-$_currency'),
-                fromCurrency: widget.trip.homeCurrency,
-                toCurrency: _currency,
-                targetController: _exchangeRateController,
-                liveRateService: _liveRateService,
+              const SizedBox(height: 12),
+              CurrencyDropdownField(
+                fieldKey: const Key('expenseCurrencyField'),
+                value: _currency,
+                label: l10n.currency,
+                onChanged: (value) => setState(() => _currency = value),
+              ),
+              if (_needsNewExchangeRate) ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  key: const Key('expenseExchangeRateField'),
+                  controller: _exchangeRateController,
+                  decoration: InputDecoration(
+                    // "1 home = ? foreign" — the direction a traveler actually
+                    // thinks in when exchanging cash, not "1 foreign = ? home".
+                    labelText: l10n.exchangeRatePrompt(widget.trip.homeCurrency, _currency),
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) {
+                    final parsed = double.tryParse(value ?? '');
+                    return (parsed != null && parsed > 0) ? null : l10n.errorPositiveRate;
+                  },
+                ),
+                MarketRateHelper(
+                  // Rekeyed per currency pair so a stale fetched rate from a
+                  // previously-selected currency can't linger after the user
+                  // changes it.
+                  key: ValueKey('market-rate-${widget.trip.homeCurrency}-$_currency'),
+                  fromCurrency: widget.trip.homeCurrency,
+                  toCurrency: _currency,
+                  targetController: _exchangeRateController,
+                  liveRateService: _liveRateService,
+                ),
+              ],
+              const SizedBox(height: 12),
+              TextFormField(
+                key: const Key('expenseDescriptionField'),
+                controller: _descriptionController,
+                decoration: InputDecoration(labelText: l10n.description),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                key: const Key('expenseLocationField'),
+                controller: _locationController,
+                decoration:
+                    InputDecoration(labelText: l10n.location, hintText: l10n.locationHint),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                key: const Key('expenseDateField'),
+                title: Text(l10n.date),
+                subtitle: Text(formatDate(context, _date)),
+                onTap: _pickDate,
+              ),
+              ListTile(
+                key: const Key('expenseEndDateField'),
+                title: Text(l10n.endDate),
+                subtitle: Text(formatDate(context, _endDate)),
+                onTap: _pickEndDate,
+              ),
+              const SizedBox(height: 12),
+              SegmentedButton<ExpenseStatus>(
+                segments: [
+                  ButtonSegment(value: ExpenseStatus.planned, label: Text(l10n.statusPlanned)),
+                  ButtonSegment(value: ExpenseStatus.actual, label: Text(l10n.statusActual)),
+                ],
+                selected: {_status},
+                onSelectionChanged: (selection) => setState(() => _status = selection.first),
+              ),
+              CheckboxListTile(
+                key: const Key('excludeFromBreakdownCheckbox'),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text(l10n.excludeFromChart),
+                value: _excludeFromBreakdown,
+                onChanged: (value) => setState(() => _excludeFromBreakdown = value ?? false),
+              ),
+              CheckboxListTile(
+                key: const Key('spreadAcrossDaysCheckbox'),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text(l10n.spreadAcrossDays),
+                value: _spreadAcrossDays,
+                onChanged: (value) =>
+                    setState(() => _spreadAcrossDays = value ?? false),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                key: const Key('saveExpenseButton'),
+                onPressed: _save,
+                child: Text(_isEditing ? l10n.saveChanges : l10n.saveExpense),
               ),
             ],
-            const SizedBox(height: 12),
-            TextFormField(
-              key: const Key('expenseDescriptionField'),
-              controller: _descriptionController,
-              decoration: InputDecoration(labelText: l10n.description),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              key: const Key('expenseLocationField'),
-              controller: _locationController,
-              decoration:
-                  InputDecoration(labelText: l10n.location, hintText: l10n.locationHint),
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              key: const Key('expenseDateField'),
-              title: Text(l10n.date),
-              subtitle: Text(formatDate(context, _date)),
-              onTap: _pickDate,
-            ),
-            ListTile(
-              key: const Key('expenseEndDateField'),
-              title: Text(l10n.endDate),
-              subtitle: Text(formatDate(context, _endDate)),
-              onTap: _pickEndDate,
-            ),
-            const SizedBox(height: 12),
-            SegmentedButton<ExpenseStatus>(
-              segments: [
-                ButtonSegment(value: ExpenseStatus.planned, label: Text(l10n.statusPlanned)),
-                ButtonSegment(value: ExpenseStatus.actual, label: Text(l10n.statusActual)),
-              ],
-              selected: {_status},
-              onSelectionChanged: (selection) => setState(() => _status = selection.first),
-            ),
-            CheckboxListTile(
-              key: const Key('excludeFromBreakdownCheckbox'),
-              contentPadding: EdgeInsets.zero,
-              controlAffinity: ListTileControlAffinity.leading,
-              title: Text(l10n.excludeFromChart),
-              value: _excludeFromBreakdown,
-              onChanged: (value) => setState(() => _excludeFromBreakdown = value ?? false),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              key: const Key('saveExpenseButton'),
-              onPressed: _save,
-              child: Text(_isEditing ? l10n.saveChanges : l10n.saveExpense),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -12,7 +12,7 @@ void main() {
 
   testWidgets('golden path: create trip -> add planned expense -> mark as spent -> edit expense',
       (tester) async {
-    final db = await AppDatabase.openOnDevice();
+    final db = AppDatabase.memory();
     final repo = TripRepository(db);
     // Pin the locale explicitly — this test asserts hardcoded Chinese
     // strings, and must not depend on the test device/emulator's own
@@ -25,7 +25,12 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('tripNameField')), 'Golden Path Japan');
+    await tester.scrollUntilVisible(find.byKey(const Key('trackBudgetSwitch')), 200, scrollable: find.descendant(of: find.byType(ListView).last, matching: find.byType(Scrollable)).first);
+    await tester.tap(find.byKey(const Key('trackBudgetSwitch')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byKey(const Key('tripBudgetField')), 200, scrollable: find.descendant(of: find.byType(ListView).last, matching: find.byType(Scrollable)).first);
     await tester.enterText(find.byKey(const Key('tripBudgetField')), '20000');
+    await tester.scrollUntilVisible(find.byKey(const Key('saveTripButton')), 250, scrollable: find.descendant(of: find.byType(ListView).last, matching: find.byType(Scrollable)).first);
     await tester.tap(find.byKey(const Key('saveTripButton')));
     await tester.pumpAndSettle();
     expect(find.text('Golden Path Japan'), findsOneWidget);
@@ -45,11 +50,13 @@ void main() {
     await tester.enterText(find.byKey(const Key('expenseAmountField')), '3200');
     await tester.tap(find.text('计划中'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byKey(const Key('saveExpenseButton')), 250, scrollable: find.descendant(of: find.byType(ListView).last, matching: find.byType(Scrollable)).first);
     await tester.tap(find.byKey(const Key('saveExpenseButton')));
     await tester.pumpAndSettle();
 
     // Back on the detail screen: the planned expense shows, mark it as spent.
     expect(find.text('标记为已发生'), findsOneWidget);
+    await tester.ensureVisible(find.text('标记为已发生'));
     await tester.tap(find.text('标记为已发生'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('确认'));
@@ -58,14 +65,16 @@ void main() {
 
     // Edit the now-actual expense (added after Task 13 was first written —
     // AddExpenseScreen gained edit mode, opened by tapping the row itself).
+    await tester.ensureVisible(find.text('交通').last);
     await tester.tap(find.text('交通').last);
     await tester.pumpAndSettle();
     expect(find.text('编辑支出'), findsOneWidget);
     await tester.enterText(find.byKey(const Key('expenseAmountField')), '3500');
+    await tester.scrollUntilVisible(find.byKey(const Key('saveExpenseButton')), 250, scrollable: find.descendant(of: find.byType(ListView).last, matching: find.byType(Scrollable)).first);
     await tester.tap(find.byKey(const Key('saveExpenseButton')));
     await tester.pumpAndSettle();
 
-    // Verify against the real on-device database directly, not just the UI.
+    // Verify against the isolated repository directly, not just the UI.
     final trips = await repo.getAllTrips();
     final trip = trips.firstWhere((t) => t.name == 'Golden Path Japan');
     final expenses = await repo.getExpenses(trip.id);

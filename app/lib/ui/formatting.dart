@@ -22,6 +22,8 @@ String categoryLabel(BuildContext context, String key) {
   switch (key) {
     case 'food':
       return l10n.categoryFood;
+    case 'drinks':
+      return l10n.categoryDrinks;
     case 'transport':
       return l10n.categoryTransport;
     case 'flight':
@@ -32,6 +34,8 @@ String categoryLabel(BuildContext context, String key) {
       return l10n.categoryShopping;
     case 'entertainment':
       return l10n.categoryEntertainment;
+    case 'sightseeing':
+      return l10n.categorySightseeing;
     case 'other':
       return l10n.categoryOther;
     default:
@@ -45,6 +49,8 @@ IconData categoryIcon(String key) {
   switch (key) {
     case 'food':
       return Icons.restaurant;
+    case 'drinks':
+      return Icons.local_cafe;
     case 'transport':
       return Icons.directions_bus;
     case 'flight':
@@ -55,6 +61,8 @@ IconData categoryIcon(String key) {
       return Icons.shopping_bag;
     case 'entertainment':
       return Icons.local_activity;
+    case 'sightseeing':
+      return Icons.photo_camera_outlined;
     case 'other':
       return Icons.category;
     default:

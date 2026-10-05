@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:travelspendplus/persistence/database.dart';
 
@@ -83,7 +86,6 @@ void main() {
   });
 
   test('schema v2 has a queryable tripExchangeRates table', () async {
-    final db = AppDatabase.memory();
     await db.into(db.trips).insert(TripsCompanion.insert(
           id: 't1',
           name: 'Japan',
@@ -103,7 +105,6 @@ void main() {
     expect(rows.length, 1);
     expect(rows.first.fromCurrency, 'JPY');
     expect(rows.first.rate, 0.05);
-    await db.close();
   });
 
   test('a trip cannot have two exchange rate rows for the same currency', () async {
@@ -131,5 +132,65 @@ void main() {
           )),
       throwsA(isA<Exception>()),
     );
+  });
+
+  test('upgrades an existing v6 expense row with safe v7 defaults', () async {
+    // This test opens the same file twice in sequence to exercise a real
+    // schema upgrade, so release the in-memory database created by setUp.
+    await db.close();
+    final tempDir = await Directory.systemTemp.createTemp('v6_migration_test');
+    final file = File('${tempDir.path}/travelspendplus.sqlite');
+    AppDatabase? legacy;
+    AppDatabase? upgraded;
+    try {
+      legacy = AppDatabase(NativeDatabase(file, enableMigrations: false));
+      await legacy.customStatement('''
+      CREATE TABLE expenses (
+        id TEXT NOT NULL PRIMARY KEY,
+        trip_id TEXT NOT NULL,
+        category TEXT NOT NULL,
+        amount_minor_units INTEGER NOT NULL,
+        amount_currency TEXT NOT NULL,
+        amount_in_home_currency_minor_units INTEGER NOT NULL,
+        description TEXT NOT NULL,
+        date INTEGER NOT NULL,
+        end_date INTEGER,
+        location TEXT NOT NULL DEFAULT '',
+        exclude_from_breakdown INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL,
+        include_in_split INTEGER NOT NULL,
+        paid_by_id TEXT NOT NULL,
+        paid_for_ids TEXT NOT NULL
+      )
+    ''');
+      await legacy.customStatement('''
+      INSERT INTO expenses VALUES (
+        'e-v6', 't1', 'food', 3000, 'EUR', 3000, 'Dinner',
+        1767312000, 1767312000, '', 0, 'actual', 1, 'p1', 'p1'
+      )
+    ''');
+      await legacy.customStatement('PRAGMA user_version = 6');
+      await legacy.close();
+      legacy = null;
+
+      upgraded = AppDatabase(NativeDatabase(file));
+      final row = await (upgraded.select(
+        upgraded.expenses,
+      )..where((e) => e.id.equals('e-v6'))).getSingle();
+      final userVersion = await upgraded
+          .customSelect('PRAGMA user_version')
+          .getSingle();
+
+      expect(row.amountMinorUnits, 3000);
+      expect(row.date.toUtc(), DateTime.utc(2026, 1, 2));
+      expect(row.status, 'actual');
+      expect(row.spreadAcrossDays, isFalse);
+      expect(row.createdAt, 0);
+      expect(userVersion.read<int>('user_version'), 7);
+    } finally {
+      await upgraded?.close();
+      await legacy?.close();
+      if (await tempDir.exists()) await tempDir.delete(recursive: true);
+    }
   });
 }

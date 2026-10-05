@@ -1,5 +1,6 @@
 import 'money.dart';
 import 'participant.dart';
+import 'civil_date.dart';
 
 enum ExpenseStatus { planned, actual }
 
@@ -20,9 +21,8 @@ class Expense {
   final DateTime date;
   // The last day this expense covers — same as [date] for an ordinary
   // single-day expense (e.g. dinner), later than [date] for something like
-  // a hotel stay or a multi-day tour. Purely descriptive: the amount always
-  // counts once, on [date], in every total and budget calculation — nothing
-  // splits or duplicates across the days in between.
+  // a hotel stay or a multi-day tour. When [spreadAcrossDays] is true, the
+  // amount is allocated evenly across this inclusive range.
   final DateTime endDate;
   // Free-text place name (e.g. a city) — optional, defaults to ''. Lets a
   // trip spanning several cities be broken down by where money was spent,
@@ -33,6 +33,11 @@ class Expense {
   // (a car, a laptop) the user doesn't want skewing the category/location
   // split. It still counts toward every other total (budget, split ledger).
   final bool excludeFromBreakdown;
+  final bool spreadAcrossDays;
+
+  /// Creation instant retained across edits so same-day entries can be
+  /// displayed newest first. Kept at microsecond precision in persistence.
+  final DateTime createdAt;
   final ExpenseStatus status;
   final bool includeInSplit;
   final Participant paidBy;
@@ -49,11 +54,13 @@ class Expense {
     required this.endDate,
     required this.location,
     this.excludeFromBreakdown = false,
+    this.spreadAcrossDays = false,
+    DateTime? createdAt,
     required this.status,
     required this.includeInSplit,
     required this.paidBy,
     required this.paidFor,
-  }) {
+  }) : createdAt = (createdAt ?? DateTime.now()).toUtc() {
     if (status == ExpenseStatus.actual && !includeInSplit) {
       throw ArgumentError('Actual expenses must have includeInSplit = true');
     }
@@ -83,6 +90,8 @@ class Expense {
     DateTime? endDate,
     String? location,
     bool? excludeFromBreakdown,
+    bool? spreadAcrossDays,
+    DateTime? createdAt,
     ExpenseStatus? status,
     bool? includeInSplit,
     Participant? paidBy,
@@ -99,6 +108,8 @@ class Expense {
       endDate: endDate ?? this.endDate,
       location: location ?? this.location,
       excludeFromBreakdown: excludeFromBreakdown ?? this.excludeFromBreakdown,
+      spreadAcrossDays: spreadAcrossDays ?? this.spreadAcrossDays,
+      createdAt: createdAt ?? this.createdAt,
       status: status ?? this.status,
       includeInSplit: includeInSplit ?? this.includeInSplit,
       paidBy: paidBy ?? this.paidBy,
@@ -117,4 +128,60 @@ class Expense {
       amountInHomeCurrency: actualAmountInHomeCurrency,
     );
   }
+}
+
+/// One expense amount allocated to one calendar day. It keeps the source
+/// expense so callers can group, edit, or open the original record without
+/// creating duplicated persisted expenses.
+class DailyExpenseAllocation {
+  final Expense expense;
+  final DateTime date;
+  final Money amount;
+  final Money amountInHomeCurrency;
+
+  const DailyExpenseAllocation({
+    required this.expense,
+    required this.date,
+    required this.amount,
+    required this.amountInHomeCurrency,
+  });
+}
+
+/// Allocates [expense] onto its displayed calendar days. Ordinary expenses
+/// remain a single entry on [Expense.date]; an opted-in multi-day expense is
+/// split inclusively from [Expense.date] to [Expense.endDate]. [splitEvenly]
+/// assigns any remainder cents to earliest days, so each currency sums back
+/// to the source expense exactly.
+List<DailyExpenseAllocation> dailyExpenseAllocations(Expense expense) {
+  final start = civilDate(expense.date);
+  if (!expense.spreadAcrossDays) {
+    return [
+      DailyExpenseAllocation(
+        expense: expense,
+        date: start,
+        amount: expense.amount,
+        amountInHomeCurrency: expense.amountInHomeCurrency,
+      ),
+    ];
+  }
+
+  final end = civilDate(expense.endDate);
+  final days = end.difference(start).inDays + 1;
+  final amounts = _dailyShares(expense.amount, days);
+  final homeAmounts = _dailyShares(expense.amountInHomeCurrency, days);
+  return List.generate(days, (index) {
+    return DailyExpenseAllocation(
+      expense: expense,
+      date: start.add(Duration(days: index)),
+      amount: amounts[index],
+      amountInHomeCurrency: homeAmounts[index],
+    );
+  });
+}
+
+List<Money> _dailyShares(Money amount, int days) {
+  if (amount.minorUnits >= 0) return splitEvenly(amount, days);
+  // Backups can contain refunds; split their magnitude before restoring the
+  // sign so remainder cents still sum to the original negative amount.
+  return splitEvenly(-amount, days).map((share) => -share).toList();
 }

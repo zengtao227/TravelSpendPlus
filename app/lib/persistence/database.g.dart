@@ -818,6 +818,33 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _spreadAcrossDaysMeta = const VerificationMeta(
+    'spreadAcrossDays',
+  );
+  @override
+  late final GeneratedColumn<bool> spreadAcrossDays = GeneratedColumn<bool>(
+    'spread_across_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("spread_across_days" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -879,6 +906,8 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     endDate,
     location,
     excludeFromBreakdown,
+    spreadAcrossDays,
+    createdAt,
     status,
     includeInSplit,
     paidById,
@@ -990,6 +1019,21 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
         ),
       );
     }
+    if (data.containsKey('spread_across_days')) {
+      context.handle(
+        _spreadAcrossDaysMeta,
+        spreadAcrossDays.isAcceptableOrUnknown(
+          data['spread_across_days']!,
+          _spreadAcrossDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
     if (data.containsKey('status')) {
       context.handle(
         _statusMeta,
@@ -1081,6 +1125,14 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
         DriftSqlType.bool,
         data['${effectivePrefix}exclude_from_breakdown'],
       )!,
+      spreadAcrossDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}spread_across_days'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -1118,6 +1170,8 @@ class Expense extends DataClass implements Insertable<Expense> {
   final DateTime? endDate;
   final String location;
   final bool excludeFromBreakdown;
+  final bool spreadAcrossDays;
+  final int createdAt;
   final String status;
   final bool includeInSplit;
   final String paidById;
@@ -1134,6 +1188,8 @@ class Expense extends DataClass implements Insertable<Expense> {
     this.endDate,
     required this.location,
     required this.excludeFromBreakdown,
+    required this.spreadAcrossDays,
+    required this.createdAt,
     required this.status,
     required this.includeInSplit,
     required this.paidById,
@@ -1157,6 +1213,8 @@ class Expense extends DataClass implements Insertable<Expense> {
     }
     map['location'] = Variable<String>(location);
     map['exclude_from_breakdown'] = Variable<bool>(excludeFromBreakdown);
+    map['spread_across_days'] = Variable<bool>(spreadAcrossDays);
+    map['created_at'] = Variable<int>(createdAt);
     map['status'] = Variable<String>(status);
     map['include_in_split'] = Variable<bool>(includeInSplit);
     map['paid_by_id'] = Variable<String>(paidById);
@@ -1179,6 +1237,8 @@ class Expense extends DataClass implements Insertable<Expense> {
           : Value(endDate),
       location: Value(location),
       excludeFromBreakdown: Value(excludeFromBreakdown),
+      spreadAcrossDays: Value(spreadAcrossDays),
+      createdAt: Value(createdAt),
       status: Value(status),
       includeInSplit: Value(includeInSplit),
       paidById: Value(paidById),
@@ -1207,6 +1267,8 @@ class Expense extends DataClass implements Insertable<Expense> {
       excludeFromBreakdown: serializer.fromJson<bool>(
         json['excludeFromBreakdown'],
       ),
+      spreadAcrossDays: serializer.fromJson<bool>(json['spreadAcrossDays']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
       status: serializer.fromJson<String>(json['status']),
       includeInSplit: serializer.fromJson<bool>(json['includeInSplit']),
       paidById: serializer.fromJson<String>(json['paidById']),
@@ -1230,6 +1292,8 @@ class Expense extends DataClass implements Insertable<Expense> {
       'endDate': serializer.toJson<DateTime?>(endDate),
       'location': serializer.toJson<String>(location),
       'excludeFromBreakdown': serializer.toJson<bool>(excludeFromBreakdown),
+      'spreadAcrossDays': serializer.toJson<bool>(spreadAcrossDays),
+      'createdAt': serializer.toJson<int>(createdAt),
       'status': serializer.toJson<String>(status),
       'includeInSplit': serializer.toJson<bool>(includeInSplit),
       'paidById': serializer.toJson<String>(paidById),
@@ -1249,6 +1313,8 @@ class Expense extends DataClass implements Insertable<Expense> {
     Value<DateTime?> endDate = const Value.absent(),
     String? location,
     bool? excludeFromBreakdown,
+    bool? spreadAcrossDays,
+    int? createdAt,
     String? status,
     bool? includeInSplit,
     String? paidById,
@@ -1266,6 +1332,8 @@ class Expense extends DataClass implements Insertable<Expense> {
     endDate: endDate.present ? endDate.value : this.endDate,
     location: location ?? this.location,
     excludeFromBreakdown: excludeFromBreakdown ?? this.excludeFromBreakdown,
+    spreadAcrossDays: spreadAcrossDays ?? this.spreadAcrossDays,
+    createdAt: createdAt ?? this.createdAt,
     status: status ?? this.status,
     includeInSplit: includeInSplit ?? this.includeInSplit,
     paidById: paidById ?? this.paidById,
@@ -1295,6 +1363,10 @@ class Expense extends DataClass implements Insertable<Expense> {
       excludeFromBreakdown: data.excludeFromBreakdown.present
           ? data.excludeFromBreakdown.value
           : this.excludeFromBreakdown,
+      spreadAcrossDays: data.spreadAcrossDays.present
+          ? data.spreadAcrossDays.value
+          : this.spreadAcrossDays,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       status: data.status.present ? data.status.value : this.status,
       includeInSplit: data.includeInSplit.present
           ? data.includeInSplit.value
@@ -1322,6 +1394,8 @@ class Expense extends DataClass implements Insertable<Expense> {
           ..write('endDate: $endDate, ')
           ..write('location: $location, ')
           ..write('excludeFromBreakdown: $excludeFromBreakdown, ')
+          ..write('spreadAcrossDays: $spreadAcrossDays, ')
+          ..write('createdAt: $createdAt, ')
           ..write('status: $status, ')
           ..write('includeInSplit: $includeInSplit, ')
           ..write('paidById: $paidById, ')
@@ -1343,6 +1417,8 @@ class Expense extends DataClass implements Insertable<Expense> {
     endDate,
     location,
     excludeFromBreakdown,
+    spreadAcrossDays,
+    createdAt,
     status,
     includeInSplit,
     paidById,
@@ -1364,6 +1440,8 @@ class Expense extends DataClass implements Insertable<Expense> {
           other.endDate == this.endDate &&
           other.location == this.location &&
           other.excludeFromBreakdown == this.excludeFromBreakdown &&
+          other.spreadAcrossDays == this.spreadAcrossDays &&
+          other.createdAt == this.createdAt &&
           other.status == this.status &&
           other.includeInSplit == this.includeInSplit &&
           other.paidById == this.paidById &&
@@ -1382,6 +1460,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
   final Value<DateTime?> endDate;
   final Value<String> location;
   final Value<bool> excludeFromBreakdown;
+  final Value<bool> spreadAcrossDays;
+  final Value<int> createdAt;
   final Value<String> status;
   final Value<bool> includeInSplit;
   final Value<String> paidById;
@@ -1399,6 +1479,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     this.endDate = const Value.absent(),
     this.location = const Value.absent(),
     this.excludeFromBreakdown = const Value.absent(),
+    this.spreadAcrossDays = const Value.absent(),
+    this.createdAt = const Value.absent(),
     this.status = const Value.absent(),
     this.includeInSplit = const Value.absent(),
     this.paidById = const Value.absent(),
@@ -1417,6 +1499,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     this.endDate = const Value.absent(),
     this.location = const Value.absent(),
     this.excludeFromBreakdown = const Value.absent(),
+    this.spreadAcrossDays = const Value.absent(),
+    this.createdAt = const Value.absent(),
     required String status,
     required bool includeInSplit,
     required String paidById,
@@ -1446,6 +1530,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Expression<DateTime>? endDate,
     Expression<String>? location,
     Expression<bool>? excludeFromBreakdown,
+    Expression<bool>? spreadAcrossDays,
+    Expression<int>? createdAt,
     Expression<String>? status,
     Expression<bool>? includeInSplit,
     Expression<String>? paidById,
@@ -1466,6 +1552,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
       if (location != null) 'location': location,
       if (excludeFromBreakdown != null)
         'exclude_from_breakdown': excludeFromBreakdown,
+      if (spreadAcrossDays != null) 'spread_across_days': spreadAcrossDays,
+      if (createdAt != null) 'created_at': createdAt,
       if (status != null) 'status': status,
       if (includeInSplit != null) 'include_in_split': includeInSplit,
       if (paidById != null) 'paid_by_id': paidById,
@@ -1486,6 +1574,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Value<DateTime?>? endDate,
     Value<String>? location,
     Value<bool>? excludeFromBreakdown,
+    Value<bool>? spreadAcrossDays,
+    Value<int>? createdAt,
     Value<String>? status,
     Value<bool>? includeInSplit,
     Value<String>? paidById,
@@ -1505,6 +1595,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
       endDate: endDate ?? this.endDate,
       location: location ?? this.location,
       excludeFromBreakdown: excludeFromBreakdown ?? this.excludeFromBreakdown,
+      spreadAcrossDays: spreadAcrossDays ?? this.spreadAcrossDays,
+      createdAt: createdAt ?? this.createdAt,
       status: status ?? this.status,
       includeInSplit: includeInSplit ?? this.includeInSplit,
       paidById: paidById ?? this.paidById,
@@ -1553,6 +1645,12 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
         excludeFromBreakdown.value,
       );
     }
+    if (spreadAcrossDays.present) {
+      map['spread_across_days'] = Variable<bool>(spreadAcrossDays.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -1587,6 +1685,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
           ..write('endDate: $endDate, ')
           ..write('location: $location, ')
           ..write('excludeFromBreakdown: $excludeFromBreakdown, ')
+          ..write('spreadAcrossDays: $spreadAcrossDays, ')
+          ..write('createdAt: $createdAt, ')
           ..write('status: $status, ')
           ..write('includeInSplit: $includeInSplit, ')
           ..write('paidById: $paidById, ')
@@ -3175,6 +3275,8 @@ typedef $$ExpensesTableCreateCompanionBuilder =
       Value<DateTime?> endDate,
       Value<String> location,
       Value<bool> excludeFromBreakdown,
+      Value<bool> spreadAcrossDays,
+      Value<int> createdAt,
       required String status,
       required bool includeInSplit,
       required String paidById,
@@ -3194,6 +3296,8 @@ typedef $$ExpensesTableUpdateCompanionBuilder =
       Value<DateTime?> endDate,
       Value<String> location,
       Value<bool> excludeFromBreakdown,
+      Value<bool> spreadAcrossDays,
+      Value<int> createdAt,
       Value<String> status,
       Value<bool> includeInSplit,
       Value<String> paidById,
@@ -3296,6 +3400,16 @@ class $$ExpensesTableFilterComposer
 
   ColumnFilters<bool> get excludeFromBreakdown => $composableBuilder(
     column: $table.excludeFromBreakdown,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get spreadAcrossDays => $composableBuilder(
+    column: $table.spreadAcrossDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3420,6 +3534,16 @@ class $$ExpensesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get spreadAcrossDays => $composableBuilder(
+    column: $table.spreadAcrossDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -3531,6 +3655,14 @@ class $$ExpensesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get spreadAcrossDays => $composableBuilder(
+    column: $table.spreadAcrossDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
@@ -3631,6 +3763,8 @@ class $$ExpensesTableTableManager
                 Value<DateTime?> endDate = const Value.absent(),
                 Value<String> location = const Value.absent(),
                 Value<bool> excludeFromBreakdown = const Value.absent(),
+                Value<bool> spreadAcrossDays = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> includeInSplit = const Value.absent(),
                 Value<String> paidById = const Value.absent(),
@@ -3648,6 +3782,8 @@ class $$ExpensesTableTableManager
                 endDate: endDate,
                 location: location,
                 excludeFromBreakdown: excludeFromBreakdown,
+                spreadAcrossDays: spreadAcrossDays,
+                createdAt: createdAt,
                 status: status,
                 includeInSplit: includeInSplit,
                 paidById: paidById,
@@ -3667,6 +3803,8 @@ class $$ExpensesTableTableManager
                 Value<DateTime?> endDate = const Value.absent(),
                 Value<String> location = const Value.absent(),
                 Value<bool> excludeFromBreakdown = const Value.absent(),
+                Value<bool> spreadAcrossDays = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
                 required String status,
                 required bool includeInSplit,
                 required String paidById,
@@ -3684,6 +3822,8 @@ class $$ExpensesTableTableManager
                 endDate: endDate,
                 location: location,
                 excludeFromBreakdown: excludeFromBreakdown,
+                spreadAcrossDays: spreadAcrossDays,
+                createdAt: createdAt,
                 status: status,
                 includeInSplit: includeInSplit,
                 paidById: paidById,

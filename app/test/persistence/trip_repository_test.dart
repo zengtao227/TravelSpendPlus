@@ -104,6 +104,48 @@ void main() {
     expect(loaded.first.paidBy, alice);
     expect(loaded.first.paidFor.map((p) => p.id).toSet(), {'p1', 'p2'});
     expect(loaded.first.status, ExpenseStatus.actual);
+  },
+  );
+
+  test(
+    'getExpenses returns same-day entries by newest creation timestamp and preserves it on edit',
+    () async {
+      await repo.createTrip(makeTrip());
+      final older = Expense(
+        id: 'e-older',
+        tripId: 't1',
+        category: 'food',
+        amount: Money.fromMajor(30, 'EUR'),
+        amountInHomeCurrency: Money.fromMajor(30, 'EUR'),
+        description: 'Older dinner',
+        date: DateTime.utc(2026, 1, 2),
+        endDate: DateTime.utc(2026, 1, 2),
+        location: '',
+        createdAt: DateTime.utc(2026, 1, 1, 10, 0, 0, 1),
+        status: ExpenseStatus.actual,
+        includeInSplit: true,
+        paidBy: alice,
+        paidFor: [alice],
+      );
+      final newer = older.copyWith(
+        id: 'e-newer',
+        description: 'Newer lunch',
+        createdAt: DateTime.utc(2026, 1, 1, 10, 0, 0, 2),
+        spreadAcrossDays: true,
+      );
+      await repo.addExpense(older);
+      await repo.addExpense(newer);
+
+      var loaded = await repo.getExpenses('t1');
+      expect(loaded.map((expense) => expense.id), ['e-newer', 'e-older']);
+      expect(loaded.first.createdAt, newer.createdAt);
+      expect(loaded.first.spreadAcrossDays, isTrue);
+
+      await repo.updateExpense(
+        loaded.first.copyWith(description: 'Edited lunch'),
+      );
+      loaded = await repo.getExpenses('t1');
+      expect(loaded.first.createdAt, newer.createdAt);
   });
 
   test('addExpense then getExpenses round-trips a multi-day expense with a location', () async {

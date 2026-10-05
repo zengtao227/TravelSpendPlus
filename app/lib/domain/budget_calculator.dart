@@ -80,9 +80,10 @@ class BudgetCalculator {
     return remainingAtStartOfToday.dividedBy(daysLeft);
   }
 
-  /// Total actual (not planned) spending so far, divided by the number of
-  /// trip days elapsed up to and including [asOf]'s day — independent of
-  /// [Trip.totalBudget], so it's meaningful even when no budget was set.
+  /// Actual allocated spending through [asOf], divided by trip days elapsed
+  /// up to and including [asOf]'s day — independent of [Trip.totalBudget],
+  /// so it's meaningful even when no budget was set. A spread expense only
+  /// contributes its shares through today; future shares are excluded.
   ///
   /// Before the trip has started, no days have "elapsed" within it, but
   /// money can already be actually spent (e.g. a flight booked ahead of
@@ -96,14 +97,16 @@ class BudgetCalculator {
     required DateTime asOf,
   }) {
     Money spentSoFar = Money(minorUnits: 0, currencyCode: trip.homeCurrency);
+    final today = civilDate(asOf);
     for (final e in expenses) {
-      if (e.status == ExpenseStatus.actual) {
-        spentSoFar = spentSoFar + e.amountInHomeCurrency;
+      if (e.status != ExpenseStatus.actual) continue;
+      for (final allocation in dailyExpenseAllocations(e)) {
+        if (allocation.date.isAfter(today)) continue;
+        spentSoFar = spentSoFar + allocation.amountInHomeCurrency;
       }
     }
 
     final startOfTrip = civilDate(trip.startDate);
-    final today = civilDate(asOf);
     if (today.isBefore(startOfTrip)) {
       if (spentSoFar.minorUnits == 0) return null;
       return spentSoFar.dividedBy(trip.totalDays);

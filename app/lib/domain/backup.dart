@@ -32,7 +32,12 @@ import 'trip.dart';
 /// each expense entry. An older backup missing this key on an expense still
 /// imports fine — that expense's entry in `expensePhotosBase64` is simply
 /// absent, meaning no photo for that expense.
-const int kBackupSchemaVersion = 6;
+///
+/// v7 added `spreadAcrossDays` and `createdAt` to each expense. Older
+/// backups retain their original one-day behavior and use the expense date as
+/// a deterministic fallback timestamp because they did not record creation
+/// order.
+const int kBackupSchemaVersion = 7;
 
 class UnsupportedBackupVersionException implements Exception {
   final int foundVersion;
@@ -114,6 +119,8 @@ Map<String, dynamic> tripBundleToJson(TripBundle bundle) {
               'endDate': dateToBackupString(e.endDate),
               'location': e.location,
               'excludeFromBreakdown': e.excludeFromBreakdown,
+            'spreadAcrossDays': e.spreadAcrossDays,
+            'createdAt': e.createdAt.toUtc().toIso8601String(),
               'status': e.status == ExpenseStatus.actual ? 'actual' : 'planned',
               'includeInSplit': e.includeInSplit,
               'paidById': e.paidBy.id,
@@ -175,6 +182,10 @@ TripBundle tripBundleFromJson(Map<String, dynamic> json) {
       // Absent in a pre-v4 backup — default to false, matching how a
       // pre-migration DB row reads too.
       excludeFromBreakdown: raw['excludeFromBreakdown'] as bool? ?? false,
+      spreadAcrossDays: raw['spreadAcrossDays'] as bool? ?? false,
+      createdAt: raw['createdAt'] != null
+          ? DateTime.parse(raw['createdAt'] as String).toUtc()
+          : dateFromBackupString(raw['date'] as String),
       status: raw['status'] == 'actual' ? ExpenseStatus.actual : ExpenseStatus.planned,
       includeInSplit: raw['includeInSplit'] as bool,
       paidBy: participantsById[raw['paidById'] as String]!,

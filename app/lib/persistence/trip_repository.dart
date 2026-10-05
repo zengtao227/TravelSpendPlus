@@ -101,8 +101,14 @@ class TripRepository {
     if (tripRow == null) return [];
     final homeCurrency = tripRow.homeCurrency;
 
-    final expenseRows =
-        await (_db.select(_db.expenses)..where((e) => e.tripId.equals(tripId))).get();
+    final expenseRows = await (_db.select(_db.expenses)
+          ..where((e) => e.tripId.equals(tripId))
+          ..orderBy([
+            (e) => OrderingTerm.desc(e.date),
+            (e) => OrderingTerm.desc(e.createdAt),
+            (_) => OrderingTerm.desc(const CustomExpression<int>('rowid')),
+          ]))
+        .get();
     final participantRows =
         await (_db.select(_db.participants)..where((p) => p.tripId.equals(tripId))).get();
     final participantsById = {
@@ -135,6 +141,10 @@ class TripRepository {
         endDate: civilDate((row.endDate ?? row.date).toUtc()),
         location: row.location,
         excludeFromBreakdown: row.excludeFromBreakdown,
+        spreadAcrossDays: row.spreadAcrossDays,
+        createdAt: row.createdAt == 0
+            ? civilDate(row.date.toUtc())
+            : DateTime.fromMicrosecondsSinceEpoch(row.createdAt, isUtc: true),
         status: row.status == 'actual' ? ExpenseStatus.actual : ExpenseStatus.planned,
         includeInSplit: row.includeInSplit,
         paidBy: participantsById[row.paidById]!,
@@ -156,6 +166,8 @@ class TripRepository {
           endDate: Value(civilDate(expense.endDate)),
           location: Value(expense.location),
           excludeFromBreakdown: Value(expense.excludeFromBreakdown),
+          spreadAcrossDays: Value(expense.spreadAcrossDays),
+          createdAt: Value(expense.createdAt.toUtc().microsecondsSinceEpoch),
           status: expense.status == ExpenseStatus.actual ? 'actual' : 'planned',
           includeInSplit: expense.includeInSplit,
           paidById: expense.paidBy.id,
@@ -175,6 +187,7 @@ class TripRepository {
         endDate: Value(civilDate(expense.endDate)),
         location: Value(expense.location),
         excludeFromBreakdown: Value(expense.excludeFromBreakdown),
+        spreadAcrossDays: Value(expense.spreadAcrossDays),
         status: Value(expense.status == ExpenseStatus.actual ? 'actual' : 'planned'),
         includeInSplit: Value(expense.includeInSplit),
         paidById: Value(expense.paidBy.id),

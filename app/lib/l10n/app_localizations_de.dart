@@ -15,6 +15,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get categoryFood => 'Essen';
 
   @override
+  String get categoryDrinks => 'Getränke';
+
+  @override
   String get categoryTransport => 'Transport';
 
   @override
@@ -28,6 +31,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get categoryEntertainment => 'Unterhaltung';
+
+  @override
+  String get categorySightseeing => 'Besichtigungen';
 
   @override
   String get categoryOther => 'Sonstiges';
@@ -365,4 +371,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get excludeFromChart => 'Vom Diagramm ausschließen';
+
+  @override
+  String get spreadAcrossDays => 'Gleichmäßig auf Tage verteilen';
 }

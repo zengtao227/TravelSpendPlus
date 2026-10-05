@@ -9,6 +9,13 @@ expenses and comparing planned spending with actual spending.
 - Record planned and actual expenses.
 - Organize expenses with built-in or custom categories.
 - Review totals, remaining budget, and category breakdowns.
+- Group expenses by day, with the newest dates and entries first.
+- Optionally spread an expense over its inclusive date range. Daily amounts
+  preserve the original total; actual daily averages count only shares through
+  today. Enable this option when entering a flight or accommodation cost and
+  choose the days it covers. Existing expenses retain their original behavior
+  until this option is enabled.
+- Tap a chart category or location to review its matching expenses.
 - Enter exchange rates manually or request an optional live reference rate.
 - Attach trip and expense photos.
 - Back up and restore trip data as JSON, and export a trip as CSV.

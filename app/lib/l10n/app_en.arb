@@ -3,11 +3,13 @@
   "appTitle": "TravelSpendPlus",
   "@appTitle": {"description": "The application title"},
   "categoryFood": "Food",
+  "categoryDrinks": "Drinks",
   "categoryTransport": "Transport",
   "categoryFlight": "Flight",
   "categoryLodging": "Lodging",
   "categoryShopping": "Shopping",
   "categoryEntertainment": "Entertainment",
+  "categorySightseeing": "Sightseeing",
   "categoryOther": "Other",
   "newTrip": "New Trip",
   "editTrip": "Edit Trip",
@@ -121,5 +123,6 @@
   "groupByCategory": "Category",
   "groupByLocation": "Location",
   "noLocation": "No location",
-  "excludeFromChart": "Exclude from chart"
+  "excludeFromChart": "Exclude from chart",
+  "spreadAcrossDays": "Spread evenly across days"
 }

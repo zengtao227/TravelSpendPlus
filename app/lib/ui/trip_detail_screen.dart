@@ -108,6 +108,43 @@ class _TripDetailData {
   _TripDetailData(this.trip, this.expenses, this.rates);
 }
 
+class _ExpenseDayGroup {
+  final DateTime date;
+  final List<DailyExpenseAllocation> allocations;
+
+  const _ExpenseDayGroup({required this.date, required this.allocations});
+}
+
+List<_ExpenseDayGroup> _groupDailyAllocations(List<Expense> expenses) {
+  final indexedAllocations =
+      <({DailyExpenseAllocation allocation, int index})>[];
+  for (var expenseIndex = 0; expenseIndex < expenses.length; expenseIndex++) {
+    for (final allocation in dailyExpenseAllocations(expenses[expenseIndex])) {
+      indexedAllocations.add((allocation: allocation, index: expenseIndex));
+    }
+  }
+  indexedAllocations.sort((a, b) {
+    final byDate = b.allocation.date.compareTo(a.allocation.date);
+    if (byDate != 0) return byDate;
+    final byCreatedAt = b.allocation.expense.createdAt.compareTo(
+      a.allocation.expense.createdAt,
+    );
+    if (byCreatedAt != 0) return byCreatedAt;
+    return a.index.compareTo(b.index);
+  });
+
+  final groups = <_ExpenseDayGroup>[];
+  for (final entry in indexedAllocations) {
+    if (groups.isEmpty || groups.last.date != entry.allocation.date) {
+      groups.add(
+        _ExpenseDayGroup(date: entry.allocation.date, allocations: []),
+      );
+    }
+    groups.last.allocations.add(entry.allocation);
+  }
+  return groups;
+}
+
 class _TripDetailScreenState extends State<TripDetailScreen> {
   late Future<_TripDetailData> _future;
   String? _viewCurrency; // null = show in home currency
@@ -292,6 +329,62 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     if (mounted) Navigator.pop(context, true);
   }
 
+  void _showBreakdownDetails({
+    required BreakdownDimension dimension,
+    required String sliceKey,
+    required List<Expense> expenses,
+    required String title,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
+    final matchingExpenses = expenses
+        .where((expense) {
+          if (expense.excludeFromBreakdown) return false;
+          final expenseKey = dimension == BreakdownDimension.category
+              ? expense.category
+              : expense.location;
+          return expenseKey == sliceKey;
+        })
+        .toList(growable: false);
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        top: false,
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            ListTile(
+              title: Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            for (final expense in matchingExpenses)
+              ListTile(
+                key: Key('breakdownExpense-${expense.id}'),
+                leading: Icon(categoryIcon(expense.category)),
+                title: Text(
+                  expense.description.isEmpty
+                      ? categoryLabel(context, expense.category)
+                      : expense.description,
+                ),
+                subtitle: Text(
+                  [
+                    formatDate(context, expense.date),
+                    if (expense.location.isNotEmpty) expense.location,
+                    if (expense.status == ExpenseStatus.planned)
+                      l10n.plannedLabel,
+                  ].join(' · '),
+                ),
+                trailing: Text(formatMoney(expense.amount)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -428,6 +521,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             expenses: expenses,
             asOf: now,
           );
+          final expenseDayGroups = _groupDailyAllocations(expenses);
 
           return ListView(
             // Extra bottom padding so the last expense row can scroll clear
@@ -647,6 +741,25 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       height: 120,
                       child: PieChart(
                         PieChartData(
+                          pieTouchData: PieTouchData(
+                            touchCallback: (event, response) {
+                              if (event is! FlTapUpEvent) return;
+                              final index =
+                                  response?.touchedSection?.touchedSectionIndex;
+                              if (index == null ||
+                                  index < 0 ||
+                                  index >= breakdown.length) {
+                                return;
+                              }
+                              final slice = breakdown[index];
+                              _showBreakdownDetails(
+                                dimension: _breakdownDimension,
+                                sliceKey: slice.category,
+                                expenses: expenses,
+                                title: sliceLabel(slice.category),
+                              );
+                            },
+                          ),
                           sections: [
                             for (var i = 0; i < breakdown.length; i++)
                               PieChartSectionData(
@@ -679,44 +792,61 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           for (var i = 0; i < breakdown.length; i++)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 3),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color:
-                                          AppColors.categoryChartColors[i %
-                                              AppColors
-                                                  .categoryChartColors
-                                                  .length],
-                                    ),
+                            InkWell(
+                              key: Key(
+                                'breakdownSlice-${_breakdownDimension.name}-${breakdown[i].category}',
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: () => _showBreakdownDetails(
+                                dimension: _breakdownDimension,
+                                sliceKey: breakdown[i].category,
+                                expenses: expenses,
+                                title: sliceLabel(breakdown[i].category),
+                              ),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  minHeight: 48,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 3),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color:
+                                              AppColors.categoryChartColors[i %
+                                                  AppColors
+                                                      .categoryChartColors
+                                                      .length],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          sliceLabel(breakdown[i].category),
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                      // breakdown[i].total is always in the trip's home
+                                      // currency (CategoryBreakdownCalculator sums each
+                                      // expense's amountInHomeCurrency) — run it through
+                                      // display() so the legend follows the same
+                                      // view-currency switcher as the summary card above,
+                                      // instead of always showing the home currency
+                                      // regardless of what's selected.
+                                      Text(
+                                        formatMoney(display(breakdown[i].total)),
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      sliceLabel(breakdown[i].category),
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
-                                  ),
-                                  // breakdown[i].total is always in the trip's home
-                                  // currency (CategoryBreakdownCalculator sums each
-                                  // expense's amountInHomeCurrency) — run it through
-                                  // display() so the legend follows the same
-                                  // view-currency switcher as the summary card above,
-                                  // instead of always showing the home currency
-                                  // regardless of what's selected.
-                                  Text(
-                                    formatMoney(display(breakdown[i].total)),
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                         ],
@@ -734,97 +864,115 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 l10n.expenses,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              for (final expense in expenses)
-                Dismissible(
-                  key: ValueKey(expense.id),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    color: Theme.of(context).colorScheme.error,
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.white,
-                    ),
-                  ),
-                  confirmDismiss: (_) async {
-                    final l10n = AppLocalizations.of(context)!;
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text(l10n.deleteExpense),
-                        content: Text(l10n.deleteExpenseConfirm),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: Text(l10n.cancel),
-                          ),
-                          TextButton(
-                            key: const Key('confirmDeleteExpenseButton'),
-                            onPressed: () => Navigator.pop(context, true),
-                            child: Text(l10n.confirm),
-                          ),
-                        ],
-                      ),
-                    );
-                    return confirmed == true;
-                  },
-                  onDismissed: (_) async {
-                    await widget.repository.deleteExpense(expense.id);
-                    _refresh();
-                  },
-                  child: ListTile(
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AddExpenseScreen(
-                            trip: trip,
-                            repository: widget.repository,
-                            existingExpense: expense,
-                          ),
-                        ),
-                      );
-                      _refresh();
-                    },
-                    leading: _ExpenseLeadingAvatar(expense: expense),
-                    title: Text(
-                      expense.description.isEmpty
-                          ? categoryLabel(context, expense.category)
-                          : expense.description,
-                    ),
-                    subtitle: Text(
-                      expense.location.isEmpty
-                          ? categoryLabel(context, expense.category)
-                          : '${categoryLabel(context, expense.category)} · ${expense.location}',
-                    ),
-                    trailing: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(formatMoney(expense.amount)),
-                        if (expense.status == ExpenseStatus.planned)
-                          TextButton(
-                            onPressed: () => _markAsSpent(expense),
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(
-                              l10n.markAsSpent,
-                              style: const TextStyle(fontSize: 11),
-                            ),
-                          )
-                        else
-                          Text(
-                            l10n.actualLabel,
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                      ],
-                    ),
+              for (final group in expenseDayGroups) ...[
+                Padding(
+                  key: Key('expenseDay-${group.date.microsecondsSinceEpoch}'),
+                  padding: const EdgeInsets.only(top: 12, bottom: 4),
+                  child: Text(
+                    formatDate(context, group.date),
+                    style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
+                for (final allocation in group.allocations)
+                  Dismissible(
+                    key: ValueKey(
+                        '${allocation.expense.id}-${allocation.date.millisecondsSinceEpoch}',
+                      ),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      color: Theme.of(context).colorScheme.error,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.white,
+                      ),
+                    ),
+                    confirmDismiss: (_) async {
+                      final l10n = AppLocalizations.of(context)!;
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text(l10n.deleteExpense),
+                          content: Text(l10n.deleteExpenseConfirm),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text(l10n.cancel),
+                            ),
+                            TextButton(
+                              key: const Key('confirmDeleteExpenseButton'),
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text(l10n.confirm),
+                            ),
+                          ],
+                        ),
+                      );
+                      return confirmed == true;
+                    },
+                    onDismissed: (_) async {
+                      await widget.repository.deleteExpense(
+                          allocation.expense.id);
+                      _refresh();
+                    },
+                    child: ListTile(
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddExpenseScreen(
+                              trip: trip,
+                              repository: widget.repository,
+                              existingExpense: allocation.expense,
+                            ),
+                          ),
+                        );
+                        _refresh();
+                      },
+                      leading: _ExpenseLeadingAvatar(expense: allocation.expense),
+                      title: Text(
+                          allocation.expense.description.isEmpty
+                            ? categoryLabel(context,
+                                  allocation.expense.category)
+                            : allocation.expense.description,
+                      ),
+                      subtitle: Text(
+                          [
+                            categoryLabel(context, allocation.expense.category),
+                            if (allocation.expense.location.isNotEmpty)
+                              allocation.expense.location,
+                            if (allocation.expense.spreadAcrossDays)
+                              l10n.spreadAcrossDays,
+                          ].join(' · '),
+                        ),
+                      trailing: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(formatMoney(allocation.amount)),
+                          if (allocation.expense.status == ExpenseStatus.planned)
+                            TextButton(
+                              onPressed: () => _markAsSpent(allocation.expense),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                l10n.markAsSpent,
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                            )
+                          else
+                            Text(
+                              l10n.actualLabel,
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ],
           );
         },

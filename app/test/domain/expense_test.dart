@@ -157,4 +157,81 @@ void main() {
     expect(updated.excludeFromBreakdown, isTrue);
     expect(e.excludeFromBreakdown, isFalse, reason: 'original must stay untouched');
   });
+
+  test(
+    'daily allocations split both currencies exactly and give remainder cents to earliest days',
+    () {
+      final expense = Expense(
+        id: 'e-spread',
+        tripId: 't1',
+        category: 'lodging',
+        amount: const Money(minorUnits: 100, currencyCode: 'EUR'),
+        amountInHomeCurrency: const Money(minorUnits: 101, currencyCode: 'EUR'),
+        description: 'Hotel',
+        date: DateTime.utc(2026, 1, 3),
+        endDate: DateTime.utc(2026, 1, 5),
+        location: '',
+        spreadAcrossDays: true,
+        status: ExpenseStatus.actual,
+        includeInSplit: true,
+        paidBy: alice,
+        paidFor: [alice],
+      );
+
+      final allocations = dailyExpenseAllocations(expense);
+
+      expect(allocations.map((entry) => entry.date), [
+        DateTime.utc(2026, 1, 3),
+        DateTime.utc(2026, 1, 4),
+        DateTime.utc(2026, 1, 5),
+      ]);
+      expect(allocations.map((entry) => entry.amount.minorUnits), [34, 33, 33]);
+      expect(
+        allocations.map((entry) => entry.amountInHomeCurrency.minorUnits),
+        [34, 34, 33],
+      );
+      expect(
+        allocations.every((entry) => entry.expense.id == expense.id),
+        isTrue,
+      );
+    },
+  );
+
+  test(
+    'daily allocations keep an unspread expense on its start date even when it has an end date',
+    () {
+      final expense = makeExpense().copyWith(endDate: DateTime.utc(2026, 1, 5));
+
+      final allocations = dailyExpenseAllocations(expense);
+
+      expect(allocations, hasLength(1));
+      expect(allocations.single.date, DateTime.utc(2026, 1, 3));
+      expect(allocations.single.amount, expense.amount);
+    },
+  );
+
+  test('copyWith preserves createdAt and can update the spread setting', () {
+    final createdAt = DateTime.utc(2026, 1, 2, 10, 30);
+    final expense = makeExpense().copyWith(createdAt: createdAt);
+
+    final updated = expense.copyWith(
+      spreadAcrossDays: true,
+      description: 'Lunch instead',
+    );
+
+    expect(updated.createdAt, createdAt);
+    expect(updated.spreadAcrossDays, isTrue);
+  });
+
+  test('daily allocations preserve negative amounts imported from a backup', () {
+    final expense = makeExpense().copyWith(
+      spreadAcrossDays: true,
+      endDate: DateTime.utc(2026, 1, 5),
+      amount: const Money(minorUnits: -100, currencyCode: 'EUR'),
+      amountInHomeCurrency: const Money(minorUnits: -101, currencyCode: 'EUR'),
+    );
+    final allocations = dailyExpenseAllocations(expense);
+    expect(allocations.map((entry) => entry.amount.minorUnits), [-34, -33, -33]);
+    expect(allocations.map((entry) => entry.amountInHomeCurrency.minorUnits), [-34, -34, -33]);
+  });
 }

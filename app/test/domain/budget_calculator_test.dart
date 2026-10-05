@@ -155,6 +155,45 @@ void main() {
     expect(avg!.major, closeTo(800.00 / 7, 0.01));
   });
 
+  test(
+    'averageDailySpendSoFar includes only spread allocations through today',
+    () {
+      final trip = makeTenDayTrip();
+      final hotel = Expense(
+        id: 'e-hotel',
+        tripId: trip.id,
+        category: 'lodging',
+        amount: Money.fromMajor(1000, 'EUR'),
+        amountInHomeCurrency: Money.fromMajor(1000, 'EUR'),
+        description: 'Hotel',
+        date: DateTime.utc(2026, 1, 1),
+        endDate: DateTime.utc(2026, 1, 10),
+        location: '',
+        spreadAcrossDays: true,
+        status: ExpenseStatus.actual,
+        includeInSplit: true,
+        paidBy: alice,
+        paidFor: [alice],
+      );
+      final dayOneExpense = actualExpense(50, DateTime.utc(2026, 1, 1));
+      final dayTwoExpense = actualExpense(70, DateTime.utc(2026, 1, 2));
+
+      final firstDay = BudgetCalculator.averageDailySpendSoFar(
+        trip: trip,
+        expenses: [hotel, dayOneExpense, dayTwoExpense],
+        asOf: DateTime.utc(2026, 1, 1),
+      );
+      final secondDay = BudgetCalculator.averageDailySpendSoFar(
+        trip: trip,
+        expenses: [hotel, dayOneExpense, dayTwoExpense],
+        asOf: DateTime.utc(2026, 1, 2),
+      );
+
+      expect(firstDay!.major, 150);
+      expect(secondDay!.major, 160);
+    },
+  );
+
   test('averageDailySpendSoFar ignores planned expenses', () {
     final trip = makeTenDayTrip();
     final planned = Expense(

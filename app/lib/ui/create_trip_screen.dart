@@ -168,73 +168,76 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(_isEditing ? l10n.editTrip : l10n.newTrip)),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Center(child: _buildPhotoPicker()),
-            const SizedBox(height: 16),
-            TextFormField(
-              key: const Key('tripNameField'),
-              controller: _nameController,
-              decoration: InputDecoration(labelText: l10n.tripName),
-              validator: (value) =>
-                  (value == null || value.trim().isEmpty) ? l10n.errorEnterTripName : null,
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              title: Text(l10n.startDate),
-              subtitle: Text(formatDate(context, _startDate)),
-              onTap: () => _pickDate(isStart: true),
-            ),
-            ListTile(
-              title: Text(l10n.endDate),
-              subtitle: Text(formatDate(context, _endDate)),
-              onTap: () => _pickDate(isStart: false),
-            ),
-            if (_dateError != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(_dateError!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error)),
-              ),
-            const SizedBox(height: 12),
-            if (!_isEditing)
-              CurrencyDropdownField(
-                fieldKey: const Key('tripCurrencyField'),
-                value: _currency,
-                label: l10n.homeCurrency,
-                onChanged: (value) => setState(() => _currency = value),
-              ),
-            const SizedBox(height: 12),
-            SwitchListTile(
-              key: const Key('trackBudgetSwitch'),
-              contentPadding: EdgeInsets.zero,
-              title: Text(l10n.trackBudget),
-              value: _hasBudget,
-              onChanged: (value) => setState(() => _hasBudget = value),
-            ),
-            if (_hasBudget)
+      body: SafeArea(
+        top: false,
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Center(child: _buildPhotoPicker()),
+              const SizedBox(height: 16),
               TextFormField(
-                key: const Key('tripBudgetField'),
-                controller: _budgetController,
-                decoration: InputDecoration(labelText: l10n.totalBudget),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                validator: (value) {
-                  final trimmed = value?.trim() ?? '';
-                  if (trimmed.isEmpty) return null; // optional: blank means no budget (0)
-                  final parsed = double.tryParse(trimmed);
-                  return (parsed != null && parsed >= 0) ? null : l10n.errorPositiveAmount;
-                },
+                key: const Key('tripNameField'),
+                controller: _nameController,
+                decoration: InputDecoration(labelText: l10n.tripName),
+                validator: (value) =>
+                    (value == null || value.trim().isEmpty) ? l10n.errorEnterTripName : null,
               ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              key: const Key('saveTripButton'),
-              onPressed: _save,
-              child: Text(_isEditing ? l10n.saveChanges : l10n.createTrip),
-            ),
-          ],
+              const SizedBox(height: 12),
+              ListTile(
+                title: Text(l10n.startDate),
+                subtitle: Text(formatDate(context, _startDate)),
+                onTap: () => _pickDate(isStart: true),
+              ),
+              ListTile(
+                title: Text(l10n.endDate),
+                subtitle: Text(formatDate(context, _endDate)),
+                onTap: () => _pickDate(isStart: false),
+              ),
+              if (_dateError != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(_dateError!,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                ),
+              const SizedBox(height: 12),
+              if (!_isEditing)
+                CurrencyDropdownField(
+                  fieldKey: const Key('tripCurrencyField'),
+                  value: _currency,
+                  label: l10n.homeCurrency,
+                  onChanged: (value) => setState(() => _currency = value),
+                ),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                key: const Key('trackBudgetSwitch'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.trackBudget),
+                value: _hasBudget,
+                onChanged: (value) => setState(() => _hasBudget = value),
+              ),
+              if (_hasBudget)
+                TextFormField(
+                  key: const Key('tripBudgetField'),
+                  controller: _budgetController,
+                  decoration: InputDecoration(labelText: l10n.totalBudget),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) {
+                    final trimmed = value?.trim() ?? '';
+                    if (trimmed.isEmpty) return null; // optional: blank means no budget (0)
+                    final parsed = double.tryParse(trimmed);
+                    return (parsed != null && parsed >= 0) ? null : l10n.errorPositiveAmount;
+                  },
+                ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                key: const Key('saveTripButton'),
+                onPressed: _save,
+                child: Text(_isEditing ? l10n.saveChanges : l10n.createTrip),
+              ),
+            ],
+          ),
         ),
       ),
     );

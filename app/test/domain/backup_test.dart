@@ -119,6 +119,47 @@ void main() {
     );
     final restored = tripBundleFromJson(tripBundleToJson(bundle));
     expect(restored.expenses.single.excludeFromBreakdown, isTrue);
+  },
+  );
+
+  test(
+    'spread setting and precise creation timestamp round-trip through a v7 backup',
+    () {
+      final createdAt = DateTime.utc(2026, 10, 1, 12, 34, 56, 789, 123);
+      final bundle = TripBundle(
+        trip: makeTrip(),
+        expenses: [
+          makeExpense().copyWith(spreadAcrossDays: true, createdAt: createdAt),
+        ],
+        exchangeRates: const [],
+      );
+
+      final restored = tripBundleFromJson(tripBundleToJson(bundle));
+
+      expect(restored.expenses.single.spreadAcrossDays, isTrue);
+      expect(restored.expenses.single.createdAt, createdAt);
+    },
+  );
+
+  test(
+    'a pre-v7 backup defaults a missing spread setting and creation timestamp',
+    () {
+      final json = tripBundleToJson(
+        TripBundle(
+          trip: makeTrip(),
+          expenses: [makeExpense()],
+          exchangeRates: const [],
+        ),
+      );
+      final expenseJson =
+          (json['expenses'] as List).single as Map<String, dynamic>;
+      expenseJson.remove('spreadAcrossDays');
+      expenseJson.remove('createdAt');
+
+      final restored = tripBundleFromJson(json).expenses.single;
+
+      expect(restored.spreadAcrossDays, isFalse);
+      expect(restored.createdAt, DateTime.utc(2026, 10, 6));
   });
 
   test('tripBundleFromJson defaults excludeFromBreakdown to false when the key is absent '

@@ -2,11 +2,13 @@
   "@@locale": "zh",
   "appTitle": "TravelSpendPlus",
   "categoryFood": "餐饮",
+  "categoryDrinks": "饮品",
   "categoryTransport": "交通",
   "categoryFlight": "机票",
   "categoryLodging": "住宿",
   "categoryShopping": "购物",
   "categoryEntertainment": "娱乐",
+  "categorySightseeing": "观光",
   "categoryOther": "其他",
   "newTrip": "新建行程",
   "editTrip": "编辑行程",
@@ -103,5 +105,6 @@
   "groupByCategory": "分类",
   "groupByLocation": "地点",
   "noLocation": "未填写地点",
-  "excludeFromChart": "从图表中排除"
+  "excludeFromChart": "从图表中排除",
+  "spreadAcrossDays": "按天平均分摊"
 }

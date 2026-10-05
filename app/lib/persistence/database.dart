@@ -47,6 +47,13 @@ class Expenses extends Table {
   DateTimeColumn get endDate => dateTime().nullable()();
   TextColumn get location => text().withDefault(const Constant(''))();
   BoolColumn get excludeFromBreakdown => boolean().withDefault(const Constant(false))();
+  BoolColumn get spreadAcrossDays =>
+      boolean().withDefault(const Constant(false))();
+  // DateTime columns use second-resolution storage in this SQLite setup.
+  // Creation order needs finer precision, so retain UTC epoch microseconds
+  // explicitly. A zero default marks a pre-v7 row whose order falls back to
+  // SQLite's insertion rowid in TripRepository.
+  IntColumn get createdAt => integer().withDefault(const Constant(0))();
   TextColumn get status => text()(); // 'planned' | 'actual'
   BoolColumn get includeInSplit => boolean()();
   TextColumn get paidById => text().references(Participants, #id)();
@@ -103,7 +110,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -131,6 +138,10 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 6) {
             await m.addColumn(expenses, expenses.excludeFromBreakdown);
+          }
+          if (from < 7) {
+            await m.addColumn(expenses, expenses.spreadAcrossDays);
+            await m.addColumn(expenses, expenses.createdAt);
           }
         },
       );

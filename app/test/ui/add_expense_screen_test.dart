@@ -84,6 +84,26 @@ void main() {
         reason: 'left untouched, endDate defaults to the same single day as date');
   });
 
+  testWidgets('the expense form keeps its save action above system insets', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 600);
+    tester.view.padding = const FakeViewPadding(bottom: 48);
+    addTearDown(tester.view.resetPadding);
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+
+    final save = find.byKey(const Key('saveExpenseButton'));
+    await tester.scrollUntilVisible(
+      save, 200,
+      scrollable: find.descendant(
+        of: find.byType(ListView), matching: find.byType(Scrollable),
+      ).first,
+    );
+    await tester.pumpAndSettle();
+    expect(tester.getBottomRight(save).dy, lessThanOrEqualTo(552));
+  });
+
   testWidgets('filling in a location persists it on the expense', (tester) async {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();
@@ -115,6 +135,24 @@ void main() {
 
     final expenses = await repo.getExpenses('t1');
     expect(expenses.single.excludeFromBreakdown, isTrue);
+    },
+  );
+
+  testWidgets('spreading an expense across its date range persists the choice', (
+    tester,
+  ) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('住宿').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '900');
+    await tester.tap(find.byKey(const Key('spreadAcrossDaysCheckbox')));
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    expect((await repo.getExpenses('t1')).single.spreadAcrossDays, isTrue);
   });
 
   testWidgets('choosing Planned status saves a planned expense', (tester) async {
@@ -378,6 +416,7 @@ void main() {
       description: 'Kyoto guesthouse',
       date: DateTime(2026, 10, 6),
       endDate: DateTime(2026, 10, 6),
+      createdAt: DateTime.utc(2026, 1, 2, 3, 4, 5, 678, 9),
       location: '',
       status: ExpenseStatus.planned,
       includeInSplit: true,
@@ -399,6 +438,11 @@ void main() {
     expect(expenses.first.id, 'e1');
     expect(expenses.first.amount, Money.fromMajor(3100, 'CNY'));
     expect(expenses.first.description, 'Kyoto guesthouse (extra night)');
+      expect(
+        expenses.first.createdAt,
+        DateTime.utc(2026, 1, 2, 3, 4, 5, 678, 9),
+        reason: 'editing must retain the original creation time for list sorting',
+      );
     expect(expenses.first.category, 'lodging', reason: 'untouched fields must be preserved');
     expect(expenses.first.status, ExpenseStatus.planned, reason: 'untouched fields must be preserved');
   });

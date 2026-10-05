@@ -2,11 +2,13 @@
   "@@locale": "de",
   "appTitle": "TravelSpendPlus",
   "categoryFood": "Essen",
+  "categoryDrinks": "Getränke",
   "categoryTransport": "Transport",
   "categoryFlight": "Flug",
   "categoryLodging": "Unterkunft",
   "categoryShopping": "Einkaufen",
   "categoryEntertainment": "Unterhaltung",
+  "categorySightseeing": "Besichtigungen",
   "categoryOther": "Sonstiges",
   "newTrip": "Neue Reise",
   "editTrip": "Reise bearbeiten",
@@ -108,5 +110,6 @@
   "groupByCategory": "Kategorie",
   "groupByLocation": "Ort",
   "noLocation": "Kein Ort",
-  "excludeFromChart": "Vom Diagramm ausschließen"
+  "excludeFromChart": "Vom Diagramm ausschließen",
+  "spreadAcrossDays": "Gleichmäßig auf Tage verteilen"
 }

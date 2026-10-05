@@ -29,7 +29,9 @@ void main() {
     ));
     await tester.pumpAndSettle();
     expect(categoryLabel(capturedContext, 'food'), '餐饮');
+    expect(categoryLabel(capturedContext, 'drinks'), '饮品');
     expect(categoryLabel(capturedContext, 'transport'), '交通');
+    expect(categoryLabel(capturedContext, 'sightseeing'), '观光');
   });
 
   testWidgets('categoryLabel returns a custom (non-built-in) category name as-is', (tester) async {

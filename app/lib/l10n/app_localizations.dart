@@ -112,6 +112,12 @@ abstract class AppLocalizations {
   /// **'Food'**
   String get categoryFood;
 
+  /// No description provided for @categoryDrinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Drinks'**
+  String get categoryDrinks;
+
   /// No description provided for @categoryTransport.
   ///
   /// In en, this message translates to:
@@ -141,6 +147,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Entertainment'**
   String get categoryEntertainment;
+
+  /// No description provided for @categorySightseeing.
+  ///
+  /// In en, this message translates to:
+  /// **'Sightseeing'**
+  String get categorySightseeing;
 
   /// No description provided for @categoryOther.
   ///
@@ -723,6 +735,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Exclude from chart'**
   String get excludeFromChart;
+
+  /// No description provided for @spreadAcrossDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread evenly across days'**
+  String get spreadAcrossDays;
 }
 
 class _AppLocalizationsDelegate

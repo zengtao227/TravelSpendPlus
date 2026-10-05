@@ -78,6 +78,77 @@ void main() {
     ),
   );
 
+  Future<void> seedDailyAllocationFixture() async {
+    final day1 = DateTime(2026, 10, 5);
+    final day3 = DateTime(2026, 10, 7);
+    await repo.createTrip(
+      Trip(
+        id: 't1',
+        name: 'Japan',
+        startDate: day1,
+        endDate: day3,
+        homeCurrency: 'CNY',
+        totalBudget: Money.fromMajor(20000, 'CNY'),
+        participants: [me],
+      ),
+    );
+    await repo.addExpense(
+      Expense(
+        id: 'hotel',
+        tripId: 't1',
+        category: 'lodging',
+        amount: Money.fromMajor(90, 'CNY'),
+        amountInHomeCurrency: Money.fromMajor(90, 'CNY'),
+        description: 'Spread hotel',
+        date: day1,
+        endDate: day3,
+        location: 'Kyoto',
+        spreadAcrossDays: true,
+        createdAt: DateTime.utc(2026, 10, 1, 8),
+        status: ExpenseStatus.actual,
+        includeInSplit: true,
+        paidBy: me,
+        paidFor: [me],
+      ),
+    );
+    await repo.addExpense(
+      Expense(
+        id: 'old',
+        tripId: 't1',
+        category: 'food',
+        amount: Money.fromMajor(11, 'CNY'),
+        amountInHomeCurrency: Money.fromMajor(11, 'CNY'),
+        description: 'Older dinner',
+        date: day3,
+        endDate: day3,
+        location: 'Kyoto',
+        createdAt: DateTime.utc(2026, 10, 1, 9),
+        status: ExpenseStatus.actual,
+        includeInSplit: true,
+        paidBy: me,
+        paidFor: [me],
+      ),
+    );
+    await repo.addExpense(
+      Expense(
+        id: 'new',
+        tripId: 't1',
+        category: 'food',
+        amount: Money.fromMajor(22, 'CNY'),
+        amountInHomeCurrency: Money.fromMajor(22, 'CNY'),
+        description: 'Newer dinner',
+        date: day3,
+        endDate: day3,
+        location: 'Kyoto',
+        createdAt: DateTime.utc(2026, 10, 1, 10),
+        status: ExpenseStatus.actual,
+        includeInSplit: true,
+        paidBy: me,
+        paidFor: [me],
+      ),
+    );
+  }
+
   testWidgets('the date range shows the trip length in days', (tester) async {
     await repo.createTrip(
       Trip(
@@ -259,6 +330,93 @@ void main() {
     expect(find.text('预计还剩'), findsOneWidget);
   });
 
+  testWidgets(
+    'expense rows group by day, sort days descending, and keep newest entries first',
+    (tester) async {
+      await seedDailyAllocationFixture();
+
+      await tester.pumpWidget(wrap('t1'));
+      await tester.pumpAndSettle();
+
+      final day3 = find.byKey(
+        Key('expenseDay-${DateTime.utc(2026, 10, 7).microsecondsSinceEpoch}'),
+      );
+      final day2 = find.byKey(
+        Key('expenseDay-${DateTime.utc(2026, 10, 6).microsecondsSinceEpoch}'),
+      );
+      final day1 = find.byKey(
+        Key('expenseDay-${DateTime.utc(2026, 10, 5).microsecondsSinceEpoch}'),
+      );
+      expect(day3, findsOneWidget);
+      expect(day2, findsOneWidget);
+      expect(day1, findsOneWidget);
+      expect(tester.getCenter(day3).dy, lessThan(tester.getCenter(day2).dy));
+      expect(tester.getCenter(day2).dy, lessThan(tester.getCenter(day1).dy));
+
+      final newer = tester.getCenter(find.text('Newer dinner')).dy;
+      final older = tester.getCenter(find.text('Older dinner')).dy;
+      final hotelOnDay3 = tester.getCenter(find.text('Spread hotel').first).dy;
+      expect(newer, lessThan(older));
+      expect(older, lessThan(hotelOnDay3));
+      // 90 CNY over three inclusive days is one 30 CNY row per day.
+      expect(
+        find.ancestor(
+          of: find.text('CNY 30.00'),
+          matching: find.byType(ListTile),
+        ),
+        findsNWidgets(3),
+      );
+
+      await tester.tap(find.text('Spread hotel').first);
+      await tester.pumpAndSettle();
+      final addScreen = tester.widget<AddExpenseScreen>(
+        find.byType(AddExpenseScreen),
+      );
+      expect(addScreen.existingExpense!.id, 'hotel');
+      expect(addScreen.existingExpense!.amount, Money.fromMajor(90, 'CNY'));
+      final amountField = tester.widget<TextFormField>(
+        find.byKey(const Key('expenseAmountField')),
+      );
+      expect(amountField.controller!.text, '90.0');
+      expect(
+        tester.widget<CheckboxListTile>(
+          find.byKey(const Key('spreadAcrossDaysCheckbox')),
+        ).value,
+        isTrue,
+      );
+    },
+  );
+
+  testWidgets(
+    'deleting one displayed allocation deletes its source and all daily rows',
+    (tester) async {
+      await seedDailyAllocationFixture();
+
+      await tester.pumpWidget(wrap('t1'));
+      await tester.pumpAndSettle();
+      await tester.drag(
+        find.text('Spread hotel').first,
+        const Offset(-500, 0),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirmDeleteExpenseButton')));
+      await tester.pumpAndSettle();
+
+      final remaining = await repo.getExpenses('t1');
+      expect(remaining.map((expense) => expense.id), unorderedEquals(['old', 'new']));
+      // deleteExpense() also awaits photo-file cleanup; remounting verifies
+      // the persisted source is gone without depending on that I/O callback
+      // to refresh the stale Dismissible tree in this fake-async test.
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpWidget(wrap('t1'));
+      await tester.pumpAndSettle();
+      expect(find.text('Spread hotel'), findsNothing);
+      expect(find.text('Newer dinner'), findsOneWidget);
+      expect(find.text('Older dinner'), findsOneWidget);
+      expect(find.text('CNY 30.00'), findsNothing);
+    },
+  );
+
   testWidgets('a finished trip shows a static "trip finished" summary', (
     tester,
   ) async {
@@ -370,6 +528,134 @@ void main() {
       expect(find.text('交通'), findsWidgets);
       expect(find.textContaining('300.00'), findsWidgets);
       expect(find.textContaining('3,200.00'), findsWidgets);
+    },
+  );
+
+  testWidgets('tapping a chart legend entry shows only its included raw expenses', (tester) async {
+    await repo.createTrip(
+      Trip(
+        id: 't1',
+        name: 'Japan',
+        startDate: DateTime.now().subtract(const Duration(days: 2)),
+        endDate: DateTime.now().add(const Duration(days: 5)),
+        homeCurrency: 'CNY',
+        totalBudget: Money.fromMajor(20000, 'CNY'),
+        participants: [me],
+      ),
+    );
+    await repo.addExpense(
+      Expense(
+        id: 'included', tripId: 't1', category: 'food',
+        amount: Money.fromMajor(300, 'CNY'), amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+        description: 'Included dinner', date: DateTime.now(), endDate: DateTime.now(), location: 'Kyoto',
+        status: ExpenseStatus.actual, includeInSplit: true, paidBy: me, paidFor: [me],
+      ),
+    );
+    await repo.addExpense(
+      Expense(
+        id: 'excluded', tripId: 't1', category: 'food',
+        amount: Money.fromMajor(200, 'CNY'), amountInHomeCurrency: Money.fromMajor(200, 'CNY'),
+        description: 'Excluded lunch', date: DateTime.now(), endDate: DateTime.now(), location: 'Kyoto',
+        excludeFromBreakdown: true, status: ExpenseStatus.actual, includeInSplit: true, paidBy: me, paidFor: [me],
+      ),
+    );
+
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('breakdownSlice-category-food')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('breakdownExpense-included')), findsOneWidget);
+    expect(find.byKey(const Key('breakdownExpense-excluded')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'tapping a location legend entry shows only matching included expenses',
+    (tester) async {
+      await repo.createTrip(
+        Trip(
+          id: 't1',
+          name: 'Japan',
+          startDate: DateTime.now().subtract(const Duration(days: 2)),
+          endDate: DateTime.now().add(const Duration(days: 5)),
+          homeCurrency: 'CNY',
+          totalBudget: Money.fromMajor(20000, 'CNY'),
+          participants: [me],
+        ),
+      );
+      await repo.addExpense(
+        Expense(
+          id: 'location-included',
+          tripId: 't1',
+          category: 'food',
+          amount: Money.fromMajor(300, 'CNY'),
+          amountInHomeCurrency: Money.fromMajor(300, 'CNY'),
+          description: 'Kyoto dinner',
+          date: DateTime.now(),
+          endDate: DateTime.now(),
+          location: 'Kyoto',
+          status: ExpenseStatus.actual,
+          includeInSplit: true,
+          paidBy: me,
+          paidFor: [me],
+        ),
+      );
+      await repo.addExpense(
+        Expense(
+          id: 'other-location',
+          tripId: 't1',
+          category: 'food',
+          amount: Money.fromMajor(200, 'CNY'),
+          amountInHomeCurrency: Money.fromMajor(200, 'CNY'),
+          description: 'Osaka lunch',
+          date: DateTime.now(),
+          endDate: DateTime.now(),
+          location: 'Osaka',
+          status: ExpenseStatus.actual,
+          includeInSplit: true,
+          paidBy: me,
+          paidFor: [me],
+        ),
+      );
+      await repo.addExpense(
+        Expense(
+          id: 'location-excluded',
+          tripId: 't1',
+          category: 'food',
+          amount: Money.fromMajor(900, 'CNY'),
+          amountInHomeCurrency: Money.fromMajor(900, 'CNY'),
+          description: 'Excluded Kyoto purchase',
+          date: DateTime.now(),
+          endDate: DateTime.now(),
+          location: 'Kyoto',
+          excludeFromBreakdown: true,
+          status: ExpenseStatus.actual,
+          includeInSplit: true,
+          paidBy: me,
+          paidFor: [me],
+        ),
+      );
+
+      await tester.pumpWidget(wrap('t1'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('地点'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('breakdownSlice-location-Kyoto')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('breakdownExpense-location-included')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('breakdownExpense-other-location')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('breakdownExpense-location-excluded')),
+        findsNothing,
+      );
     },
   );
 

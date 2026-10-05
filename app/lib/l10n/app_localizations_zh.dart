@@ -15,6 +15,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get categoryFood => '餐饮';
 
   @override
+  String get categoryDrinks => '饮品';
+
+  @override
   String get categoryTransport => '交通';
 
   @override
@@ -28,6 +31,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get categoryEntertainment => '娱乐';
+
+  @override
+  String get categorySightseeing => '观光';
 
   @override
   String get categoryOther => '其他';
@@ -337,4 +343,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get excludeFromChart => '从图表中排除';
+
+  @override
+  String get spreadAcrossDays => '按天平均分摊';
 }

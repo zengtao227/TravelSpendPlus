@@ -49,7 +49,29 @@ void main() {
     expect(trips.length, 1);
     expect(trips.first.name, 'Japan Trip');
     expect(trips.first.participants.length, 1);
-    expect(trips.first.homeCurrency, 'EUR', reason: 'EUR is the default home currency for a new trip');
+    expect(trips.first.homeCurrency, 'EUR', reason: 'EUR is the default home currency for a new trip',
+      );
+    },
+  );
+
+  testWidgets('the trip form keeps its save action above system insets', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 600);
+    tester.view.padding = const FakeViewPadding(bottom: 48);
+    addTearDown(tester.view.resetPadding);
+    await tester.pumpWidget(wrap(CreateTripScreen(repository: repo)));
+    await tester.pumpAndSettle();
+
+    final save = find.byKey(const Key('saveTripButton'));
+    await tester.scrollUntilVisible(
+      save, 200,
+      scrollable: find.descendant(
+        of: find.byType(ListView), matching: find.byType(Scrollable),
+      ).first,
+    );
+    await tester.pumpAndSettle();
+    expect(tester.getBottomRight(save).dy, lessThanOrEqualTo(552));
   });
 
   testWidgets('picking a currency from the dropdown saves the trip with that home currency',
