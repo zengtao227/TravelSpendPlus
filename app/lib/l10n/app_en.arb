@@ -135,5 +135,21 @@
         "type": "int"
       }
     }
+  },
+  "dailyActualTotal": "Actual total: {amount}",
+  "@dailyActualTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dailyPlannedTotal": "Planned total: {amount}",
+  "@dailyPlannedTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
   }
 }

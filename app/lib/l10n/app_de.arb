@@ -122,5 +122,21 @@
         "type": "int"
       }
     }
+  },
+  "dailyActualTotal": "Tatsächliche Summe: {amount}",
+  "@dailyActualTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dailyPlannedTotal": "Geplante Summe: {amount}",
+  "@dailyPlannedTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
   }
 }

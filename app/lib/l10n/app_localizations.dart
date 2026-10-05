@@ -747,6 +747,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Average {amount}/day over {days} days'**
   String expenseDailyAverage(String amount, int days);
+
+  /// No description provided for @dailyActualTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual total: {amount}'**
+  String dailyActualTotal(String amount);
+
+  /// No description provided for @dailyPlannedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned total: {amount}'**
+  String dailyPlannedTotal(String amount);
 }
 
 class _AppLocalizationsDelegate

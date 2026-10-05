@@ -148,6 +148,27 @@ void main() {
     );
   }
 
+  testWidgets('daily totals separate planned and allocated actual amounts', (tester) async {
+    await seedDailyAllocationFixture();
+    for (final planned in [false, true]) {
+      await repo.addExpense(Expense(
+        id: planned ? 'planned-total' : 'foreign-total', tripId: 't1',
+        category: 'food', amount: Money.fromMajor(10, 'USD'),
+        amountInHomeCurrency: Money.fromMajor(planned ? 120 : 70, 'CNY'),
+        description: planned ? 'Planned meal' : 'Foreign meal', location: 'Kyoto',
+        date: DateTime(2026, 10, 7), endDate: DateTime(2026, 10, 7),
+        status: planned ? ExpenseStatus.planned : ExpenseStatus.actual,
+        includeInSplit: !planned, paidBy: me, paidFor: [me],
+      ));
+    }
+    await tester.pumpWidget(wrap('t1', locale: const Locale('en')));
+    await tester.pumpAndSettle();
+    final header = find.byKey(Key('expenseDay-${DateTime.utc(2026, 10, 7).microsecondsSinceEpoch}'));
+    expect(find.descendant(of: header, matching: find.textContaining('Actual total')), findsOneWidget);
+    expect(find.descendant(of: header, matching: find.textContaining('133.00')), findsOneWidget);
+    expect(find.descendant(of: header, matching: find.textContaining('120.00')), findsOneWidget);
+  });
+
   testWidgets('the date range shows the trip length in days', (tester) async {
     await repo.createTrip(
       Trip(

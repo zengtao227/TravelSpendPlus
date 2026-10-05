@@ -117,5 +117,21 @@
         "type": "int"
       }
     }
+  },
+  "dailyActualTotal": "当天实际合计：{amount}",
+  "@dailyActualTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dailyPlannedTotal": "计划合计：{amount}",
+  "@dailyPlannedTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
   }
 }

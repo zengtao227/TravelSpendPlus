@@ -377,4 +377,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String expenseDailyAverage(String amount, int days) {
     return 'Average $amount/day over $days days';
   }
+
+  @override
+  String dailyActualTotal(String amount) {
+    return 'Actual total: $amount';
+  }
+
+  @override
+  String dailyPlannedTotal(String amount) {
+    return 'Planned total: $amount';
+  }
 }

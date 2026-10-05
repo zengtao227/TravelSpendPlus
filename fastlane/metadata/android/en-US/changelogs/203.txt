@@ -1,0 +1,2 @@
+Show daily actual spending totals, including allocated multi-day costs.
+Show planned daily spending separately and sum in the trip home currency.

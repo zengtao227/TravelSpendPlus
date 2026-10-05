@@ -113,6 +113,13 @@ class _ExpenseDayGroup {
   final List<DailyExpenseAllocation> allocations;
 
   const _ExpenseDayGroup({required this.date, required this.allocations});
+
+  Money totalFor(ExpenseStatus status) {
+    return allocations.where((item) => item.expense.status == status).fold(
+      Money(minorUnits: 0, currencyCode: allocations.first.amountInHomeCurrency.currencyCode),
+      (total, item) => total + item.amountInHomeCurrency,
+    );
+  }
 }
 
 List<_ExpenseDayGroup> _groupDailyAllocations(List<Expense> expenses) {
@@ -875,9 +882,19 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 Padding(
                   key: Key('expenseDay-${group.date.microsecondsSinceEpoch}'),
                   padding: const EdgeInsets.only(top: 12, bottom: 4),
-                  child: Text(
-                    formatDate(context, group.date),
-                    style: Theme.of(context).textTheme.titleSmall,
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    children: [
+                      Text(formatDate(context, group.date),
+                          style: Theme.of(context).textTheme.titleSmall),
+                      Text(l10n.dailyActualTotal(
+                          formatMoney(group.totalFor(ExpenseStatus.actual)))),
+                      if (group.allocations.any((item) =>
+                          item.expense.status == ExpenseStatus.planned))
+                        Text(l10n.dailyPlannedTotal(
+                            formatMoney(group.totalFor(ExpenseStatus.planned)))),
+                    ],
                   ),
                 ),
                 for (final allocation in group.allocations)

@@ -351,4 +351,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String expenseDailyAverage(String amount, int days) {
     return '此项日均 $amount，共 $days 天';
   }
+
+  @override
+  String dailyActualTotal(String amount) {
+    return '当天实际合计：$amount';
+  }
+
+  @override
+  String dailyPlannedTotal(String amount) {
+    return '计划合计：$amount';
+  }
 }
