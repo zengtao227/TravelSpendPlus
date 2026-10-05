@@ -72,7 +72,7 @@
   "dailyBudgetRemaining": "Daily budget remaining: {amount}/day",
   "@dailyBudgetRemaining": {"placeholders": {"amount": {"type": "String"}}},
   "totalSpentLabel": "Total spent",
-  "avgPerDayLabel": "Avg. per day",
+  "avgPerDayLabel": "Average through today",
   "plannedLabel": "Planned",
   "actualLabel": "Actual",
   "remainingLabel": "Remaining",
@@ -124,5 +124,16 @@
   "groupByLocation": "Location",
   "noLocation": "No location",
   "excludeFromChart": "Exclude from chart",
-  "spreadAcrossDays": "Spread evenly across days"
+  "fullTripAverageLabel": "Average over full trip",
+  "expenseDailyAverage": "Average {amount}/day over {days} days",
+  "@expenseDailyAverage": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  }
 }

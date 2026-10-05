@@ -214,7 +214,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get totalSpentLabel => 'Bisher ausgegeben';
 
   @override
-  String get avgPerDayLabel => 'Ø pro Tag';
+  String get avgPerDayLabel => 'Ø bis heute';
 
   @override
   String get plannedLabel => 'Geplant';
@@ -373,5 +373,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get excludeFromChart => 'Vom Diagramm ausschließen';
 
   @override
-  String get spreadAcrossDays => 'Gleichmäßig auf Tage verteilen';
+  String get fullTripAverageLabel => 'Ø gesamte Reise';
+
+  @override
+  String expenseDailyAverage(String amount, int days) {
+    return 'Ø $amount/Tag für $days Tage';
+  }
 }

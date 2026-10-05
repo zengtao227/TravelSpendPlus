@@ -46,7 +46,6 @@ void main() {
         date: today,
         endDate: trip.endDate,
         location: 'Zurich',
-        spreadAcrossDays: true,
         status: ExpenseStatus.actual,
         includeInSplit: true,
         paidBy: me,
@@ -60,7 +59,6 @@ void main() {
           description: 'Coffee',
           amount: Money.fromMajor(50, 'EUR'),
           amountInHomeCurrency: Money.fromMajor(50, 'EUR'),
-          spreadAcrossDays: false,
           endDate: today,
         ),
       );

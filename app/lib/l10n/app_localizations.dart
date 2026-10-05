@@ -457,7 +457,7 @@ abstract class AppLocalizations {
   /// No description provided for @avgPerDayLabel.
   ///
   /// In en, this message translates to:
-  /// **'Avg. per day'**
+  /// **'Average through today'**
   String get avgPerDayLabel;
 
   /// No description provided for @plannedLabel.
@@ -736,11 +736,17 @@ abstract class AppLocalizations {
   /// **'Exclude from chart'**
   String get excludeFromChart;
 
-  /// No description provided for @spreadAcrossDays.
+  /// No description provided for @fullTripAverageLabel.
   ///
   /// In en, this message translates to:
-  /// **'Spread evenly across days'**
-  String get spreadAcrossDays;
+  /// **'Average over full trip'**
+  String get fullTripAverageLabel;
+
+  /// No description provided for @expenseDailyAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Average {amount}/day over {days} days'**
+  String expenseDailyAverage(String amount, int days);
 }
 
 class _AppLocalizationsDelegate

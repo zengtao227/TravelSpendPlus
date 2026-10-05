@@ -141,7 +141,6 @@ class TripRepository {
         endDate: civilDate((row.endDate ?? row.date).toUtc()),
         location: row.location,
         excludeFromBreakdown: row.excludeFromBreakdown,
-        spreadAcrossDays: row.spreadAcrossDays,
         createdAt: row.createdAt == 0
             ? civilDate(row.date.toUtc())
             : DateTime.fromMicrosecondsSinceEpoch(row.createdAt, isUtc: true),

@@ -103,7 +103,6 @@ void main() {
         date: day1,
         endDate: day3,
         location: 'Kyoto',
-        spreadAcrossDays: true,
         createdAt: DateTime.utc(2026, 10, 1, 8),
         status: ExpenseStatus.actual,
         includeInSplit: true,
@@ -262,7 +261,7 @@ void main() {
     // independent of the budget) — as a caption ("日均消费") above a big
     // number, not a full sentence, so match on the caption.
     expect(find.textContaining('每日剩余预算'), findsOneWidget);
-    expect(find.text('日均消费'), findsOneWidget);
+    expect(find.text('全行程日均'), findsOneWidget);
   });
 
   testWidgets(
@@ -302,13 +301,32 @@ void main() {
       await tester.pumpWidget(wrap('t1'));
       await tester.pumpAndSettle();
       // 300 / 3 elapsed days = 100.00/day, shown even though totalBudget is 0.
-      expect(find.text('日均消费'), findsOneWidget);
-      expect(find.textContaining('100.00'), findsWidgets);
+      expect(find.text('全行程日均'), findsOneWidget);
+      expect(find.textContaining('截至今日平均: CNY 100.00'), findsOneWidget);
+      expect(find.text('CNY 37.50'), findsOneWidget);
       // With no budget set, "remaining" is just the negative of what's been
       // spent — not a meaningful number, so it isn't shown at all.
       expect(find.text('预计还剩'), findsNothing);
     },
   );
+
+  testWidgets('seven-day trip and four-day rental show distinct daily averages', (tester) async {
+    final start = DateTime.now();
+    await repo.createTrip(Trip(id: 't1', name: 'Seven days', startDate: start,
+        endDate: start.add(const Duration(days: 6)), homeCurrency: 'CNY',
+        totalBudget: Money.fromMajor(0, 'CNY'), participants: [me]));
+    await repo.addExpense(Expense(id: 'rental', tripId: 't1', category: 'transport',
+        amount: Money.fromMajor(400, 'CNY'), amountInHomeCurrency: Money.fromMajor(400, 'CNY'),
+        description: 'Four-day rental', date: start, endDate: start.add(const Duration(days: 3)),
+        location: '', status: ExpenseStatus.actual, includeInSplit: true, paidBy: me, paidFor: [me]));
+    await tester.pumpWidget(wrap('t1'));
+    await tester.pumpAndSettle();
+    expect(find.text('全行程日均'), findsOneWidget);
+    expect(find.text('CNY 57.14'), findsOneWidget);
+    expect(find.textContaining('截至今日平均: CNY 100.00'), findsOneWidget);
+    await tester.scrollUntilVisible(find.textContaining('此项日均').first, 250);
+    expect(find.textContaining('此项日均 CNY 100.00，共 4 天'), findsWidgets);
+  });
 
   testWidgets('a trip with a budget set still shows the "remaining" figure', (
     tester,
@@ -378,12 +396,7 @@ void main() {
         find.byKey(const Key('expenseAmountField')),
       );
       expect(amountField.controller!.text, '90.0');
-      expect(
-        tester.widget<CheckboxListTile>(
-          find.byKey(const Key('spreadAcrossDaysCheckbox')),
-        ).value,
-        isTrue,
-      );
+      expect(find.byKey(const Key('spreadAcrossDaysCheckbox')), findsNothing);
     },
   );
 
@@ -439,7 +452,7 @@ void main() {
     // average-daily-spend stat still shows (it's meaningful for the whole
     // finished trip, unlike remaining-budget).
     expect(find.textContaining('每日剩余预算'), findsNothing);
-    expect(find.text('日均消费'), findsOneWidget);
+    expect(find.text('全行程日均'), findsOneWidget);
   });
 
   testWidgets(
@@ -903,7 +916,7 @@ void main() {
       await tester.pumpWidget(wrap('t1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('住宿 · Kyoto'), findsOneWidget);
+      expect(find.textContaining('住宿 · Kyoto'), findsWidgets);
       // "餐饮" also appears in the category-breakdown legend above the expense
       // list, so this can't be findsOneWidget — just confirm the plain
       // (no "· location") subtitle rendered somewhere, i.e. the row itself.

@@ -138,7 +138,7 @@ void main() {
     },
   );
 
-  testWidgets('spreading an expense across its date range persists the choice', (
+  testWidgets('date range allocates automatically without a spread checkbox', (
     tester,
   ) async {
     await tester.pumpWidget(wrap());
@@ -148,11 +148,11 @@ void main() {
     await tester.tap(find.text('住宿').last);
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('expenseAmountField')), '900');
-    await tester.tap(find.byKey(const Key('spreadAcrossDaysCheckbox')));
+    expect(find.byKey(const Key('spreadAcrossDaysCheckbox')), findsNothing);
     await tester.tap(find.byKey(const Key('saveExpenseButton')));
     await tester.pumpAndSettle();
 
-    expect((await repo.getExpenses('t1')).single.spreadAcrossDays, isTrue);
+    expect((await repo.getExpenses('t1')).single.spreadAcrossDays, isFalse);
   });
 
   testWidgets('choosing Planned status saves a planned expense', (tester) async {

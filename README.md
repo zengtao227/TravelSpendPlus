@@ -10,12 +10,10 @@ expenses and comparing planned spending with actual spending.
 - Organize expenses with built-in or custom categories.
 - Review totals, remaining budget, and category breakdowns.
 - Group expenses by day, with the newest dates and entries first.
-- Optionally spread an expense over its inclusive date range. Daily amounts
-  preserve the original total; actual daily averages count only shares through
-  today. Enable this option when entering a flight or accommodation cost and
-  choose the days it covers. On upgrade or legacy backup restore, existing
-  multi-day date ranges automatically use daily allocation; single-day entries
-  stay on their original day.
+- Automatically allocate each expense over its inclusive start/end date range,
+  including existing records. Daily shares preserve the original total.
+- Show the full-trip daily average using all trip days, alongside the average
+  through today. Multi-day entries also show their own daily average.
 - Tap a chart category or location to review its matching expenses.
 - Enter exchange rates manually or request an optional live reference rate.
 - Attach trip and expense photos.

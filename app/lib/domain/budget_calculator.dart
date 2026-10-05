@@ -80,6 +80,12 @@ class BudgetCalculator {
     return remainingAtStartOfToday.dividedBy(daysLeft);
   }
 
+  /// Actual source totals averaged over the full trip, regardless of the
+  /// duration of any individual expense. Planned costs are excluded.
+  static Money averageDailySpendForTrip({required Trip trip, required List<Expense> expenses}) {
+    return summarize(trip: trip, expenses: expenses).actualTotal.dividedBy(trip.totalDays);
+  }
+
   /// Actual allocated spending through [asOf], divided by trip days elapsed
   /// up to and including [asOf]'s day — independent of [Trip.totalBudget],
   /// so it's meaningful even when no budget was set. A spread expense only

@@ -143,6 +143,23 @@ void main() {
     expect(daily!.major, closeTo(-50.00, 0.01));
   });
 
+  test('four-day rental contributes its total over all seven trip days', () {
+    final trip = Trip(id: 't1', name: 'Seven days', startDate: DateTime.utc(2026, 1, 1),
+        endDate: DateTime.utc(2026, 1, 7), homeCurrency: 'EUR',
+        totalBudget: Money.fromMajor(1000, 'EUR'), participants: [alice]);
+    final rental = actualExpense(400, DateTime.utc(2026, 1, 2))
+        .copyWith(endDate: DateTime.utc(2026, 1, 5));
+    expect(dailyExpenseAllocations(rental).map((a) => a.amount.major), [100, 100, 100, 100]);
+    expect(BudgetCalculator.averageDailySpendForTrip(trip: trip, expenses: [rental]).major,
+        closeTo(400 / 7, 0.01));
+    expect(BudgetCalculator.averageDailySpendSoFar(trip: trip, expenses: [rental],
+        asOf: DateTime.utc(2026, 1, 7))!.major, closeTo(400 / 7, 0.01));
+    expect(BudgetCalculator.averageDailySpendSoFar(trip: trip, expenses: [rental],
+        asOf: DateTime.utc(2026, 1, 3))!.major, closeTo(200 / 3, 0.01));
+    expect(BudgetCalculator.averageDailySpendForTrip(trip: trip,
+        expenses: [rental.copyWith(status: ExpenseStatus.planned)]).minorUnits, 0);
+  });
+
   test('averageDailySpendSoFar divides actual spend by elapsed trip days', () {
     final trip = makeTenDayTrip();
     final expenses = [actualExpense(800.00, DateTime(2026, 1, 3))];
@@ -169,7 +186,6 @@ void main() {
         date: DateTime.utc(2026, 1, 1),
         endDate: DateTime.utc(2026, 1, 10),
         location: '',
-        spreadAcrossDays: true,
         status: ExpenseStatus.actual,
         includeInSplit: true,
         paidBy: alice,

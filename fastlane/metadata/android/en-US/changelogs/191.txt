@@ -1,0 +1,3 @@
+Automatically allocate all multi-day expenses across their inclusive date ranges.
+Remove the daily-allocation checkbox.
+Show full-trip, elapsed-trip, and individual expense daily averages separately.

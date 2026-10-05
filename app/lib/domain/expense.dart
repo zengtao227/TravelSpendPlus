@@ -21,8 +21,8 @@ class Expense {
   final DateTime date;
   // The last day this expense covers — same as [date] for an ordinary
   // single-day expense (e.g. dinner), later than [date] for something like
-  // a hotel stay or a multi-day tour. When [spreadAcrossDays] is true, the
-  // amount is allocated evenly across this inclusive range.
+  // a hotel stay or a multi-day tour. Amounts are always allocated evenly
+  // across this inclusive range.
   final DateTime endDate;
   // Free-text place name (e.g. a city) — optional, defaults to ''. Lets a
   // trip spanning several cities be broken down by where money was spent,
@@ -33,7 +33,9 @@ class Expense {
   // (a car, a laptop) the user doesn't want skewing the category/location
   // split. It still counts toward every other total (budget, split ledger).
   final bool excludeFromBreakdown;
-  final bool spreadAcrossDays;
+  bool get spreadAcrossDays => civilDate(endDate).isAfter(civilDate(date));
+
+  int get coveredDays => civilDate(endDate).difference(civilDate(date)).inDays + 1;
 
   /// Creation instant retained across edits so same-day entries can be
   /// displayed newest first. Kept at microsecond precision in persistence.
@@ -54,7 +56,6 @@ class Expense {
     required this.endDate,
     required this.location,
     this.excludeFromBreakdown = false,
-    this.spreadAcrossDays = false,
     DateTime? createdAt,
     required this.status,
     required this.includeInSplit,
@@ -90,7 +91,6 @@ class Expense {
     DateTime? endDate,
     String? location,
     bool? excludeFromBreakdown,
-    bool? spreadAcrossDays,
     DateTime? createdAt,
     ExpenseStatus? status,
     bool? includeInSplit,
@@ -108,7 +108,6 @@ class Expense {
       endDate: endDate ?? this.endDate,
       location: location ?? this.location,
       excludeFromBreakdown: excludeFromBreakdown ?? this.excludeFromBreakdown,
-      spreadAcrossDays: spreadAcrossDays ?? this.spreadAcrossDays,
       createdAt: createdAt ?? this.createdAt,
       status: status ?? this.status,
       includeInSplit: includeInSplit ?? this.includeInSplit,
@@ -148,7 +147,7 @@ class DailyExpenseAllocation {
 }
 
 /// Allocates [expense] onto its displayed calendar days. Ordinary expenses
-/// remain a single entry on [Expense.date]; an opted-in multi-day expense is
+/// remain a single entry on [Expense.date]; every multi-day expense is
 /// split inclusively from [Expense.date] to [Expense.endDate]. [splitEvenly]
 /// assigns any remainder cents to earliest days, so each currency sums back
 /// to the source expense exactly.

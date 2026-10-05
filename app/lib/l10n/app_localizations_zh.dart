@@ -198,7 +198,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get totalSpentLabel => '本次总花费';
 
   @override
-  String get avgPerDayLabel => '日均消费';
+  String get avgPerDayLabel => '截至今日平均';
 
   @override
   String get plannedLabel => '计划中';
@@ -345,5 +345,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get excludeFromChart => '从图表中排除';
 
   @override
-  String get spreadAcrossDays => '按天平均分摊';
+  String get fullTripAverageLabel => '全行程日均';
+
+  @override
+  String expenseDailyAverage(String amount, int days) {
+    return '此项日均 $amount，共 $days 天';
+  }
 }

@@ -125,7 +125,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   late DateTime _date;
   late DateTime _endDate;
   late bool _excludeFromBreakdown;
-  late bool _spreadAcrossDays;
   late ExpenseStatus _status;
   List<ExchangeRate> _existingRates = [];
   List<String> _customCategories = [];
@@ -154,7 +153,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     // that do (e.g. a multi-night hotel stay).
     _endDate = civilDate(existing?.endDate ?? _date);
     _excludeFromBreakdown = existing?.excludeFromBreakdown ?? false;
-    _spreadAcrossDays = existing?.spreadAcrossDays ?? false;
     _status = existing?.status ?? ExpenseStatus.actual;
     _loadRates();
     _loadCategories();
@@ -367,7 +365,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       endDate: _endDate,
       location: _locationController.text.trim(),
       excludeFromBreakdown: _excludeFromBreakdown,
-      spreadAcrossDays: _spreadAcrossDays,
       status: _status,
       includeInSplit: true,
       paidBy: existing?.paidBy ?? participant,
@@ -560,15 +557,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 title: Text(l10n.excludeFromChart),
                 value: _excludeFromBreakdown,
                 onChanged: (value) => setState(() => _excludeFromBreakdown = value ?? false),
-              ),
-              CheckboxListTile(
-                key: const Key('spreadAcrossDaysCheckbox'),
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                title: Text(l10n.spreadAcrossDays),
-                value: _spreadAcrossDays,
-                onChanged: (value) =>
-                    setState(() => _spreadAcrossDays = value ?? false),
               ),
               const SizedBox(height: 8),
               ElevatedButton(

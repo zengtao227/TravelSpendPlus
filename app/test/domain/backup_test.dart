@@ -129,7 +129,7 @@ void main() {
       final bundle = TripBundle(
         trip: makeTrip(),
         expenses: [
-          makeExpense().copyWith(spreadAcrossDays: true, createdAt: createdAt),
+          makeExpense().copyWith(createdAt: createdAt),
         ],
         exchangeRates: const [],
       );
@@ -162,11 +162,11 @@ void main() {
       expect(restored.createdAt, DateTime.utc(2026, 10, 6));
   });
 
-  test('legacy single-day backup stays single-day and explicit v7 opt-out is preserved', () {
+  test('multi-day v7 records allocate automatically and legacy single-day stays single-day', () {
     final bundle = TripBundle(trip: makeTrip(), expenses: [makeExpense()], exchangeRates: const []);
     final json = tripBundleToJson(bundle);
     final row = (json['expenses'] as List).single as Map<String, dynamic>;
-    expect(tripBundleFromJson(json).expenses.single.spreadAcrossDays, false);
+    expect(tripBundleFromJson(json).expenses.single.spreadAcrossDays, true);
     row.remove('spreadAcrossDays');
     row['endDate'] = row['date'];
     expect(tripBundleFromJson(json).expenses.single.spreadAcrossDays, false);

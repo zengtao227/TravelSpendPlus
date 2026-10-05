@@ -62,7 +62,7 @@
   "dailyBudgetRemaining": "Verbleibendes Tagesbudget: {amount}/Tag",
   "@dailyBudgetRemaining": {"placeholders": {"amount": {"type": "String"}}},
   "totalSpentLabel": "Bisher ausgegeben",
-  "avgPerDayLabel": "Ø pro Tag",
+  "avgPerDayLabel": "Ø bis heute",
   "plannedLabel": "Geplant",
   "actualLabel": "Tatsächlich",
   "remainingLabel": "Verbleibend",
@@ -111,5 +111,16 @@
   "groupByLocation": "Ort",
   "noLocation": "Kein Ort",
   "excludeFromChart": "Vom Diagramm ausschließen",
-  "spreadAcrossDays": "Gleichmäßig auf Tage verteilen"
+  "fullTripAverageLabel": "Ø gesamte Reise",
+  "expenseDailyAverage": "Ø {amount}/Tag für {days} Tage",
+  "@expenseDailyAverage": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  }
 }

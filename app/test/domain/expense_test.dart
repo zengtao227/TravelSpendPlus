@@ -171,7 +171,6 @@ void main() {
         date: DateTime.utc(2026, 1, 3),
         endDate: DateTime.utc(2026, 1, 5),
         location: '',
-        spreadAcrossDays: true,
         status: ExpenseStatus.actual,
         includeInSplit: true,
         paidBy: alice,
@@ -198,24 +197,25 @@ void main() {
   );
 
   test(
-    'daily allocations keep an unspread expense on its start date even when it has an end date',
+    'daily allocations automatically spread any multi-day range',
     () {
       final expense = makeExpense().copyWith(endDate: DateTime.utc(2026, 1, 5));
 
       final allocations = dailyExpenseAllocations(expense);
 
-      expect(allocations, hasLength(1));
-      expect(allocations.single.date, DateTime.utc(2026, 1, 3));
-      expect(allocations.single.amount, expense.amount);
+      expect(allocations, hasLength(3));
+      expect(allocations.first.date, DateTime.utc(2026, 1, 3));
+      expect(allocations.last.date, DateTime.utc(2026, 1, 5));
+      expect(allocations.fold<int>(0, (sum, a) => sum + a.amount.minorUnits), expense.amount.minorUnits);
     },
   );
 
-  test('copyWith preserves createdAt and can update the spread setting', () {
+  test('copyWith preserves createdAt and derives allocation from the dates', () {
     final createdAt = DateTime.utc(2026, 1, 2, 10, 30);
     final expense = makeExpense().copyWith(createdAt: createdAt);
 
     final updated = expense.copyWith(
-      spreadAcrossDays: true,
+      endDate: DateTime.utc(2026, 1, 5),
       description: 'Lunch instead',
     );
 
@@ -225,7 +225,6 @@ void main() {
 
   test('daily allocations preserve negative amounts imported from a backup', () {
     final expense = makeExpense().copyWith(
-      spreadAcrossDays: true,
       endDate: DateTime.utc(2026, 1, 5),
       amount: const Money(minorUnits: -100, currencyCode: 'EUR'),
       amountInHomeCurrency: const Money(minorUnits: -101, currencyCode: 'EUR'),

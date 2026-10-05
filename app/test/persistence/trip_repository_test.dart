@@ -132,7 +132,6 @@ void main() {
         id: 'e-newer',
         description: 'Newer lunch',
         createdAt: DateTime.utc(2026, 1, 1, 10, 0, 0, 2),
-        spreadAcrossDays: true,
       );
       await repo.addExpense(older);
       await repo.addExpense(newer);
@@ -140,7 +139,7 @@ void main() {
       var loaded = await repo.getExpenses('t1');
       expect(loaded.map((expense) => expense.id), ['e-newer', 'e-older']);
       expect(loaded.first.createdAt, newer.createdAt);
-      expect(loaded.first.spreadAcrossDays, isTrue);
+      expect(loaded.first.spreadAcrossDays, isFalse);
 
       await repo.updateExpense(
         loaded.first.copyWith(description: 'Edited lunch'),

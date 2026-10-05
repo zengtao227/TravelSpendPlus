@@ -521,6 +521,9 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             expenses: expenses,
             asOf: now,
           );
+          final fullTripAverage = BudgetCalculator.averageDailySpendForTrip(
+            trip: trip, expenses: expenses,
+          );
           final expenseDayGroups = _groupDailyAllocations(expenses);
 
           return ListView(
@@ -563,17 +566,21 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       AppColors.teal,
                     ),
                   ),
-                  if (averageDailySpend != null)
-                    Expanded(
+                  Expanded(
                       child: _bigStat(
                         context,
-                        l10n.avgPerDayLabel,
-                        formatMoney(display(averageDailySpend)),
+                        l10n.fullTripAverageLabel,
+                        formatMoney(display(fullTripAverage)),
                         AppColors.coral,
                       ),
                     ),
                 ],
               ),
+              if (averageDailySpend != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text('${l10n.avgPerDayLabel}: ${formatMoney(display(averageDailySpend))}'),
+                ),
               const SizedBox(height: 8),
               budgetTimingWidget,
               const SizedBox(height: 12),
@@ -942,7 +949,12 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                             if (allocation.expense.location.isNotEmpty)
                               allocation.expense.location,
                             if (allocation.expense.spreadAcrossDays)
-                              l10n.spreadAcrossDays,
+                              '${formatDate(context, allocation.expense.date)} – ${formatDate(context, allocation.expense.endDate)}',
+                            if (allocation.expense.spreadAcrossDays)
+                              l10n.expenseDailyAverage(
+                                formatMoney(allocation.expense.amount.dividedBy(allocation.expense.coveredDays)),
+                                allocation.expense.coveredDays,
+                              ),
                           ].join(' · '),
                         ),
                       trailing: Column(
