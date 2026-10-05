@@ -2,3 +2,4 @@ Daily expense groups with newest entries first.
 Spread expenses evenly across dates and calculate actual daily averages.
 Add Drinks and Sightseeing categories and tappable chart details.
 Keep save buttons clear of Android navigation controls.
+Automatically spread existing multi-day records when upgrading or restoring an old backup.

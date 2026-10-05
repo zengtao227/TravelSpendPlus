@@ -142,7 +142,7 @@ void main() {
   );
 
   test(
-    'a pre-v7 backup defaults a missing spread setting and creation timestamp',
+    'a pre-v7 backup spreads an existing date range and defaults creation timestamp',
     () {
       final json = tripBundleToJson(
         TripBundle(
@@ -158,8 +158,20 @@ void main() {
 
       final restored = tripBundleFromJson(json).expenses.single;
 
-      expect(restored.spreadAcrossDays, isFalse);
+      expect(restored.spreadAcrossDays, isTrue);
       expect(restored.createdAt, DateTime.utc(2026, 10, 6));
+  });
+
+  test('legacy single-day backup stays single-day and explicit v7 opt-out is preserved', () {
+    final bundle = TripBundle(trip: makeTrip(), expenses: [makeExpense()], exchangeRates: const []);
+    final json = tripBundleToJson(bundle);
+    final row = (json['expenses'] as List).single as Map<String, dynamic>;
+    expect(tripBundleFromJson(json).expenses.single.spreadAcrossDays, false);
+    row.remove('spreadAcrossDays');
+    row['endDate'] = row['date'];
+    expect(tripBundleFromJson(json).expenses.single.spreadAcrossDays, false);
+    row.remove('endDate');
+    expect(tripBundleFromJson(json).expenses.single.spreadAcrossDays, false);
   });
 
   test('tripBundleFromJson defaults excludeFromBreakdown to false when the key is absent '

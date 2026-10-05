@@ -169,6 +169,18 @@ void main() {
         1767312000, 1767312000, '', 0, 'actual', 1, 'p1', 'p1'
       )
     ''');
+      await legacy.customStatement('''
+      INSERT INTO expenses VALUES (
+        'e-range', 't1', 'accommodation', 10001, 'EUR', 10001, 'Hotel',
+        1767312000, 1767484800, 'Kyoto', 0, 'actual', 1, 'p1', 'p1'
+      )
+    ''');
+      await legacy.customStatement('''
+      INSERT INTO expenses VALUES (
+        'e-no-end', 't1', 'food', 1000, 'EUR', 1000, 'Coffee',
+        1767312000, NULL, '', 0, 'actual', 1, 'p1', 'p1'
+      )
+    ''');
       await legacy.customStatement('PRAGMA user_version = 6');
       await legacy.close();
       legacy = null;
@@ -186,6 +198,15 @@ void main() {
       expect(row.status, 'actual');
       expect(row.spreadAcrossDays, isFalse);
       expect(row.createdAt, 0);
+      final range = await (upgraded.select(upgraded.expenses)
+            ..where((e) => e.id.equals('e-range'))).getSingle();
+      final noEnd = await (upgraded.select(upgraded.expenses)
+            ..where((e) => e.id.equals('e-no-end'))).getSingle();
+      expect(range.spreadAcrossDays, true);
+      expect(range.amountMinorUnits, 10001);
+      expect(range.endDate!.toUtc(), DateTime.utc(2026, 1, 4));
+      expect(noEnd.spreadAcrossDays, false);
+
       expect(userVersion.read<int>('user_version'), 7);
     } finally {
       await upgraded?.close();

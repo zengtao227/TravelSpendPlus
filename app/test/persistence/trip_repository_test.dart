@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -760,6 +761,78 @@ void main() {
   });
 
   group('export/import', () {
+    test('v6 complete backup restores every legacy field and photo without mixing records', () async {
+      final trip = makeTrip();
+      await repo.createTrip(trip);
+      await repo.setExchangeRate(trip.id,
+          const ExchangeRate(fromCurrency: 'JPY', toCurrency: 'EUR', rate: 0.006));
+      await repo.addCustomCategory(trip.id, '纪念品');
+      for (var i = 0; i < 3; i++) {
+        await repo.addExpense(Expense(
+          id: 'legacy-$i',
+          tripId: trip.id,
+          category: i == 1 ? '纪念品' : 'accommodation',
+          amount: Money(minorUnits: 10001 + i, currencyCode: 'JPY'),
+          amountInHomeCurrency: Money(minorUnits: 61 + i, currencyCode: 'EUR'),
+          description: '旧旅行记录 $i',
+          date: DateTime.utc(2026, 1, 2 + i),
+          endDate: DateTime.utc(2026, 1, 5 + i),
+          location: i == 0 ? '东京' : '京都',
+          excludeFromBreakdown: i == 1,
+          status: i == 0 ? ExpenseStatus.actual : ExpenseStatus.planned,
+          includeInSplit: i != 1,
+          paidBy: i == 1 ? bob : alice,
+          paidFor: i == 1 ? [bob] : [alice, bob],
+        ));
+      }
+      final sourceJpeg = await makeSourceJpeg();
+      await TripPhotoStore.saveFromPath(trip.id, sourceJpeg);
+      await ExpensePhotoStore.saveFromPath('legacy-0', sourceJpeg);
+      final secondPhoto = img.Image(width: 20, height: 20);
+      img.fill(secondPhoto, color: img.ColorRgb8(180, 50, 80));
+      await ExpensePhotoStore.writeBase64(
+          'legacy-2', base64Encode(img.encodeJpg(secondPhoto)));
+
+      // v1.0.2 exports exactly these fields, without the two v7 additions.
+      final legacy = await repo.exportAllTripsToJson();
+      legacy['schemaVersion'] = 6;
+      final original = (legacy['trips'] as List).single as Map<String, dynamic>;
+      for (final raw in original['expenses'] as List) {
+        final row = raw as Map<String, dynamic>;
+        row.remove('spreadAcrossDays');
+        row.remove('createdAt');
+      }
+      // Remove source files so the restored photos cannot accidentally be
+      // read from the original app's storage in this isolated test.
+      await TripPhotoStore.delete(trip.id);
+      await ExpensePhotoStore.delete('legacy-0');
+      await ExpensePhotoStore.delete('legacy-2');
+      final freshDb = AppDatabase.memory();
+      addTearDown(freshDb.close);
+      final restoredRepo = TripRepository(freshDb);
+      final decoded = jsonDecode(jsonEncode(legacy)) as Map<String, dynamic>;
+      expect(await restoredRepo.importAllTripsFromJson(decoded), 1);
+      final restored = await restoredRepo.exportAllTripsToJson();
+      final roundTrip = (restored['trips'] as List).single as Map<String, dynamic>;
+      for (final raw in roundTrip['expenses'] as List) {
+        final row = raw as Map<String, dynamic>;
+        expect(row.remove('spreadAcrossDays'), true);
+        row.remove('createdAt');
+      }
+      expect(roundTrip, original);
+      expect(await restoredRepo.getAllTrips(), hasLength(1));
+      final restoredExpenses = await restoredRepo.getExpenses(trip.id);
+      expect(restoredExpenses, hasLength(3));
+      for (final expense in restoredExpenses) {
+        final shares = dailyExpenseAllocations(expense);
+        expect(shares, hasLength(4));
+        expect(shares.fold<int>(0, (sum, share) => sum + share.amount.minorUnits),
+            expense.amount.minorUnits);
+        expect(shares.fold<int>(0, (sum, share) => sum + share.amountInHomeCurrency.minorUnits),
+            expense.amountInHomeCurrency.minorUnits);
+      }
+    });
+
     test('exportAllTripsToJson then importAllTripsFromJson (into a fresh db) round-trips '
         'a trip with an expense, a rate, and a custom category', () async {
       final trip = makeTrip();

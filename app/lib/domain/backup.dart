@@ -34,9 +34,9 @@ import 'trip.dart';
 /// absent, meaning no photo for that expense.
 ///
 /// v7 added `spreadAcrossDays` and `createdAt` to each expense. Older
-/// backups retain their original one-day behavior and use the expense date as
-/// a deterministic fallback timestamp because they did not record creation
-/// order.
+/// backups spread expenses over an existing multi-day date range and use the
+/// expense date as a deterministic fallback timestamp because they did not
+/// record creation order. Single-day expenses remain single-day.
 const int kBackupSchemaVersion = 7;
 
 class UnsupportedBackupVersionException implements Exception {
@@ -159,6 +159,10 @@ TripBundle tripBundleFromJson(Map<String, dynamic> json) {
     final expenseId = raw['id'] as String;
     final photo = raw['photo'] as String?;
     if (photo != null) expensePhotosBase64[expenseId] = photo;
+    final date = dateFromBackupString(raw['date'] as String);
+    final endDate = raw['endDate'] != null
+        ? dateFromBackupString(raw['endDate'] as String)
+        : date;
     return Expense(
       id: expenseId,
       tripId: trip.id,
@@ -172,17 +176,17 @@ TripBundle tripBundleFromJson(Map<String, dynamic> json) {
         currencyCode: homeCurrency,
       ),
       description: raw['description'] as String,
-      date: dateFromBackupString(raw['date'] as String),
+      date: date,
       // Absent in a pre-v3 backup — default to the same day (endDate) and
       // no location, matching how a pre-migration DB row reads too.
-      endDate: raw['endDate'] != null
-          ? dateFromBackupString(raw['endDate'] as String)
-          : dateFromBackupString(raw['date'] as String),
+      endDate: endDate,
       location: raw['location'] as String? ?? '',
       // Absent in a pre-v4 backup — default to false, matching how a
       // pre-migration DB row reads too.
       excludeFromBreakdown: raw['excludeFromBreakdown'] as bool? ?? false,
-      spreadAcrossDays: raw['spreadAcrossDays'] as bool? ?? false,
+      // Legacy date ranges now participate in daily allocation; an explicit
+      // setting from a newer backup always takes precedence.
+      spreadAcrossDays: raw['spreadAcrossDays'] as bool? ?? endDate.isAfter(date),
       createdAt: raw['createdAt'] != null
           ? DateTime.parse(raw['createdAt'] as String).toUtc()
           : dateFromBackupString(raw['date'] as String),

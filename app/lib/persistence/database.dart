@@ -142,6 +142,11 @@ class AppDatabase extends _$AppDatabase {
           if (from < 7) {
             await m.addColumn(expenses, expenses.spreadAcrossDays);
             await m.addColumn(expenses, expenses.createdAt);
+            // Existing date ranges represent costs covering multiple days.
+            // Preserve source rows and amounts; only enable their daily view.
+            await m.database.customStatement(
+              'UPDATE expenses SET spread_across_days = 1 WHERE end_date > date',
+            );
           }
         },
       );
