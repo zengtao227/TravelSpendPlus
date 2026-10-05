@@ -890,7 +890,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                             style: Theme.of(context).textTheme.titleSmall),
                       ),
                       const SizedBox(width: 12),
-                      Flexible(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
