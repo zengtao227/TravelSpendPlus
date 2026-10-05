@@ -882,18 +882,33 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 Padding(
                   key: Key('expenseDay-${group.date.microsecondsSinceEpoch}'),
                   padding: const EdgeInsets.only(top: 12, bottom: 4),
-                  child: Wrap(
-                    spacing: 12,
-                    runSpacing: 4,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(formatDate(context, group.date),
-                          style: Theme.of(context).textTheme.titleSmall),
-                      Text(l10n.dailyActualTotal(
-                          formatMoney(group.totalFor(ExpenseStatus.actual)))),
-                      if (group.allocations.any((item) =>
-                          item.expense.status == ExpenseStatus.planned))
-                        Text(l10n.dailyPlannedTotal(
-                            formatMoney(group.totalFor(ExpenseStatus.planned)))),
+                      Expanded(
+                        child: Text(formatDate(context, group.date),
+                            style: Theme.of(context).textTheme.titleSmall),
+                      ),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              l10n.dailyActualTotal(formatMoney(
+                                  group.totalFor(ExpenseStatus.actual))),
+                              textAlign: TextAlign.right,
+                            ),
+                            if (group.allocations.any((item) =>
+                                item.expense.status == ExpenseStatus.planned))
+                              Text(
+                                l10n.dailyPlannedTotal(formatMoney(
+                                    group.totalFor(ExpenseStatus.planned))),
+                                textAlign: TextAlign.right,
+                              ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),

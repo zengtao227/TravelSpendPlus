@@ -1,0 +1,1 @@
+Align daily actual and planned totals to the right of each date heading.
