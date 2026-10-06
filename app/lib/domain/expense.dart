@@ -22,8 +22,22 @@ class Expense {
   // The last day this expense covers — same as [date] for an ordinary
   // single-day expense (e.g. dinner), later than [date] for something like
   // a hotel stay or a multi-day tour. Amounts are always allocated evenly
-  // across this inclusive range.
+  // across this inclusive range, except rentals billed in 24-hour periods.
   final DateTime endDate;
+  // Rental times are local wall-clock minutes on the selected civil dates.
+  // Null means the legacy/calendar-day calculation; both must be supplied
+  // for rental billing. Keeping them separate avoids timezone/DST shifts.
+  final int? rentalPickupMinutes;
+  final int? rentalReturnMinutes;
+  bool get isCarRental => rentalPickupMinutes != null;
+
+  int? get rentalDurationMinutes {
+    if (!isCarRental) return null;
+    return civilDate(endDate).difference(civilDate(date)).inMinutes +
+        rentalReturnMinutes! -
+        rentalPickupMinutes!;
+  }
+
   // Free-text place name (e.g. a city) — optional, defaults to ''. Lets a
   // trip spanning several cities be broken down by where money was spent,
   // not just when.
@@ -33,9 +47,13 @@ class Expense {
   // (a car, a laptop) the user doesn't want skewing the category/location
   // split. It still counts toward every other total (budget, split ledger).
   final bool excludeFromBreakdown;
-  bool get spreadAcrossDays => civilDate(endDate).isAfter(civilDate(date));
+  bool get spreadAcrossDays => coveredDays > 1;
 
-  int get coveredDays => civilDate(endDate).difference(civilDate(date)).inDays + 1;
+  int get coveredDays {
+    final minutes = rentalDurationMinutes;
+    if (minutes != null) return (minutes + 1439) ~/ 1440;
+    return civilDate(endDate).difference(civilDate(date)).inDays + 1;
+  }
 
   /// Creation instant retained across edits so same-day entries can be
   /// displayed newest first. Kept at microsecond precision in persistence.
@@ -54,6 +72,8 @@ class Expense {
     required this.description,
     required this.date,
     required this.endDate,
+    this.rentalPickupMinutes,
+    this.rentalReturnMinutes,
     required this.location,
     this.excludeFromBreakdown = false,
     DateTime? createdAt,
@@ -75,6 +95,22 @@ class Expense {
       // id ''. Reject it here instead of letting it round-trip into a crash.
       throw ArgumentError('paidFor must not be empty');
     }
+    if ((rentalPickupMinutes == null) != (rentalReturnMinutes == null)) {
+      throw ArgumentError(
+        'Rental pickup and return times must both be supplied',
+      );
+    }
+    if (isCarRental) {
+      if (rentalPickupMinutes! < 0 ||
+          rentalPickupMinutes! >= 1440 ||
+          rentalReturnMinutes! < 0 ||
+          rentalReturnMinutes! >= 1440) {
+        throw ArgumentError('Rental time must be between 00:00 and 23:59');
+      }
+      if (rentalDurationMinutes! <= 0) {
+        throw ArgumentError('Rental return must be after pickup');
+      }
+    }
     if (endDate.isBefore(date)) {
       throw ArgumentError('endDate must not be before date');
     }
@@ -89,6 +125,9 @@ class Expense {
     String? description,
     DateTime? date,
     DateTime? endDate,
+    int? rentalPickupMinutes,
+    int? rentalReturnMinutes,
+    bool clearRentalTimes = false,
     String? location,
     bool? excludeFromBreakdown,
     DateTime? createdAt,
@@ -106,6 +145,12 @@ class Expense {
       description: description ?? this.description,
       date: date ?? this.date,
       endDate: endDate ?? this.endDate,
+      rentalPickupMinutes: clearRentalTimes
+          ? null
+          : rentalPickupMinutes ?? this.rentalPickupMinutes,
+      rentalReturnMinutes: clearRentalTimes
+          ? null
+          : rentalReturnMinutes ?? this.rentalReturnMinutes,
       location: location ?? this.location,
       excludeFromBreakdown: excludeFromBreakdown ?? this.excludeFromBreakdown,
       createdAt: createdAt ?? this.createdAt,
@@ -148,7 +193,8 @@ class DailyExpenseAllocation {
 
 /// Allocates [expense] onto its displayed calendar days. Ordinary expenses
 /// remain a single entry on [Expense.date]; every multi-day expense is
-/// split inclusively from [Expense.date] to [Expense.endDate]. [splitEvenly]
+/// split inclusively from [Expense.date] to [Expense.endDate]. Rentals use
+/// their billed 24-hour periods, starting on pickup day. [splitEvenly]
 /// assigns any remainder cents to earliest days, so each currency sums back
 /// to the source expense exactly.
 List<DailyExpenseAllocation> dailyExpenseAllocations(Expense expense) {
@@ -164,8 +210,7 @@ List<DailyExpenseAllocation> dailyExpenseAllocations(Expense expense) {
     ];
   }
 
-  final end = civilDate(expense.endDate);
-  final days = end.difference(start).inDays + 1;
+  final days = expense.coveredDays;
   final amounts = _dailyShares(expense.amount, days);
   final homeAmounts = _dailyShares(expense.amountInHomeCurrency, days);
   return List.generate(days, (index) {

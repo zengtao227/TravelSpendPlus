@@ -43,7 +43,11 @@ import 'trip.dart';
 /// v8 added the optional per-trip `categorySettings` list. The setting key is
 /// intentionally separate from an expense's category key, so renaming or
 /// hiding a category never rewrites existing expense records.
-const int kBackupSchemaVersion = 8;
+///
+/// v9 added optional rental pickup and return wall-clock minutes. The pair is
+/// present only for rentals, so older records keep their existing calendar-day
+/// behavior instead of guessing a time.
+const int kBackupSchemaVersion = 9;
 
 class UnsupportedBackupVersionException implements Exception {
   final int foundVersion;
@@ -125,6 +129,8 @@ Map<String, dynamic> tripBundleToJson(TripBundle bundle) {
               'description': e.description,
               'date': dateToBackupString(e.date),
               'endDate': dateToBackupString(e.endDate),
+              if (e.rentalPickupMinutes != null) 'rentalPickupMinutes': e.rentalPickupMinutes,
+              if (e.rentalReturnMinutes != null) 'rentalReturnMinutes': e.rentalReturnMinutes,
               'location': e.location,
               'excludeFromBreakdown': e.excludeFromBreakdown,
             'spreadAcrossDays': e.spreadAcrossDays,
@@ -172,6 +178,8 @@ TripBundle tripBundleFromJson(Map<String, dynamic> json) {
     final endDate = raw['endDate'] != null
         ? dateFromBackupString(raw['endDate'] as String)
         : date;
+    final rentalPickupMinutes = raw['rentalPickupMinutes'] as int?;
+    final rentalReturnMinutes = raw['rentalReturnMinutes'] as int?;
     return Expense(
       id: expenseId,
       tripId: trip.id,
@@ -189,6 +197,8 @@ TripBundle tripBundleFromJson(Map<String, dynamic> json) {
       // Absent in a pre-v3 backup — default to the same day (endDate) and
       // no location, matching how a pre-migration DB row reads too.
       endDate: endDate,
+      rentalPickupMinutes: rentalPickupMinutes,
+      rentalReturnMinutes: rentalReturnMinutes,
       location: raw['location'] as String? ?? '',
       // Absent in a pre-v4 backup — default to false, matching how a
       // pre-migration DB row reads too.
@@ -263,8 +273,8 @@ String expensesToCsv(
   final rows = <List<String>>[headers];
   for (final e in expenses) {
     rows.add([
-      dateToBackupString(e.date),
-      dateToBackupString(e.endDate),
+      _csvDateTime(e.date, e.rentalPickupMinutes),
+      _csvDateTime(e.endDate, e.rentalReturnMinutes),
       categoryLabel(e.category),
       statusLabel(e.status),
       e.description,
@@ -277,4 +287,12 @@ String expensesToCsv(
   // `csv` is this package's default top-level `Csv()` instance (csv 8.x
   // redesigned the API away from the older `ListToCsvConverter` class).
   return csv.encode(rows);
+}
+
+String _csvDateTime(DateTime date, int? minutes) {
+  final formattedDate = dateToBackupString(date);
+  if (minutes == null) return formattedDate;
+  final hours = (minutes ~/ 60).toString().padLeft(2, '0');
+  final remainingMinutes = (minutes % 60).toString().padLeft(2, '0');
+  return '$formattedDate $hours:$remainingMinutes';
 }

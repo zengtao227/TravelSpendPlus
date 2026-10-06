@@ -427,4 +427,32 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorDeleteCategory =>
       'Could not delete category. No changes were saved.';
+
+  @override
+  String get carRental24Hours => 'Car rental (24-hour days)';
+
+  @override
+  String get carRental24HoursHint =>
+      'Each started 24-hour period counts as one rental day. Costs are shared from the pickup date.';
+
+  @override
+  String get pickupDate => 'Pickup date';
+
+  @override
+  String get returnDate => 'Return date';
+
+  @override
+  String get pickupTime => 'Pickup time';
+
+  @override
+  String get returnTime => 'Return time';
+
+  @override
+  String get errorRentalReturnTime =>
+      'Return date and time must be after pickup.';
+
+  @override
+  String rentalDays(int count) {
+    return 'Rental: $count day(s)';
+  }
 }

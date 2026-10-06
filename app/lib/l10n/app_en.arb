@@ -183,5 +183,20 @@
     }
   },
   "replacementCategory": "Move expenses to",
-  "errorDeleteCategory": "Could not delete category. No changes were saved."
+  "errorDeleteCategory": "Could not delete category. No changes were saved.",
+  "carRental24Hours": "Car rental (24-hour days)",
+  "carRental24HoursHint": "Each started 24-hour period counts as one rental day. Costs are shared from the pickup date.",
+  "pickupDate": "Pickup date",
+  "returnDate": "Return date",
+  "pickupTime": "Pickup time",
+  "returnTime": "Return time",
+  "errorRentalReturnTime": "Return date and time must be after pickup.",
+  "rentalDays": "Rental: {count} day(s)",
+  "@rentalDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

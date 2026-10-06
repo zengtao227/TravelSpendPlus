@@ -400,4 +400,30 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorDeleteCategory => '无法删除分类，未保存任何更改。';
+
+  @override
+  String get carRental24Hours => '租车（按 24 小时）';
+
+  @override
+  String get carRental24HoursHint => '每满 24 小时算一天，不足 24 小时也算一天，费用从取车日开始分摊。';
+
+  @override
+  String get pickupDate => '取车日期';
+
+  @override
+  String get returnDate => '还车日期';
+
+  @override
+  String get pickupTime => '取车时间';
+
+  @override
+  String get returnTime => '还车时间';
+
+  @override
+  String get errorRentalReturnTime => '还车日期和时间必须晚于取车。';
+
+  @override
+  String rentalDays(int count) {
+    return '租车：$count 天';
+  }
 }

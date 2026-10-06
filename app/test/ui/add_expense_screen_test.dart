@@ -574,4 +574,116 @@ void main() {
     expect(find.byIcon(Icons.add_a_photo_outlined), findsOneWidget);
     expect(find.byKey(const Key('removeExpensePhotoButton')), findsNothing);
   });
+
+  testWidgets('editing a car rental keeps its pickup and return times', (tester) async {
+    final me = trip.participants.first;
+    final existing = Expense(
+      id: 'rental-1',
+      tripId: 't1',
+      category: 'transport',
+      amount: Money.fromMajor(240, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(240, 'CNY'),
+      description: 'Car rental',
+      date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 7),
+      location: '',
+      rentalPickupMinutes: 11 * 60,
+      rentalReturnMinutes: 11 * 60,
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    );
+    await repo.addExpense(existing);
+
+    await tester.pumpWidget(wrap(existingExpense: existing));
+    await tester.pumpAndSettle();
+
+    final carRental = tester.widget<SwitchListTile>(find.byKey(const Key('carRentalSwitch')));
+    expect(carRental.value, isTrue);
+    expect(find.byKey(const Key('rentalPickupTimeField')), findsOneWidget);
+    expect(find.byKey(const Key('rentalReturnTimeField')), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('expenseDescriptionField')), 'Car rental (updated)');
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    final saved = (await repo.getExpenses('t1')).single;
+    expect(saved.rentalPickupMinutes, 11 * 60);
+    expect(saved.rentalReturnMinutes, 11 * 60);
+  });
+
+  testWidgets('a car rental cannot be saved when its return is not after pickup', (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('交通').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '240');
+    await tester.tap(find.byKey(const Key('carRentalSwitch')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    expect(await repo.getExpenses('t1'), isEmpty);
+  });
+
+  testWidgets('disabling car rental clears its pickup and return times on save', (tester) async {
+    final me = trip.participants.first;
+    final existing = Expense(
+      id: 'rental-1',
+      tripId: 't1',
+      category: 'transport',
+      amount: Money.fromMajor(240, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(240, 'CNY'),
+      description: 'Car rental',
+      date: DateTime(2026, 10, 6),
+      endDate: DateTime(2026, 10, 7),
+      location: '',
+      rentalPickupMinutes: 11 * 60,
+      rentalReturnMinutes: 11 * 60,
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: me,
+      paidFor: [me],
+    );
+    await repo.addExpense(existing);
+
+    await tester.pumpWidget(wrap(existingExpense: existing));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('carRentalSwitch')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+
+    final saved = (await repo.getExpenses('t1')).single;
+    expect(saved.rentalPickupMinutes, isNull);
+    expect(saved.rentalReturnMinutes, isNull);
+  });
+  testWidgets('legacy October 1 to 5 rental becomes four days when enabled', (tester) async {
+    final me = trip.participants.first;
+    final existing = Expense(
+      id: 'legacy-rental', tripId: 't1', category: 'transport',
+      amount: Money.fromMajor(400, 'CNY'),
+      amountInHomeCurrency: Money.fromMajor(400, 'CNY'),
+      description: 'Car rental', date: DateTime.utc(2026, 10, 1),
+      endDate: DateTime.utc(2026, 10, 5), location: '',
+      status: ExpenseStatus.actual, includeInSplit: true,
+      paidBy: me, paidFor: [me],
+    );
+    await repo.addExpense(existing);
+    await tester.pumpWidget(wrap(existingExpense: existing));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('carRentalSwitch')));
+    await tester.pumpAndSettle();
+    expect(find.text('租车：4 天'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+    final saved = (await repo.getExpenses('t1')).single;
+    expect(saved.coveredDays, 4);
+    expect(saved.amount, existing.amount);
+    expect(saved.date, existing.date);
+    expect(saved.endDate, existing.endDate);
+  });
 }

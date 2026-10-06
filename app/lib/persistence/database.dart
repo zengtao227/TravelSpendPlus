@@ -45,6 +45,11 @@ class Expenses extends Table {
   // ordinary single-day expense) — see TripRepository.getExpenses, which
   // falls back to [date] when this is null.
   DateTimeColumn get endDate => dateTime().nullable()();
+  // Local wall-clock minutes on the selected civil dates for a car rental.
+  // Both values are null for ordinary/calendar-day expenses. They remain
+  // nullable so existing records retain their established allocation rule.
+  IntColumn get rentalPickupMinutes => integer().nullable()();
+  IntColumn get rentalReturnMinutes => integer().nullable()();
   TextColumn get location => text().withDefault(const Constant(''))();
   BoolColumn get excludeFromBreakdown => boolean().withDefault(const Constant(false))();
   BoolColumn get spreadAcrossDays =>
@@ -114,7 +119,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -159,6 +164,10 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(tripCategories, tripCategories.displayName);
             await m.addColumn(tripCategories, tripCategories.iconKey);
             await m.addColumn(tripCategories, tripCategories.hidden);
+          }
+          if (from < 9) {
+            await m.addColumn(expenses, expenses.rentalPickupMinutes);
+            await m.addColumn(expenses, expenses.rentalReturnMinutes);
           }
         },
       );

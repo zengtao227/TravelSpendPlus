@@ -109,6 +109,42 @@ void main() {
   },
   );
 
+  test('addExpense and updateExpense preserve and can clear rental times', () async {
+    await repo.createTrip(makeTrip());
+    final rental = Expense(
+      id: 'e-rental',
+      tripId: 't1',
+      category: 'transport',
+      amount: Money.fromMajor(90, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(90, 'EUR'),
+      description: 'Car rental',
+      date: DateTime.utc(2026, 1, 2),
+      endDate: DateTime.utc(2026, 1, 3),
+      rentalPickupMinutes: 11 * 60,
+      rentalReturnMinutes: 11 * 60,
+      location: '',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice, bob],
+    );
+    await repo.addExpense(rental);
+
+    var loaded = (await repo.getExpenses('t1')).single;
+    expect(loaded.rentalPickupMinutes, 11 * 60);
+    expect(loaded.rentalReturnMinutes, 11 * 60);
+    expect(loaded.isCarRental, isTrue);
+    expect(loaded.coveredDays, 1);
+
+    await repo.updateExpense(
+      loaded.copyWith(endDate: loaded.date, clearRentalTimes: true),
+    );
+    loaded = (await repo.getExpenses('t1')).single;
+    expect(loaded.rentalPickupMinutes, isNull);
+    expect(loaded.rentalReturnMinutes, isNull);
+    expect(loaded.isCarRental, isFalse);
+  });
+
   test(
     'getExpenses returns same-day entries by newest creation timestamp and preserves it on edit',
     () async {
@@ -1006,6 +1042,37 @@ void main() {
 
     expect(await restoredRepo.getCustomCategories(trip.id), isEmpty);
     expect((await restoredRepo.getExpenses(trip.id)).single.category, 'drinks');
+  });
+
+  test('rental complete backup survives import and malformed times write nothing', () async {
+    await repo.createTrip(makeTrip());
+    await repo.addExpense(Expense(
+      id: 'backup-rental', tripId: 't1', category: 'transport',
+      amount: Money.fromMajor(400, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(400, 'EUR'),
+      description: 'Car rental', date: DateTime.utc(2026, 1, 1),
+      endDate: DateTime.utc(2026, 1, 5), location: '',
+      rentalPickupMinutes: 660, rentalReturnMinutes: 660,
+      status: ExpenseStatus.actual, includeInSplit: true,
+      paidBy: alice, paidFor: [alice, bob],
+    ));
+    final backup = await repo.exportAllTripsToJson();
+    final freshDb = AppDatabase.memory();
+    addTearDown(freshDb.close);
+    final restored = TripRepository(freshDb);
+    await restored.importAllTripsFromJson(backup);
+    final expense = (await restored.getExpenses('t1')).single;
+    expect(expense.coveredDays, 4);
+    expect(expense.rentalPickupMinutes, 660);
+    expect(expense.rentalReturnMinutes, 660);
+    expect(expense.amount.minorUnits, 40000);
+    final row = ((backup['trips'] as List).single['expenses'] as List).single;
+    row.remove('rentalReturnMinutes');
+    final emptyDb = AppDatabase.memory();
+    addTearDown(emptyDb.close);
+    final emptyRepo = TripRepository(emptyDb);
+    await expectLater(emptyRepo.importAllTripsFromJson(backup), throwsArgumentError);
+    expect(await emptyRepo.getAllTrips(), isEmpty);
   });
 
   group('export/import', () {

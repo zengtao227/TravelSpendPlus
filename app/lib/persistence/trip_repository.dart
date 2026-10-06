@@ -140,6 +140,8 @@ class TripRepository {
         // Pre-migration rows have no stored end date — a single-day expense
         // ending on its own start day is the correct fallback.
         endDate: civilDate((row.endDate ?? row.date).toUtc()),
+        rentalPickupMinutes: row.rentalPickupMinutes,
+        rentalReturnMinutes: row.rentalReturnMinutes,
         location: row.location,
         excludeFromBreakdown: row.excludeFromBreakdown,
         createdAt: row.createdAt == 0
@@ -164,6 +166,8 @@ class TripRepository {
           description: expense.description,
           date: civilDate(expense.date),
           endDate: Value(civilDate(expense.endDate)),
+          rentalPickupMinutes: Value(expense.rentalPickupMinutes),
+          rentalReturnMinutes: Value(expense.rentalReturnMinutes),
           location: Value(expense.location),
           excludeFromBreakdown: Value(expense.excludeFromBreakdown),
           spreadAcrossDays: Value(expense.spreadAcrossDays),
@@ -185,6 +189,8 @@ class TripRepository {
         description: Value(expense.description),
         date: Value(civilDate(expense.date)),
         endDate: Value(civilDate(expense.endDate)),
+        rentalPickupMinutes: Value(expense.rentalPickupMinutes),
+        rentalReturnMinutes: Value(expense.rentalReturnMinutes),
         location: Value(expense.location),
         excludeFromBreakdown: Value(expense.excludeFromBreakdown),
         spreadAcrossDays: Value(expense.spreadAcrossDays),

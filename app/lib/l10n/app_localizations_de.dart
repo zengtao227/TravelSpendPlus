@@ -430,4 +430,32 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get errorDeleteCategory =>
       'Kategorie konnte nicht gelöscht werden. Es wurden keine Änderungen gespeichert.';
+
+  @override
+  String get carRental24Hours => 'Mietwagen (24-Stunden-Tage)';
+
+  @override
+  String get carRental24HoursHint =>
+      'Jeder begonnene 24-Stunden-Zeitraum zählt als ein Miettag. Die Kosten werden ab dem Abholtag verteilt.';
+
+  @override
+  String get pickupDate => 'Abholdatum';
+
+  @override
+  String get returnDate => 'Rückgabedatum';
+
+  @override
+  String get pickupTime => 'Abholzeit';
+
+  @override
+  String get returnTime => 'Rückgabezeit';
+
+  @override
+  String get errorRentalReturnTime =>
+      'Die Rückgabe muss nach der Abholung liegen.';
+
+  @override
+  String rentalDays(int count) {
+    return 'Mietwagen: $count Tag(e)';
+  }
 }

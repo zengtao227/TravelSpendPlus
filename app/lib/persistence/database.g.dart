@@ -792,6 +792,26 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _rentalPickupMinutesMeta =
+      const VerificationMeta('rentalPickupMinutes');
+  @override
+  late final GeneratedColumn<int> rentalPickupMinutes = GeneratedColumn<int>(
+    'rental_pickup_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rentalReturnMinutesMeta =
+      const VerificationMeta('rentalReturnMinutes');
+  @override
+  late final GeneratedColumn<int> rentalReturnMinutes = GeneratedColumn<int>(
+    'rental_return_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _locationMeta = const VerificationMeta(
     'location',
   );
@@ -904,6 +924,8 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     description,
     date,
     endDate,
+    rentalPickupMinutes,
+    rentalReturnMinutes,
     location,
     excludeFromBreakdown,
     spreadAcrossDays,
@@ -1002,6 +1024,24 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
       context.handle(
         _endDateMeta,
         endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
+      );
+    }
+    if (data.containsKey('rental_pickup_minutes')) {
+      context.handle(
+        _rentalPickupMinutesMeta,
+        rentalPickupMinutes.isAcceptableOrUnknown(
+          data['rental_pickup_minutes']!,
+          _rentalPickupMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rental_return_minutes')) {
+      context.handle(
+        _rentalReturnMinutesMeta,
+        rentalReturnMinutes.isAcceptableOrUnknown(
+          data['rental_return_minutes']!,
+          _rentalReturnMinutesMeta,
+        ),
       );
     }
     if (data.containsKey('location')) {
@@ -1117,6 +1157,14 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}end_date'],
       ),
+      rentalPickupMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rental_pickup_minutes'],
+      ),
+      rentalReturnMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rental_return_minutes'],
+      ),
       location: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}location'],
@@ -1168,6 +1216,8 @@ class Expense extends DataClass implements Insertable<Expense> {
   final String description;
   final DateTime date;
   final DateTime? endDate;
+  final int? rentalPickupMinutes;
+  final int? rentalReturnMinutes;
   final String location;
   final bool excludeFromBreakdown;
   final bool spreadAcrossDays;
@@ -1186,6 +1236,8 @@ class Expense extends DataClass implements Insertable<Expense> {
     required this.description,
     required this.date,
     this.endDate,
+    this.rentalPickupMinutes,
+    this.rentalReturnMinutes,
     required this.location,
     required this.excludeFromBreakdown,
     required this.spreadAcrossDays,
@@ -1211,6 +1263,12 @@ class Expense extends DataClass implements Insertable<Expense> {
     if (!nullToAbsent || endDate != null) {
       map['end_date'] = Variable<DateTime>(endDate);
     }
+    if (!nullToAbsent || rentalPickupMinutes != null) {
+      map['rental_pickup_minutes'] = Variable<int>(rentalPickupMinutes);
+    }
+    if (!nullToAbsent || rentalReturnMinutes != null) {
+      map['rental_return_minutes'] = Variable<int>(rentalReturnMinutes);
+    }
     map['location'] = Variable<String>(location);
     map['exclude_from_breakdown'] = Variable<bool>(excludeFromBreakdown);
     map['spread_across_days'] = Variable<bool>(spreadAcrossDays);
@@ -1235,6 +1293,12 @@ class Expense extends DataClass implements Insertable<Expense> {
       endDate: endDate == null && nullToAbsent
           ? const Value.absent()
           : Value(endDate),
+      rentalPickupMinutes: rentalPickupMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rentalPickupMinutes),
+      rentalReturnMinutes: rentalReturnMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rentalReturnMinutes),
       location: Value(location),
       excludeFromBreakdown: Value(excludeFromBreakdown),
       spreadAcrossDays: Value(spreadAcrossDays),
@@ -1263,6 +1327,12 @@ class Expense extends DataClass implements Insertable<Expense> {
       description: serializer.fromJson<String>(json['description']),
       date: serializer.fromJson<DateTime>(json['date']),
       endDate: serializer.fromJson<DateTime?>(json['endDate']),
+      rentalPickupMinutes: serializer.fromJson<int?>(
+        json['rentalPickupMinutes'],
+      ),
+      rentalReturnMinutes: serializer.fromJson<int?>(
+        json['rentalReturnMinutes'],
+      ),
       location: serializer.fromJson<String>(json['location']),
       excludeFromBreakdown: serializer.fromJson<bool>(
         json['excludeFromBreakdown'],
@@ -1290,6 +1360,8 @@ class Expense extends DataClass implements Insertable<Expense> {
       'description': serializer.toJson<String>(description),
       'date': serializer.toJson<DateTime>(date),
       'endDate': serializer.toJson<DateTime?>(endDate),
+      'rentalPickupMinutes': serializer.toJson<int?>(rentalPickupMinutes),
+      'rentalReturnMinutes': serializer.toJson<int?>(rentalReturnMinutes),
       'location': serializer.toJson<String>(location),
       'excludeFromBreakdown': serializer.toJson<bool>(excludeFromBreakdown),
       'spreadAcrossDays': serializer.toJson<bool>(spreadAcrossDays),
@@ -1311,6 +1383,8 @@ class Expense extends DataClass implements Insertable<Expense> {
     String? description,
     DateTime? date,
     Value<DateTime?> endDate = const Value.absent(),
+    Value<int?> rentalPickupMinutes = const Value.absent(),
+    Value<int?> rentalReturnMinutes = const Value.absent(),
     String? location,
     bool? excludeFromBreakdown,
     bool? spreadAcrossDays,
@@ -1330,6 +1404,12 @@ class Expense extends DataClass implements Insertable<Expense> {
     description: description ?? this.description,
     date: date ?? this.date,
     endDate: endDate.present ? endDate.value : this.endDate,
+    rentalPickupMinutes: rentalPickupMinutes.present
+        ? rentalPickupMinutes.value
+        : this.rentalPickupMinutes,
+    rentalReturnMinutes: rentalReturnMinutes.present
+        ? rentalReturnMinutes.value
+        : this.rentalReturnMinutes,
     location: location ?? this.location,
     excludeFromBreakdown: excludeFromBreakdown ?? this.excludeFromBreakdown,
     spreadAcrossDays: spreadAcrossDays ?? this.spreadAcrossDays,
@@ -1359,6 +1439,12 @@ class Expense extends DataClass implements Insertable<Expense> {
           : this.description,
       date: data.date.present ? data.date.value : this.date,
       endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      rentalPickupMinutes: data.rentalPickupMinutes.present
+          ? data.rentalPickupMinutes.value
+          : this.rentalPickupMinutes,
+      rentalReturnMinutes: data.rentalReturnMinutes.present
+          ? data.rentalReturnMinutes.value
+          : this.rentalReturnMinutes,
       location: data.location.present ? data.location.value : this.location,
       excludeFromBreakdown: data.excludeFromBreakdown.present
           ? data.excludeFromBreakdown.value
@@ -1392,6 +1478,8 @@ class Expense extends DataClass implements Insertable<Expense> {
           ..write('description: $description, ')
           ..write('date: $date, ')
           ..write('endDate: $endDate, ')
+          ..write('rentalPickupMinutes: $rentalPickupMinutes, ')
+          ..write('rentalReturnMinutes: $rentalReturnMinutes, ')
           ..write('location: $location, ')
           ..write('excludeFromBreakdown: $excludeFromBreakdown, ')
           ..write('spreadAcrossDays: $spreadAcrossDays, ')
@@ -1415,6 +1503,8 @@ class Expense extends DataClass implements Insertable<Expense> {
     description,
     date,
     endDate,
+    rentalPickupMinutes,
+    rentalReturnMinutes,
     location,
     excludeFromBreakdown,
     spreadAcrossDays,
@@ -1438,6 +1528,8 @@ class Expense extends DataClass implements Insertable<Expense> {
           other.description == this.description &&
           other.date == this.date &&
           other.endDate == this.endDate &&
+          other.rentalPickupMinutes == this.rentalPickupMinutes &&
+          other.rentalReturnMinutes == this.rentalReturnMinutes &&
           other.location == this.location &&
           other.excludeFromBreakdown == this.excludeFromBreakdown &&
           other.spreadAcrossDays == this.spreadAcrossDays &&
@@ -1458,6 +1550,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
   final Value<String> description;
   final Value<DateTime> date;
   final Value<DateTime?> endDate;
+  final Value<int?> rentalPickupMinutes;
+  final Value<int?> rentalReturnMinutes;
   final Value<String> location;
   final Value<bool> excludeFromBreakdown;
   final Value<bool> spreadAcrossDays;
@@ -1477,6 +1571,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     this.description = const Value.absent(),
     this.date = const Value.absent(),
     this.endDate = const Value.absent(),
+    this.rentalPickupMinutes = const Value.absent(),
+    this.rentalReturnMinutes = const Value.absent(),
     this.location = const Value.absent(),
     this.excludeFromBreakdown = const Value.absent(),
     this.spreadAcrossDays = const Value.absent(),
@@ -1497,6 +1593,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     required String description,
     required DateTime date,
     this.endDate = const Value.absent(),
+    this.rentalPickupMinutes = const Value.absent(),
+    this.rentalReturnMinutes = const Value.absent(),
     this.location = const Value.absent(),
     this.excludeFromBreakdown = const Value.absent(),
     this.spreadAcrossDays = const Value.absent(),
@@ -1528,6 +1626,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Expression<String>? description,
     Expression<DateTime>? date,
     Expression<DateTime>? endDate,
+    Expression<int>? rentalPickupMinutes,
+    Expression<int>? rentalReturnMinutes,
     Expression<String>? location,
     Expression<bool>? excludeFromBreakdown,
     Expression<bool>? spreadAcrossDays,
@@ -1549,6 +1649,10 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
       if (description != null) 'description': description,
       if (date != null) 'date': date,
       if (endDate != null) 'end_date': endDate,
+      if (rentalPickupMinutes != null)
+        'rental_pickup_minutes': rentalPickupMinutes,
+      if (rentalReturnMinutes != null)
+        'rental_return_minutes': rentalReturnMinutes,
       if (location != null) 'location': location,
       if (excludeFromBreakdown != null)
         'exclude_from_breakdown': excludeFromBreakdown,
@@ -1572,6 +1676,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Value<String>? description,
     Value<DateTime>? date,
     Value<DateTime?>? endDate,
+    Value<int?>? rentalPickupMinutes,
+    Value<int?>? rentalReturnMinutes,
     Value<String>? location,
     Value<bool>? excludeFromBreakdown,
     Value<bool>? spreadAcrossDays,
@@ -1593,6 +1699,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
       description: description ?? this.description,
       date: date ?? this.date,
       endDate: endDate ?? this.endDate,
+      rentalPickupMinutes: rentalPickupMinutes ?? this.rentalPickupMinutes,
+      rentalReturnMinutes: rentalReturnMinutes ?? this.rentalReturnMinutes,
       location: location ?? this.location,
       excludeFromBreakdown: excludeFromBreakdown ?? this.excludeFromBreakdown,
       spreadAcrossDays: spreadAcrossDays ?? this.spreadAcrossDays,
@@ -1636,6 +1744,12 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     }
     if (endDate.present) {
       map['end_date'] = Variable<DateTime>(endDate.value);
+    }
+    if (rentalPickupMinutes.present) {
+      map['rental_pickup_minutes'] = Variable<int>(rentalPickupMinutes.value);
+    }
+    if (rentalReturnMinutes.present) {
+      map['rental_return_minutes'] = Variable<int>(rentalReturnMinutes.value);
     }
     if (location.present) {
       map['location'] = Variable<String>(location.value);
@@ -1683,6 +1797,8 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
           ..write('description: $description, ')
           ..write('date: $date, ')
           ..write('endDate: $endDate, ')
+          ..write('rentalPickupMinutes: $rentalPickupMinutes, ')
+          ..write('rentalReturnMinutes: $rentalReturnMinutes, ')
           ..write('location: $location, ')
           ..write('excludeFromBreakdown: $excludeFromBreakdown, ')
           ..write('spreadAcrossDays: $spreadAcrossDays, ')
@@ -3428,6 +3544,8 @@ typedef $$ExpensesTableCreateCompanionBuilder =
       required String description,
       required DateTime date,
       Value<DateTime?> endDate,
+      Value<int?> rentalPickupMinutes,
+      Value<int?> rentalReturnMinutes,
       Value<String> location,
       Value<bool> excludeFromBreakdown,
       Value<bool> spreadAcrossDays,
@@ -3449,6 +3567,8 @@ typedef $$ExpensesTableUpdateCompanionBuilder =
       Value<String> description,
       Value<DateTime> date,
       Value<DateTime?> endDate,
+      Value<int?> rentalPickupMinutes,
+      Value<int?> rentalReturnMinutes,
       Value<String> location,
       Value<bool> excludeFromBreakdown,
       Value<bool> spreadAcrossDays,
@@ -3545,6 +3665,16 @@ class $$ExpensesTableFilterComposer
 
   ColumnFilters<DateTime> get endDate => $composableBuilder(
     column: $table.endDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rentalPickupMinutes => $composableBuilder(
+    column: $table.rentalPickupMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rentalReturnMinutes => $composableBuilder(
+    column: $table.rentalReturnMinutes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3679,6 +3809,16 @@ class $$ExpensesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get rentalPickupMinutes => $composableBuilder(
+    column: $table.rentalPickupMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rentalReturnMinutes => $composableBuilder(
+    column: $table.rentalReturnMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get location => $composableBuilder(
     column: $table.location,
     builder: (column) => ColumnOrderings(column),
@@ -3802,6 +3942,16 @@ class $$ExpensesTableAnnotationComposer
   GeneratedColumn<DateTime> get endDate =>
       $composableBuilder(column: $table.endDate, builder: (column) => column);
 
+  GeneratedColumn<int> get rentalPickupMinutes => $composableBuilder(
+    column: $table.rentalPickupMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rentalReturnMinutes => $composableBuilder(
+    column: $table.rentalReturnMinutes,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get location =>
       $composableBuilder(column: $table.location, builder: (column) => column);
 
@@ -3916,6 +4066,8 @@ class $$ExpensesTableTableManager
                 Value<String> description = const Value.absent(),
                 Value<DateTime> date = const Value.absent(),
                 Value<DateTime?> endDate = const Value.absent(),
+                Value<int?> rentalPickupMinutes = const Value.absent(),
+                Value<int?> rentalReturnMinutes = const Value.absent(),
                 Value<String> location = const Value.absent(),
                 Value<bool> excludeFromBreakdown = const Value.absent(),
                 Value<bool> spreadAcrossDays = const Value.absent(),
@@ -3935,6 +4087,8 @@ class $$ExpensesTableTableManager
                 description: description,
                 date: date,
                 endDate: endDate,
+                rentalPickupMinutes: rentalPickupMinutes,
+                rentalReturnMinutes: rentalReturnMinutes,
                 location: location,
                 excludeFromBreakdown: excludeFromBreakdown,
                 spreadAcrossDays: spreadAcrossDays,
@@ -3956,6 +4110,8 @@ class $$ExpensesTableTableManager
                 required String description,
                 required DateTime date,
                 Value<DateTime?> endDate = const Value.absent(),
+                Value<int?> rentalPickupMinutes = const Value.absent(),
+                Value<int?> rentalReturnMinutes = const Value.absent(),
                 Value<String> location = const Value.absent(),
                 Value<bool> excludeFromBreakdown = const Value.absent(),
                 Value<bool> spreadAcrossDays = const Value.absent(),
@@ -3975,6 +4131,8 @@ class $$ExpensesTableTableManager
                 description: description,
                 date: date,
                 endDate: endDate,
+                rentalPickupMinutes: rentalPickupMinutes,
+                rentalReturnMinutes: rentalReturnMinutes,
                 location: location,
                 excludeFromBreakdown: excludeFromBreakdown,
                 spreadAcrossDays: spreadAcrossDays,

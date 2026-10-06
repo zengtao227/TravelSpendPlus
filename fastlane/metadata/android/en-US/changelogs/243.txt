@@ -1,0 +1,1 @@
+Car rentals can use pickup and return times to calculate 24-hour rental days. October 1 to October 5 at the same time counts as four days. Costs are shared from pickup day; trip averages still use the full trip duration. Existing records and backups remain compatible.

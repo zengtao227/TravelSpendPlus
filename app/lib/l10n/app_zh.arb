@@ -151,5 +151,13 @@
   "deleteCategoryConfirm": "删除「{name}」？删除后无法恢复。",
   "moveCategoryExpenses": "这个分类有 {count} 笔支出。删除前请将它们转到其他分类，金额和日期保持不变。",
   "replacementCategory": "将支出转到",
-  "errorDeleteCategory": "无法删除分类，未保存任何更改。"
+  "errorDeleteCategory": "无法删除分类，未保存任何更改。",
+  "carRental24Hours": "租车（按 24 小时）",
+  "carRental24HoursHint": "每满 24 小时算一天，不足 24 小时也算一天，费用从取车日开始分摊。",
+  "pickupDate": "取车日期",
+  "returnDate": "还车日期",
+  "pickupTime": "取车时间",
+  "returnTime": "还车时间",
+  "errorRentalReturnTime": "还车日期和时间必须晚于取车。",
+  "rentalDays": "租车：{count} 天"
 }

@@ -825,6 +825,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not delete category. No changes were saved.'**
   String get errorDeleteCategory;
+
+  /// No description provided for @carRental24Hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Car rental (24-hour days)'**
+  String get carRental24Hours;
+
+  /// No description provided for @carRental24HoursHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each started 24-hour period counts as one rental day. Costs are shared from the pickup date.'**
+  String get carRental24HoursHint;
+
+  /// No description provided for @pickupDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup date'**
+  String get pickupDate;
+
+  /// No description provided for @returnDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Return date'**
+  String get returnDate;
+
+  /// No description provided for @pickupTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup time'**
+  String get pickupTime;
+
+  /// No description provided for @returnTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Return time'**
+  String get returnTime;
+
+  /// No description provided for @errorRentalReturnTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Return date and time must be after pickup.'**
+  String get errorRentalReturnTime;
+
+  /// No description provided for @rentalDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Rental: {count} day(s)'**
+  String rentalDays(int count);
 }
 
 class _AppLocalizationsDelegate

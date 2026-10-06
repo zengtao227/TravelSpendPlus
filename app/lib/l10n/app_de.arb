@@ -156,5 +156,13 @@
   "deleteCategoryConfirm": "„{name}“ löschen? Dies kann nicht rückgängig gemacht werden.",
   "moveCategoryExpenses": "Diese Kategorie enthält {count} Ausgaben. Verschiebe sie vor dem Löschen in eine andere Kategorie. Beträge und Daten bleiben erhalten.",
   "replacementCategory": "Ausgaben verschieben nach",
-  "errorDeleteCategory": "Kategorie konnte nicht gelöscht werden. Es wurden keine Änderungen gespeichert."
+  "errorDeleteCategory": "Kategorie konnte nicht gelöscht werden. Es wurden keine Änderungen gespeichert.",
+  "carRental24Hours": "Mietwagen (24-Stunden-Tage)",
+  "carRental24HoursHint": "Jeder begonnene 24-Stunden-Zeitraum zählt als ein Miettag. Die Kosten werden ab dem Abholtag verteilt.",
+  "pickupDate": "Abholdatum",
+  "returnDate": "Rückgabedatum",
+  "pickupTime": "Abholzeit",
+  "returnTime": "Rückgabezeit",
+  "errorRentalReturnTime": "Die Rückgabe muss nach der Abholung liegen.",
+  "rentalDays": "Mietwagen: {count} Tag(e)"
 }

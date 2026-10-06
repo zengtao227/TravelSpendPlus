@@ -349,7 +349,8 @@ void main() {
         totalBudget: Money.fromMajor(0, 'CNY'), participants: [me]));
     await repo.addExpense(Expense(id: 'rental', tripId: 't1', category: 'transport',
         amount: Money.fromMajor(400, 'CNY'), amountInHomeCurrency: Money.fromMajor(400, 'CNY'),
-        description: 'Four-day rental', date: start, endDate: start.add(const Duration(days: 3)),
+        description: 'Four-day rental', date: start, endDate: start.add(const Duration(days: 4)),
+        rentalPickupMinutes: 660, rentalReturnMinutes: 660,
         location: '', status: ExpenseStatus.actual, includeInSplit: true, paidBy: me, paidFor: [me]));
     await tester.pumpWidget(wrap('t1'));
     await tester.pumpAndSettle();

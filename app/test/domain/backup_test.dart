@@ -64,6 +64,8 @@ void main() {
     expect(e.description, 'Dinner, with a comma');
     expect(e.date, DateTime.utc(2026, 10, 6));
     expect(e.endDate, DateTime.utc(2026, 10, 8));
+    expect(e.rentalPickupMinutes, isNull);
+    expect(e.rentalReturnMinutes, isNull);
     expect(e.location, 'Kyoto');
     expect(e.excludeFromBreakdown, isFalse);
     expect(e.status, ExpenseStatus.actual);
@@ -159,6 +161,47 @@ void main() {
       expect(restored.expenses.single.createdAt, createdAt);
     },
   );
+
+  test('rental pickup and return minutes round-trip through a v9 backup', () {
+    final rental = makeExpense().copyWith(
+      category: 'transport',
+      rentalPickupMinutes: 11 * 60,
+      rentalReturnMinutes: 10 * 60 + 30,
+    );
+    final json = tripBundleToJson(
+      TripBundle(trip: makeTrip(), expenses: [rental], exchangeRates: const []),
+    );
+    final row = (json['expenses'] as List).single as Map<String, dynamic>;
+
+    expect(row['rentalPickupMinutes'], 11 * 60);
+    expect(row['rentalReturnMinutes'], 10 * 60 + 30);
+    final restored = tripBundleFromJson(json).expenses.single;
+    expect(restored.rentalPickupMinutes, 11 * 60);
+    expect(restored.rentalReturnMinutes, 10 * 60 + 30);
+  });
+
+  test('a pre-v9 backup defaults absent rental times to null', () {
+    final json = tripBundleToJson(
+      TripBundle(trip: makeTrip(), expenses: [makeExpense()], exchangeRates: const []),
+    );
+    final row = (json['expenses'] as List).single as Map<String, dynamic>;
+    row.remove('rentalPickupMinutes');
+    row.remove('rentalReturnMinutes');
+
+    final restored = tripBundleFromJson(json).expenses.single;
+    expect(restored.rentalPickupMinutes, isNull);
+    expect(restored.rentalReturnMinutes, isNull);
+  });
+
+  test('a backup with only one rental time is rejected while decoding', () {
+    final json = tripBundleToJson(
+      TripBundle(trip: makeTrip(), expenses: [makeExpense()], exchangeRates: const []),
+    );
+    final row = (json['expenses'] as List).single as Map<String, dynamic>;
+    row['rentalPickupMinutes'] = 11 * 60;
+
+    expect(() => tripBundleFromJson(json), throwsArgumentError);
+  });
 
   test(
     'a pre-v7 backup spreads an existing date range and defaults creation timestamp',
@@ -375,6 +418,23 @@ void main() {
         statusLabel: status,
       );
       expect(csv, contains('"Ramen, extra egg"'));
+    });
+
+    test('adds rental wall-clock times to the existing date cells', () {
+      final rental = expenseWith(description: 'Car rental', amountMajor: 90).copyWith(
+        date: DateTime.utc(2026, 10, 6),
+        endDate: DateTime.utc(2026, 10, 7),
+        rentalPickupMinutes: 11 * 60,
+        rentalReturnMinutes: 10 * 60 + 30,
+      );
+      final csv = expensesToCsv(
+        [rental],
+        headers: headers,
+        categoryLabel: label,
+        statusLabel: status,
+      );
+
+      expect(csv, contains('2026-10-06 11:00,2026-10-07 10:30'));
     });
 
     test('an empty expense list produces just the header row', () {

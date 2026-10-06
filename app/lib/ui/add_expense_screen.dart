@@ -125,6 +125,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   late final TextEditingController _locationController;
   late DateTime _date;
   late DateTime _endDate;
+  late bool _isCarRental;
+  late int _rentalPickupMinutes;
+  late int _rentalReturnMinutes;
   late bool _excludeFromBreakdown;
   late ExpenseStatus _status;
   List<ExchangeRate> _existingRates = [];
@@ -156,6 +159,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     // more than one, and the picker only needs to be touched for the ones
     // that do (e.g. a multi-night hotel stay).
     _endDate = civilDate(existing?.endDate ?? _date);
+    _isCarRental = existing?.isCarRental ?? false;
+    _rentalPickupMinutes = existing?.rentalPickupMinutes ?? 11 * 60;
+    _rentalReturnMinutes = existing?.rentalReturnMinutes ?? 11 * 60;
     _excludeFromBreakdown = existing?.excludeFromBreakdown ?? false;
     _status = existing?.status ?? ExpenseStatus.actual;
     _loadRates();
@@ -318,8 +324,37 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     if (picked != null) setState(() => _endDate = civilDate(picked));
   }
 
+  int get _rentalDurationMinutes =>
+      civilDate(_endDate).difference(civilDate(_date)).inMinutes +
+      _rentalReturnMinutes - _rentalPickupMinutes;
+
+  int get _rentalDays => (_rentalDurationMinutes + 1439) ~/ 1440;
+
+  Future<void> _pickRentalTime({required bool pickup}) async {
+    final minutes = pickup ? _rentalPickupMinutes : _rentalReturnMinutes;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
+    );
+    if (picked == null) return;
+    setState(() {
+      final value = picked.hour * 60 + picked.minute;
+      if (pickup) {
+        _rentalPickupMinutes = value;
+      } else {
+        _rentalReturnMinutes = value;
+      }
+    });
+  }
+
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
+    if (_isCarRental && _rentalDurationMinutes <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.errorRentalReturnTime)),
+      );
+      return;
+    }
     final formValid = _formKey.currentState!.validate();
     final categoryValid = _categoriesLoaded && _category != null &&
         (_isEditing || _availableCategoryKeys.contains(_category));
@@ -380,6 +415,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       description: _descriptionController.text.trim(),
       date: _date,
       endDate: _endDate,
+      rentalPickupMinutes: _isCarRental ? _rentalPickupMinutes : null,
+      rentalReturnMinutes: _isCarRental ? _rentalReturnMinutes : null,
       location: _locationController.text.trim(),
       excludeFromBreakdown: _excludeFromBreakdown,
       status: _status,
@@ -553,18 +590,44 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     InputDecoration(labelText: l10n.location, hintText: l10n.locationHint),
               ),
               const SizedBox(height: 12),
+              SwitchListTile(
+                key: const Key('carRentalSwitch'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.carRental24Hours),
+                subtitle: Text(l10n.carRental24HoursHint),
+                value: _isCarRental,
+                onChanged: (value) => setState(() => _isCarRental = value),
+              ),
               ListTile(
                 key: const Key('expenseDateField'),
-                title: Text(l10n.startDate),
+                title: Text(_isCarRental ? l10n.pickupDate : l10n.startDate),
                 subtitle: Text(formatDate(context, _date)),
                 onTap: _pickDate,
               ),
               ListTile(
                 key: const Key('expenseEndDateField'),
-                title: Text(l10n.endDate),
+                title: Text(_isCarRental ? l10n.returnDate : l10n.endDate),
                 subtitle: Text(formatDate(context, _endDate)),
                 onTap: _pickEndDate,
               ),
+              if (_isCarRental) ...[
+                ListTile(
+                  key: const Key('rentalPickupTimeField'),
+                  title: Text(l10n.pickupTime),
+                  subtitle: Text(TimeOfDay(hour: _rentalPickupMinutes ~/ 60,
+                      minute: _rentalPickupMinutes % 60).format(context)),
+                  onTap: () => _pickRentalTime(pickup: true),
+                ),
+                ListTile(
+                  key: const Key('rentalReturnTimeField'),
+                  title: Text(l10n.returnTime),
+                  subtitle: Text(TimeOfDay(hour: _rentalReturnMinutes ~/ 60,
+                      minute: _rentalReturnMinutes % 60).format(context)),
+                  onTap: () => _pickRentalTime(pickup: false),
+                ),
+                Text(_rentalDurationMinutes > 0
+                    ? l10n.rentalDays(_rentalDays) : l10n.errorRentalReturnTime),
+              ],
               const SizedBox(height: 12),
               SegmentedButton<ExpenseStatus>(
                 segments: [

@@ -159,6 +159,11 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   late Future<_TripDetailData> _future;
   List<CategorySetting> _categorySettings = [];
   String _categoryLabel(String key) => categoryLabel(context, key, settings: _categorySettings);
+
+  String _rentalDateTime(DateTime date, int minutes) {
+    final time = TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60);
+    return '${formatDate(context, date)} ${time.format(context)}';
+  }
   IconData _categoryIcon(String key) => categoryIcon(key, settings: _categorySettings);
   String? _viewCurrency; // null = show in home currency
   BreakdownDimension _breakdownDimension = BreakdownDimension.category;
@@ -985,9 +990,13 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                             _categoryLabel(allocation.expense.category),
                             if (allocation.expense.location.isNotEmpty)
                               allocation.expense.location,
-                            if (allocation.expense.spreadAcrossDays)
+                            if (allocation.expense.isCarRental)
+                              '${_rentalDateTime(allocation.expense.date, allocation.expense.rentalPickupMinutes!)} – ${_rentalDateTime(allocation.expense.endDate, allocation.expense.rentalReturnMinutes!)}'
+                            else if (allocation.expense.spreadAcrossDays)
                               '${formatDate(context, allocation.expense.date)} – ${formatDate(context, allocation.expense.endDate)}',
-                            if (allocation.expense.spreadAcrossDays)
+                            if (allocation.expense.isCarRental)
+                              l10n.rentalDays(allocation.expense.coveredDays),
+                            if (allocation.expense.spreadAcrossDays || allocation.expense.isCarRental)
                               l10n.expenseDailyAverage(
                                 formatMoney(allocation.expense.amount.dividedBy(allocation.expense.coveredDays)),
                                 allocation.expense.coveredDays,
