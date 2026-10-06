@@ -837,6 +837,177 @@ void main() {
     expect(await repo.getAvailableCategoryKeys('t2'), isNot(contains('food')));
   });
 
+  test('deleteCustomCategory deletes an unused custom category and rejects built-ins', () async {
+    await repo.createTrip(makeTrip());
+    await repo.addCustomCategory('t1', 'Duplicate drinks');
+
+    await repo.deleteCustomCategory('t1', 'Duplicate drinks');
+
+    expect(await repo.getCustomCategories('t1'), isEmpty);
+    await expectLater(repo.deleteCustomCategory('t1', 'drinks'), throwsArgumentError);
+  });
+
+  test('deleteCustomCategory requires a replacement when the category has expenses', () async {
+    await repo.createTrip(makeTrip());
+    await repo.addCustomCategory('t1', 'Duplicate drinks');
+    await repo.addExpense(Expense(
+      id: 'e-delete-requires-target',
+      tripId: 't1',
+      category: 'Duplicate drinks',
+      amount: Money.fromMajor(12.34, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(12.34, 'EUR'),
+      description: 'Cocktail',
+      date: DateTime.utc(2026, 1, 3),
+      endDate: DateTime.utc(2026, 1, 3),
+      location: 'Bar',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+
+    await expectLater(
+      repo.deleteCustomCategory('t1', 'Duplicate drinks'),
+      throwsArgumentError,
+    );
+
+    expect((await repo.getExpenses('t1')).single.category, 'Duplicate drinks');
+    expect(await repo.getCustomCategories('t1'), ['Duplicate drinks']);
+  });
+
+  test('deleteCustomCategory moves only matching trip expenses and preserves their other fields',
+      () async {
+    await repo.createTrip(makeTrip());
+    await repo.createTrip(Trip(
+      id: 't2',
+      name: 'Korea',
+      startDate: DateTime.utc(2026, 2, 1),
+      endDate: DateTime.utc(2026, 2, 5),
+      homeCurrency: 'KRW',
+      totalBudget: Money.fromMajor(500000, 'KRW'),
+      participants: [const Participant(id: 'p3', name: 'Carol')],
+    ));
+    await repo.addCustomCategory('t1', 'Duplicate drinks');
+    await repo.addCustomCategory('t2', 'Duplicate drinks');
+    final source = Expense(
+      id: 'e-delete-merge',
+      tripId: 't1',
+      category: 'Duplicate drinks',
+      amount: Money.fromMajor(12.34, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(12.34, 'EUR'),
+      description: 'Cocktail',
+      date: DateTime.utc(2026, 1, 3),
+      endDate: DateTime.utc(2026, 1, 6),
+      location: 'Athens',
+      excludeFromBreakdown: true,
+      createdAt: DateTime.utc(2026, 1, 2, 3, 4, 5, 6),
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice, bob],
+    );
+    await repo.addExpense(source);
+    await repo.addExpense(Expense(
+      id: 'e-other-trip',
+      tripId: 't2',
+      category: 'Duplicate drinks',
+      amount: Money.fromMajor(1200, 'KRW'),
+      amountInHomeCurrency: Money.fromMajor(1200, 'KRW'),
+      description: 'Other trip',
+      date: DateTime.utc(2026, 2, 3),
+      endDate: DateTime.utc(2026, 2, 3),
+      location: '',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: const Participant(id: 'p3', name: 'Carol'),
+      paidFor: const [Participant(id: 'p3', name: 'Carol')],
+    ));
+    await ExpensePhotoStore.saveFromPath(source.id, await makeSourceJpeg());
+
+    await repo.deleteCustomCategory('t1', 'Duplicate drinks', replacementKey: 'drinks');
+
+    final moved = (await repo.getExpenses('t1')).single;
+    expect(moved.category, 'drinks');
+    expect(moved.id, source.id);
+    expect(moved.amount, source.amount);
+    expect(moved.amountInHomeCurrency, source.amountInHomeCurrency);
+    expect(moved.description, source.description);
+    expect(moved.date, source.date);
+    expect(moved.endDate, source.endDate);
+    expect(moved.location, source.location);
+    expect(moved.excludeFromBreakdown, source.excludeFromBreakdown);
+    expect(moved.createdAt, source.createdAt);
+    expect(moved.status, source.status);
+    expect(moved.includeInSplit, source.includeInSplit);
+    expect(moved.paidBy, source.paidBy);
+    expect(moved.paidFor, source.paidFor);
+    expect(await ExpensePhotoStore.hasPhoto(source.id), isTrue);
+    expect(await repo.getCustomCategories('t1'), isEmpty);
+    expect((await repo.getExpenses('t2')).single.category, 'Duplicate drinks');
+    expect(await repo.getCustomCategories('t2'), ['Duplicate drinks']);
+  });
+
+  test('deleteCustomCategory rolls back when its replacement is not available', () async {
+    await repo.createTrip(makeTrip());
+    await repo.addCustomCategory('t1', 'Duplicate drinks');
+    await repo.addCustomCategory('t1', 'Hidden target');
+    await repo.saveCategorySetting('t1', const CategorySetting(key: 'Hidden target', hidden: true));
+    await repo.addExpense(Expense(
+      id: 'e-delete-rollback',
+      tripId: 't1',
+      category: 'Duplicate drinks',
+      amount: Money.fromMajor(12.34, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(12.34, 'EUR'),
+      description: 'Cocktail',
+      date: DateTime.utc(2026, 1, 3),
+      endDate: DateTime.utc(2026, 1, 3),
+      location: 'Bar',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+
+    await expectLater(
+      repo.deleteCustomCategory('t1', 'Duplicate drinks', replacementKey: 'Hidden target'),
+      throwsArgumentError,
+    );
+
+    expect((await repo.getExpenses('t1')).single.category, 'Duplicate drinks');
+    expect(await repo.getCustomCategories('t1'), contains('Duplicate drinks'));
+  });
+
+  test('deleteCustomCategory does not restore the deleted key through backup import', () async {
+    final trip = makeTrip();
+    await repo.createTrip(trip);
+    await repo.addCustomCategory(trip.id, 'Duplicate drinks');
+    await repo.addExpense(Expense(
+      id: 'e-delete-backup',
+      tripId: trip.id,
+      category: 'Duplicate drinks',
+      amount: Money.fromMajor(12.34, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(12.34, 'EUR'),
+      description: 'Cocktail',
+      date: DateTime.utc(2026, 1, 3),
+      endDate: DateTime.utc(2026, 1, 3),
+      location: 'Bar',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+    await repo.deleteCustomCategory(trip.id, 'Duplicate drinks', replacementKey: 'drinks');
+    final backup = await repo.exportAllTripsToJson();
+
+    final freshDb = AppDatabase.memory();
+    addTearDown(freshDb.close);
+    final restoredRepo = TripRepository(freshDb);
+    await restoredRepo.importAllTripsFromJson(backup);
+
+    expect(await restoredRepo.getCustomCategories(trip.id), isEmpty);
+    expect((await restoredRepo.getExpenses(trip.id)).single.category, 'drinks');
+  });
+
   group('export/import', () {
     test('invalid category settings are rejected before creating imported trips', () async {
       final backup = backupToJson([TripBundle(trip: makeTrip(), expenses: const [], exchangeRates: const [])]);

@@ -407,4 +407,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorSaveCategory => 'Could not save category. Please try again.';
+
+  @override
+  String get deleteCategory => 'Delete category';
+
+  @override
+  String deleteCategoryConfirm(String name) {
+    return 'Delete “$name”? This cannot be undone.';
+  }
+
+  @override
+  String moveCategoryExpenses(int count) {
+    return 'This category has $count expenses. Move them to another category before deleting it. Amounts and dates stay the same.';
+  }
+
+  @override
+  String get replacementCategory => 'Move expenses to';
+
+  @override
+  String get errorDeleteCategory =>
+      'Could not delete category. No changes were saved.';
 }

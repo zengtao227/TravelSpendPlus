@@ -410,4 +410,24 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get errorSaveCategory =>
       'Kategorie konnte nicht gespeichert werden. Bitte erneut versuchen.';
+
+  @override
+  String get deleteCategory => 'Kategorie löschen';
+
+  @override
+  String deleteCategoryConfirm(String name) {
+    return '„$name“ löschen? Dies kann nicht rückgängig gemacht werden.';
+  }
+
+  @override
+  String moveCategoryExpenses(int count) {
+    return 'Diese Kategorie enthält $count Ausgaben. Verschiebe sie vor dem Löschen in eine andere Kategorie. Beträge und Daten bleiben erhalten.';
+  }
+
+  @override
+  String get replacementCategory => 'Ausgaben verschieben nach';
+
+  @override
+  String get errorDeleteCategory =>
+      'Kategorie konnte nicht gelöscht werden. Es wurden keine Änderungen gespeichert.';
 }

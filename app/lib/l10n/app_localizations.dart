@@ -795,6 +795,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not save category. Please try again.'**
   String get errorSaveCategory;
+
+  /// No description provided for @deleteCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete category'**
+  String get deleteCategory;
+
+  /// No description provided for @deleteCategoryConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete “{name}”? This cannot be undone.'**
+  String deleteCategoryConfirm(String name);
+
+  /// No description provided for @moveCategoryExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'This category has {count} expenses. Move them to another category before deleting it. Amounts and dates stay the same.'**
+  String moveCategoryExpenses(int count);
+
+  /// No description provided for @replacementCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Move expenses to'**
+  String get replacementCategory;
+
+  /// No description provided for @errorDeleteCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete category. No changes were saved.'**
+  String get errorDeleteCategory;
 }
 
 class _AppLocalizationsDelegate

@@ -151,5 +151,10 @@
       }
     }
   },
-  "errorSaveCategory": "Kategorie konnte nicht gespeichert werden. Bitte erneut versuchen."
+  "errorSaveCategory": "Kategorie konnte nicht gespeichert werden. Bitte erneut versuchen.",
+  "deleteCategory": "Kategorie löschen",
+  "deleteCategoryConfirm": "„{name}“ löschen? Dies kann nicht rückgängig gemacht werden.",
+  "moveCategoryExpenses": "Diese Kategorie enthält {count} Ausgaben. Verschiebe sie vor dem Löschen in eine andere Kategorie. Beträge und Daten bleiben erhalten.",
+  "replacementCategory": "Ausgaben verschieben nach",
+  "errorDeleteCategory": "Kategorie konnte nicht gelöscht werden. Es wurden keine Änderungen gespeichert."
 }

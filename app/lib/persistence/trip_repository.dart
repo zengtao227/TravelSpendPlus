@@ -394,6 +394,55 @@ class TripRepository {
         .insert(TripCategoriesCompanion.insert(tripId: tripId, name: name));
   }
 
+  /// Deletes a custom category. If existing expenses use [key], they are
+  /// moved to a different visible category in the same transaction, keeping
+  /// every other expense field and any stored photo intact.
+  Future<void> deleteCustomCategory(
+    String tripId,
+    String key, {
+    String? replacementKey,
+  }) async {
+    if (isBuiltInExpenseCategoryKey(key)) {
+      throw ArgumentError.value(key, 'key', 'built-in categories cannot be deleted');
+    }
+
+    await _db.transaction(() async {
+      final categoryRows =
+          await (_db.select(_db.tripCategories)..where((c) => c.tripId.equals(tripId))).get();
+      final expenseRows =
+          await (_db.select(_db.expenses)..where((e) => e.tripId.equals(tripId))).get();
+      final categoryRow = categoryRows.where((row) => row.name == key).firstOrNull;
+      final matchingExpenses = expenseRows.where((row) => row.category == key).toList();
+
+      if (categoryRow == null && matchingExpenses.isEmpty) {
+        throw ArgumentError.value(key, 'key', 'custom category does not exist for this trip');
+      }
+      if (matchingExpenses.isNotEmpty) {
+        final hiddenKeys = categoryRows.where((row) => row.hidden).map((row) => row.name).toSet();
+        final availableKeys = <String>{
+          ...kExpenseCategoryKeys,
+          ...categoryRows.map((row) => row.name),
+          ...expenseRows.map((row) => row.category),
+        }..removeAll(hiddenKeys);
+        if (replacementKey == null ||
+            replacementKey == key ||
+            !availableKeys.contains(replacementKey)) {
+          throw ArgumentError.value(
+            replacementKey,
+            'replacementKey',
+            'must be a different available category',
+          );
+        }
+        await (_db.update(_db.expenses)
+              ..where((e) => e.tripId.equals(tripId) & e.category.equals(key)))
+            .write(ExpensesCompanion(category: Value(replacementKey)));
+      }
+      if (categoryRow != null) {
+        await (_db.delete(_db.tripCategories)..where((c) => c.id.equals(categoryRow.id))).go();
+      }
+    });
+  }
+
   Future<List<CategorySetting>> getCategorySettings(String tripId) async {
     final rows = await (_db.select(_db.tripCategories)
           ..where((c) => c.tripId.equals(tripId))

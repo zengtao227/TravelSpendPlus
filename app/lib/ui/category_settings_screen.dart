@@ -173,6 +173,95 @@ class _CategorySettingsScreenState extends State<CategorySettingsScreen> {
     );
   }
 
+  Future<void> _deleteCategory(_CategoryData data, String key) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final expenses = await widget.repository.getExpenses(widget.trip.id);
+      if (!mounted) return;
+      final count = expenses.where((expense) => expense.category == key).length;
+      final targets = data.keys
+          .where(
+            (candidate) =>
+                candidate != key &&
+                !(_settingFor(data, candidate)?.hidden ?? false),
+          )
+          .toList();
+      String? replacementKey;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: Text(l10n.deleteCategory),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.deleteCategoryConfirm(
+                    categoryLabel(context, key, settings: data.settings),
+                  ),
+                ),
+                if (count > 0) ...[
+                  const SizedBox(height: 12),
+                  Text(l10n.moveCategoryExpenses(count)),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    key: const Key('replacementCategoryField'),
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: l10n.replacementCategory,
+                    ),
+                    items: targets
+                        .map(
+                          (target) => DropdownMenuItem(
+                            value: target,
+                            child: Text(
+                              categoryLabel(
+                                context,
+                                target,
+                                settings: data.settings,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) =>
+                        setDialogState(() => replacementKey = value),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.cancel),
+              ),
+              TextButton(
+                key: Key('confirmDeleteCategory-$key'),
+                onPressed: count > 0 && replacementKey == null
+                    ? null
+                    : () => Navigator.pop(dialogContext, true),
+                child: Text(l10n.deleteCategory),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (confirmed != true) return;
+      await widget.repository.deleteCustomCategory(
+        widget.trip.id,
+        key,
+        replacementKey: replacementKey,
+      );
+      if (mounted) _refresh();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.errorDeleteCategory)));
+    }
+  }
+
   Future<void> _restoreCategory(_CategoryData data, String key) async {
     final setting = _settingFor(data, key);
     await _save(
@@ -229,6 +318,13 @@ class _CategorySettingsScreenState extends State<CategorySettingsScreen> {
                       icon: const Icon(Icons.edit_outlined),
                       onPressed: () => _editCategory(data, key),
                     ),
+                    if (!isBuiltInExpenseCategoryKey(key))
+                      IconButton(
+                        key: Key('deleteCategory-$key'),
+                        tooltip: l10n.deleteCategory,
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => _deleteCategory(data, key),
+                      ),
                     if (hidden)
                       TextButton(
                         key: Key('restoreCategory-$key'),

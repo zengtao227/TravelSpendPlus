@@ -164,5 +164,24 @@
       }
     }
   },
-  "errorSaveCategory": "Could not save category. Please try again."
+  "errorSaveCategory": "Could not save category. Please try again.",
+  "deleteCategory": "Delete category",
+  "deleteCategoryConfirm": "Delete “{name}”? This cannot be undone.",
+  "@deleteCategoryConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moveCategoryExpenses": "This category has {count} expenses. Move them to another category before deleting it. Amounts and dates stay the same.",
+  "@moveCategoryExpenses": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "replacementCategory": "Move expenses to",
+  "errorDeleteCategory": "Could not delete category. No changes were saved."
 }

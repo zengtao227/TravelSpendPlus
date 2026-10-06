@@ -381,4 +381,23 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorSaveCategory => '无法保存分类，请重试';
+
+  @override
+  String get deleteCategory => '删除分类';
+
+  @override
+  String deleteCategoryConfirm(String name) {
+    return '删除「$name」？删除后无法恢复。';
+  }
+
+  @override
+  String moveCategoryExpenses(int count) {
+    return '这个分类有 $count 笔支出。删除前请将它们转到其他分类，金额和日期保持不变。';
+  }
+
+  @override
+  String get replacementCategory => '将支出转到';
+
+  @override
+  String get errorDeleteCategory => '无法删除分类，未保存任何更改。';
 }

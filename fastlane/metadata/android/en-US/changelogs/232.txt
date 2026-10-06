@@ -1,0 +1,1 @@
+Delete unused custom categories. When deleting a category with expenses, choose another category to move its expenses into. Amounts, dates, and existing records are preserved.

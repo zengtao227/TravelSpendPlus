@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:travelspendplus/domain/money.dart';
+import 'package:travelspendplus/domain/expense.dart' as domain;
 import 'package:travelspendplus/domain/participant.dart';
 import 'package:travelspendplus/domain/trip.dart';
 import 'package:travelspendplus/l10n/app_localizations.dart';
@@ -133,4 +134,79 @@ void main() {
           'Restoring the untouched built-in returns it to its default state.',
     );
   });
+  testWidgets(
+    'deletes unused custom category after confirmation, allows cancel',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(360, 640));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await repo.addCustomCategory('t1', 'Drinks');
+      await tester.pumpWidget(wrap());
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('deleteCategory-drinks')), findsNothing);
+      final button = find.byKey(const Key('deleteCategory-Drinks'));
+      await tester.scrollUntilVisible(button, 200);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(await repo.getCustomCategories('t1'), contains('Drinks'));
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirmDeleteCategory-Drinks')));
+      await tester.pumpAndSettle();
+      expect(await repo.getCustomCategories('t1'), isEmpty);
+      expect(find.byKey(const Key('categorySetting-Drinks')), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'used duplicate Drinks requires target then merges into built-in',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(360, 640));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await repo.addCustomCategory('t1', 'Drinks');
+      await repo.addExpense(
+        domain.Expense(
+          id: 'drink1',
+          tripId: 't1',
+          category: 'Drinks',
+          amount: Money.fromMajor(12, 'CNY'),
+          amountInHomeCurrency: Money.fromMajor(12, 'CNY'),
+          description: 'Coffee',
+          date: trip.startDate,
+          endDate: trip.startDate,
+          location: '',
+          status: domain.ExpenseStatus.actual,
+          includeInSplit: true,
+          paidBy: trip.participants.single,
+          paidFor: trip.participants,
+        ),
+      );
+      await tester.pumpWidget(wrap());
+      await tester.pumpAndSettle();
+      final button = find.byKey(const Key('deleteCategory-Drinks'));
+      await tester.scrollUntilVisible(button, 200);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      final confirm = find.byKey(const Key('confirmDeleteCategory-Drinks'));
+      expect(tester.widget<TextButton>(confirm).onPressed, isNull);
+      await tester.tap(find.byKey(const Key('replacementCategoryField')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Drinks').last);
+      await tester.pumpAndSettle();
+      await tester.tap(confirm);
+      await tester.pumpAndSettle();
+      expect((await repo.getExpenses('t1')).single.category, 'drinks');
+      expect((await repo.getExpenses('t1')).single.amount.minorUnits, 1200);
+      expect(await repo.getCustomCategories('t1'), isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
