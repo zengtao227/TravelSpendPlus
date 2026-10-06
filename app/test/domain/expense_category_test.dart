@@ -10,4 +10,17 @@ void main() {
         'transport',
         'sightseeing', 'shopping', 'entertainment', 'other']);
   });
+
+  test('category settings serialize their immutable key and optional presentation fields', () {
+    const setting = CategorySetting(
+      key: 'Souvenirs',
+      displayName: 'Gifts',
+      iconKey: 'gifts',
+      hidden: true,
+    );
+
+    expect(CategorySetting.fromJson(setting.toJson()), setting);
+    expect(CategorySetting.fromJson(const {'key': 'food'}),
+        const CategorySetting(key: 'food'));
+  });
 }

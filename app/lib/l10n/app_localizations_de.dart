@@ -389,4 +389,25 @@ class AppLocalizationsDe extends AppLocalizations {
   String dailyPlannedTotal(String amount) {
     return 'Geplante Summe: $amount';
   }
+
+  @override
+  String get manageCategories => 'Kategorien verwalten';
+
+  @override
+  String get chooseCategoryIcon => 'Symbol auswählen';
+
+  @override
+  String get hiddenCategory => 'Ausgeblendet';
+
+  @override
+  String get restoreCategory => 'Wiederherstellen';
+
+  @override
+  String hideCategoryConfirm(String name) {
+    return '$name für neue Ausgaben ausblenden? Bestehende Ausgaben behalten Kategorie und Betrag.';
+  }
+
+  @override
+  String get errorSaveCategory =>
+      'Kategorie konnte nicht gespeichert werden. Bitte erneut versuchen.';
 }

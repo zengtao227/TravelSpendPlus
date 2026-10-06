@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:travelspendplus/domain/backup.dart';
 import 'package:travelspendplus/domain/exchange_rate.dart';
+import 'package:travelspendplus/domain/expense_category.dart';
 import 'package:travelspendplus/domain/expense.dart';
 import 'package:travelspendplus/domain/money.dart';
 import 'package:travelspendplus/domain/participant.dart';
@@ -85,6 +86,24 @@ void main() {
 
     final restored = tripBundleFromJson(tripBundleToJson(bundle));
     expect(restored.customCategories, ['Souvenirs', 'Visa fee']);
+  });
+
+  test('category settings round-trip through a v8 bundle and a v7 bundle defaults them', () {
+    final bundle = TripBundle(
+      trip: makeTrip(),
+      expenses: const [],
+      exchangeRates: const [],
+      categorySettings: const [
+        CategorySetting(key: 'food', displayName: 'Meals', iconKey: 'groceries'),
+        CategorySetting(key: 'Souvenirs', iconKey: 'gifts', hidden: true),
+      ],
+    );
+
+    final json = tripBundleToJson(bundle);
+    expect(tripBundleFromJson(json).categorySettings, bundle.categorySettings);
+
+    json.remove('categorySettings');
+    expect(tripBundleFromJson(json).categorySettings, isEmpty);
   });
 
   test('tripBundleFromJson defaults customCategories to empty when the key is absent '

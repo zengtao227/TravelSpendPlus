@@ -133,5 +133,18 @@
         "type": "String"
       }
     }
-  }
+  },
+  "manageCategories": "管理分类",
+  "chooseCategoryIcon": "选择图标",
+  "hiddenCategory": "已隐藏",
+  "restoreCategory": "恢复",
+  "hideCategoryConfirm": "从新支出的选项中隐藏“{name}”？已有费用的分类和金额会保留。",
+  "@hideCategoryConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "errorSaveCategory": "无法保存分类，请重试"
 }

@@ -2046,8 +2046,50 @@ class $TripCategoriesTable extends TripCategories
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, tripId, name];
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _iconKeyMeta = const VerificationMeta(
+    'iconKey',
+  );
+  @override
+  late final GeneratedColumn<String> iconKey = GeneratedColumn<String>(
+    'icon_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hiddenMeta = const VerificationMeta('hidden');
+  @override
+  late final GeneratedColumn<bool> hidden = GeneratedColumn<bool>(
+    'hidden',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("hidden" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tripId,
+    name,
+    displayName,
+    iconKey,
+    hidden,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2079,6 +2121,27 @@ class $TripCategoriesTable extends TripCategories
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('icon_key')) {
+      context.handle(
+        _iconKeyMeta,
+        iconKey.isAcceptableOrUnknown(data['icon_key']!, _iconKeyMeta),
+      );
+    }
+    if (data.containsKey('hidden')) {
+      context.handle(
+        _hiddenMeta,
+        hidden.isAcceptableOrUnknown(data['hidden']!, _hiddenMeta),
+      );
+    }
     return context;
   }
 
@@ -2104,6 +2167,18 @@ class $TripCategoriesTable extends TripCategories
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      ),
+      iconKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon_key'],
+      ),
+      hidden: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}hidden'],
+      )!,
     );
   }
 
@@ -2117,10 +2192,16 @@ class TripCategory extends DataClass implements Insertable<TripCategory> {
   final int id;
   final String tripId;
   final String name;
+  final String? displayName;
+  final String? iconKey;
+  final bool hidden;
   const TripCategory({
     required this.id,
     required this.tripId,
     required this.name,
+    this.displayName,
+    this.iconKey,
+    required this.hidden,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2128,6 +2209,13 @@ class TripCategory extends DataClass implements Insertable<TripCategory> {
     map['id'] = Variable<int>(id);
     map['trip_id'] = Variable<String>(tripId);
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || displayName != null) {
+      map['display_name'] = Variable<String>(displayName);
+    }
+    if (!nullToAbsent || iconKey != null) {
+      map['icon_key'] = Variable<String>(iconKey);
+    }
+    map['hidden'] = Variable<bool>(hidden);
     return map;
   }
 
@@ -2136,6 +2224,13 @@ class TripCategory extends DataClass implements Insertable<TripCategory> {
       id: Value(id),
       tripId: Value(tripId),
       name: Value(name),
+      displayName: displayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayName),
+      iconKey: iconKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(iconKey),
+      hidden: Value(hidden),
     );
   }
 
@@ -2148,6 +2243,9 @@ class TripCategory extends DataClass implements Insertable<TripCategory> {
       id: serializer.fromJson<int>(json['id']),
       tripId: serializer.fromJson<String>(json['tripId']),
       name: serializer.fromJson<String>(json['name']),
+      displayName: serializer.fromJson<String?>(json['displayName']),
+      iconKey: serializer.fromJson<String?>(json['iconKey']),
+      hidden: serializer.fromJson<bool>(json['hidden']),
     );
   }
   @override
@@ -2157,20 +2255,37 @@ class TripCategory extends DataClass implements Insertable<TripCategory> {
       'id': serializer.toJson<int>(id),
       'tripId': serializer.toJson<String>(tripId),
       'name': serializer.toJson<String>(name),
+      'displayName': serializer.toJson<String?>(displayName),
+      'iconKey': serializer.toJson<String?>(iconKey),
+      'hidden': serializer.toJson<bool>(hidden),
     };
   }
 
-  TripCategory copyWith({int? id, String? tripId, String? name}) =>
-      TripCategory(
-        id: id ?? this.id,
-        tripId: tripId ?? this.tripId,
-        name: name ?? this.name,
-      );
+  TripCategory copyWith({
+    int? id,
+    String? tripId,
+    String? name,
+    Value<String?> displayName = const Value.absent(),
+    Value<String?> iconKey = const Value.absent(),
+    bool? hidden,
+  }) => TripCategory(
+    id: id ?? this.id,
+    tripId: tripId ?? this.tripId,
+    name: name ?? this.name,
+    displayName: displayName.present ? displayName.value : this.displayName,
+    iconKey: iconKey.present ? iconKey.value : this.iconKey,
+    hidden: hidden ?? this.hidden,
+  );
   TripCategory copyWithCompanion(TripCategoriesCompanion data) {
     return TripCategory(
       id: data.id.present ? data.id.value : this.id,
       tripId: data.tripId.present ? data.tripId.value : this.tripId,
       name: data.name.present ? data.name.value : this.name,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      iconKey: data.iconKey.present ? data.iconKey.value : this.iconKey,
+      hidden: data.hidden.present ? data.hidden.value : this.hidden,
     );
   }
 
@@ -2179,46 +2294,68 @@ class TripCategory extends DataClass implements Insertable<TripCategory> {
     return (StringBuffer('TripCategory(')
           ..write('id: $id, ')
           ..write('tripId: $tripId, ')
-          ..write('name: $name')
+          ..write('name: $name, ')
+          ..write('displayName: $displayName, ')
+          ..write('iconKey: $iconKey, ')
+          ..write('hidden: $hidden')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, tripId, name);
+  int get hashCode =>
+      Object.hash(id, tripId, name, displayName, iconKey, hidden);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is TripCategory &&
           other.id == this.id &&
           other.tripId == this.tripId &&
-          other.name == this.name);
+          other.name == this.name &&
+          other.displayName == this.displayName &&
+          other.iconKey == this.iconKey &&
+          other.hidden == this.hidden);
 }
 
 class TripCategoriesCompanion extends UpdateCompanion<TripCategory> {
   final Value<int> id;
   final Value<String> tripId;
   final Value<String> name;
+  final Value<String?> displayName;
+  final Value<String?> iconKey;
+  final Value<bool> hidden;
   const TripCategoriesCompanion({
     this.id = const Value.absent(),
     this.tripId = const Value.absent(),
     this.name = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.iconKey = const Value.absent(),
+    this.hidden = const Value.absent(),
   });
   TripCategoriesCompanion.insert({
     this.id = const Value.absent(),
     required String tripId,
     required String name,
+    this.displayName = const Value.absent(),
+    this.iconKey = const Value.absent(),
+    this.hidden = const Value.absent(),
   }) : tripId = Value(tripId),
        name = Value(name);
   static Insertable<TripCategory> custom({
     Expression<int>? id,
     Expression<String>? tripId,
     Expression<String>? name,
+    Expression<String>? displayName,
+    Expression<String>? iconKey,
+    Expression<bool>? hidden,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (tripId != null) 'trip_id': tripId,
       if (name != null) 'name': name,
+      if (displayName != null) 'display_name': displayName,
+      if (iconKey != null) 'icon_key': iconKey,
+      if (hidden != null) 'hidden': hidden,
     });
   }
 
@@ -2226,11 +2363,17 @@ class TripCategoriesCompanion extends UpdateCompanion<TripCategory> {
     Value<int>? id,
     Value<String>? tripId,
     Value<String>? name,
+    Value<String?>? displayName,
+    Value<String?>? iconKey,
+    Value<bool>? hidden,
   }) {
     return TripCategoriesCompanion(
       id: id ?? this.id,
       tripId: tripId ?? this.tripId,
       name: name ?? this.name,
+      displayName: displayName ?? this.displayName,
+      iconKey: iconKey ?? this.iconKey,
+      hidden: hidden ?? this.hidden,
     );
   }
 
@@ -2246,6 +2389,15 @@ class TripCategoriesCompanion extends UpdateCompanion<TripCategory> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (iconKey.present) {
+      map['icon_key'] = Variable<String>(iconKey.value);
+    }
+    if (hidden.present) {
+      map['hidden'] = Variable<bool>(hidden.value);
+    }
     return map;
   }
 
@@ -2254,7 +2406,10 @@ class TripCategoriesCompanion extends UpdateCompanion<TripCategory> {
     return (StringBuffer('TripCategoriesCompanion(')
           ..write('id: $id, ')
           ..write('tripId: $tripId, ')
-          ..write('name: $name')
+          ..write('name: $name, ')
+          ..write('displayName: $displayName, ')
+          ..write('iconKey: $iconKey, ')
+          ..write('hidden: $hidden')
           ..write(')'))
         .toString();
   }
@@ -4225,12 +4380,18 @@ typedef $$TripCategoriesTableCreateCompanionBuilder =
       Value<int> id,
       required String tripId,
       required String name,
+      Value<String?> displayName,
+      Value<String?> iconKey,
+      Value<bool> hidden,
     });
 typedef $$TripCategoriesTableUpdateCompanionBuilder =
     TripCategoriesCompanion Function({
       Value<int> id,
       Value<String> tripId,
       Value<String> name,
+      Value<String?> displayName,
+      Value<String?> iconKey,
+      Value<bool> hidden,
     });
 
 final class $$TripCategoriesTableReferences
@@ -4278,6 +4439,21 @@ class $$TripCategoriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get iconKey => $composableBuilder(
+    column: $table.iconKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hidden => $composableBuilder(
+    column: $table.hidden,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$TripsTableFilterComposer get tripId {
     final $$TripsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -4321,6 +4497,21 @@ class $$TripCategoriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get iconKey => $composableBuilder(
+    column: $table.iconKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hidden => $composableBuilder(
+    column: $table.hidden,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TripsTableOrderingComposer get tripId {
     final $$TripsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -4359,6 +4550,17 @@ class $$TripCategoriesTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get iconKey =>
+      $composableBuilder(column: $table.iconKey, builder: (column) => column);
+
+  GeneratedColumn<bool> get hidden =>
+      $composableBuilder(column: $table.hidden, builder: (column) => column);
 
   $$TripsTableAnnotationComposer get tripId {
     final $$TripsTableAnnotationComposer composer = $composerBuilder(
@@ -4417,16 +4619,32 @@ class $$TripCategoriesTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> tripId = const Value.absent(),
                 Value<String> name = const Value.absent(),
-              }) => TripCategoriesCompanion(id: id, tripId: tripId, name: name),
+                Value<String?> displayName = const Value.absent(),
+                Value<String?> iconKey = const Value.absent(),
+                Value<bool> hidden = const Value.absent(),
+              }) => TripCategoriesCompanion(
+                id: id,
+                tripId: tripId,
+                name: name,
+                displayName: displayName,
+                iconKey: iconKey,
+                hidden: hidden,
+              ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String tripId,
                 required String name,
+                Value<String?> displayName = const Value.absent(),
+                Value<String?> iconKey = const Value.absent(),
+                Value<bool> hidden = const Value.absent(),
               }) => TripCategoriesCompanion.insert(
                 id: id,
                 tripId: tripId,
                 name: name,
+                displayName: displayName,
+                iconKey: iconKey,
+                hidden: hidden,
               ),
           withReferenceMapper: (p0) => p0
               .map(

@@ -1,3 +1,4 @@
+import 'package:travelspendplus/domain/expense_category.dart';
 // app/test/ui/trip_detail_screen_test.dart
 import 'dart:io';
 
@@ -167,6 +168,16 @@ void main() {
     expect(find.descendant(of: header, matching: find.textContaining('Actual total')), findsOneWidget);
     expect(find.descendant(of: header, matching: find.textContaining('133.00')), findsOneWidget);
     expect(find.descendant(of: header, matching: find.textContaining('120.00')), findsOneWidget);
+  });
+
+  testWidgets('hidden renamed categories still appear in historical rows and chart', (tester) async {
+    await seedDailyAllocationFixture();
+    await repo.saveCategorySetting('t1', const CategorySetting(key: 'food', displayName: 'Meals', iconKey: 'shopping', hidden: true));
+    await tester.pumpWidget(wrap('t1', locale: const Locale('en')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Meals'), findsWidgets);
+    expect(find.byIcon(Icons.shopping_bag), findsWidgets);
+    expect((await repo.getExpenses('t1')).where((e) => e.category == 'food').length, 2);
   });
 
   testWidgets('the date range shows the trip length in days', (tester) async {

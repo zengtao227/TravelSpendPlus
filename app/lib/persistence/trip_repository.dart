@@ -7,6 +7,7 @@ import '../domain/participant.dart';
 import '../domain/trip.dart';
 import '../domain/expense.dart';
 import '../domain/exchange_rate.dart';
+import '../domain/expense_category.dart';
 import '../services/expense_photo_store.dart';
 import '../services/trip_photo_store.dart';
 import 'database.dart' hide Trip, Participant, Expense;
@@ -375,7 +376,13 @@ class TripRepository {
   Future<List<String>> getCustomCategories(String tripId) async {
     final rows =
         await (_db.select(_db.tripCategories)..where((c) => c.tripId.equals(tripId))).get();
-    return rows.map((row) => row.name).toList();
+    // A built-in category can have a saved display/icon/hidden setting too,
+    // but it was never a custom category and must not become one in backups
+    // or the old add-expense API.
+    return rows
+        .map((row) => row.name)
+        .where((name) => !isBuiltInExpenseCategoryKey(name))
+        .toList();
   }
 
   Future<void> addCustomCategory(String tripId, String name) async {
@@ -385,6 +392,69 @@ class TripRepository {
     if (existing != null) return; // already exists — nothing to do
     await _db.into(_db.tripCategories)
         .insert(TripCategoriesCompanion.insert(tripId: tripId, name: name));
+  }
+
+  Future<List<CategorySetting>> getCategorySettings(String tripId) async {
+    final rows = await (_db.select(_db.tripCategories)
+          ..where((c) => c.tripId.equals(tripId))
+          ..orderBy([(c) => OrderingTerm.asc(c.name)]))
+        .get();
+    return rows
+        .where((row) => row.displayName != null || row.iconKey != null || row.hidden)
+        .map((row) => CategorySetting(
+              key: row.name,
+              displayName: row.displayName,
+              iconKey: row.iconKey,
+              hidden: row.hidden,
+            ))
+        .toList();
+  }
+
+  /// Upserts only presentation data. [CategorySetting.key] remains the
+  /// stored expense category key, so this must never rename an expense.
+  Future<void> saveCategorySetting(String tripId, CategorySetting setting) async {
+    if (setting.key.trim().isEmpty) {
+      throw ArgumentError.value(setting.key, 'setting.key', 'must not be empty');
+    }
+    final displayName = setting.displayName?.trim();
+    if (displayName != null && displayName.isEmpty) {
+      throw ArgumentError.value(setting.displayName, 'setting.displayName', 'must not be empty');
+    }
+    final existing = await (_db.select(_db.tripCategories)
+          ..where((c) => c.tripId.equals(tripId) & c.name.equals(setting.key)))
+        .getSingleOrNull();
+    final values = TripCategoriesCompanion(
+      displayName: Value(displayName),
+      iconKey: Value(setting.iconKey),
+      hidden: Value(setting.hidden),
+    );
+    if (existing == null) {
+      await _db.into(_db.tripCategories).insert(TripCategoriesCompanion.insert(
+            tripId: tripId,
+            name: setting.key,
+            displayName: Value(displayName),
+            iconKey: Value(setting.iconKey),
+            hidden: Value(setting.hidden),
+          ));
+      return;
+    }
+    await (_db.update(_db.tripCategories)..where((c) => c.id.equals(existing.id))).write(values);
+  }
+
+  /// The selectable keys combine built-ins, explicitly created categories,
+  /// and old imported expense keys. Hidden categories are deliberately left
+  /// out; edit UI can add its current key back while editing an old expense.
+  Future<List<String>> getAvailableCategoryKeys(String tripId) async {
+    final rows = await (_db.select(_db.tripCategories)..where((c) => c.tripId.equals(tripId))).get();
+    final expenseRows =
+        await (_db.select(_db.expenses)..where((e) => e.tripId.equals(tripId))).get();
+    final hiddenKeys = rows.where((row) => row.hidden).map((row) => row.name).toSet();
+    final keys = <String>{
+      ...kExpenseCategoryKeys,
+      ...rows.map((row) => row.name),
+      ...expenseRows.map((row) => row.category),
+    };
+    return keys.where((key) => !hiddenKeys.contains(key)).toList();
   }
 
   /// Assembles every trip currently in the database (with its expenses,
@@ -407,6 +477,7 @@ class TripRepository {
         expenses: expenses,
         exchangeRates: await getExchangeRates(trip.id),
         customCategories: await getCustomCategories(trip.id),
+        categorySettings: await getCategorySettings(trip.id),
         photoBase64: await TripPhotoStore.readBase64(trip.id),
         expensePhotosBase64: expensePhotos,
       ));
@@ -432,6 +503,9 @@ class TripRepository {
       }
       for (final name in bundle.customCategories) {
         await addCustomCategory(bundle.trip.id, name);
+      }
+      for (final setting in bundle.categorySettings) {
+        await saveCategorySetting(bundle.trip.id, setting);
       }
       for (final expense in bundle.expenses) {
         await addExpense(expense);

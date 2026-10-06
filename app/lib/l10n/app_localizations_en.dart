@@ -387,4 +387,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String dailyPlannedTotal(String amount) {
     return 'Planned total: $amount';
   }
+
+  @override
+  String get manageCategories => 'Manage categories';
+
+  @override
+  String get chooseCategoryIcon => 'Choose icon';
+
+  @override
+  String get hiddenCategory => 'Hidden';
+
+  @override
+  String get restoreCategory => 'Restore';
+
+  @override
+  String hideCategoryConfirm(String name) {
+    return 'Hide $name from new expenses? Existing expenses will keep their category and amount.';
+  }
+
+  @override
+  String get errorSaveCategory => 'Could not save category. Please try again.';
 }

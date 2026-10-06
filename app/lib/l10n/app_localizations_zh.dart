@@ -361,4 +361,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String dailyPlannedTotal(String amount) {
     return '计划合计：$amount';
   }
+
+  @override
+  String get manageCategories => '管理分类';
+
+  @override
+  String get chooseCategoryIcon => '选择图标';
+
+  @override
+  String get hiddenCategory => '已隐藏';
+
+  @override
+  String get restoreCategory => '恢复';
+
+  @override
+  String hideCategoryConfirm(String name) {
+    return '从新支出的选项中隐藏“$name”？已有费用的分类和金额会保留。';
+  }
+
+  @override
+  String get errorSaveCategory => '无法保存分类，请重试';
 }

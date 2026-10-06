@@ -6,6 +6,11 @@ or actual expenses, assign categories, and review totals and category-based
 breakdowns. Expenses in other currencies can be recorded with an exchange
 rate, including an optional live reference rate.
 
+Manage categories for each trip: add, rename, choose icons, hide, and restore
+without changing existing expense records. Category settings are included in
+complete backups. Daily totals include each day's share of multi-day expenses,
+and planned spending is shown separately.
+
 The app is designed for direct, local expense tracking without requiring an
 account. Trip data is stored by the app on the device. Network access is used
 when requesting the optional live exchange-rate feature.

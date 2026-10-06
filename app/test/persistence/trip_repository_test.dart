@@ -10,6 +10,7 @@ import 'package:travelspendplus/domain/participant.dart';
 import 'package:travelspendplus/domain/trip.dart';
 import 'package:travelspendplus/domain/expense.dart';
 import 'package:travelspendplus/domain/exchange_rate.dart';
+import 'package:travelspendplus/domain/expense_category.dart';
 import 'package:travelspendplus/persistence/database.dart' hide Trip, Participant, Expense;
 import 'package:travelspendplus/persistence/trip_repository.dart';
 import 'package:travelspendplus/services/expense_photo_store.dart';
@@ -759,7 +760,92 @@ void main() {
     expect(await repo.getCustomCategories('t2'), ['Visa fee']);
   });
 
+  test('category settings can hide and restore a custom category without changing expenses',
+      () async {
+    final trip = makeTrip();
+    await repo.createTrip(trip);
+    await repo.addCustomCategory(trip.id, 'Souvenirs');
+    await repo.addExpense(Expense(
+      id: 'e-category',
+      tripId: trip.id,
+      category: 'Souvenirs',
+      amount: Money.fromMajor(42, 'EUR'),
+      amountInHomeCurrency: Money.fromMajor(42, 'EUR'),
+      description: 'Gift',
+      date: DateTime.utc(2026, 1, 3),
+      endDate: DateTime.utc(2026, 1, 3),
+      location: '',
+      status: ExpenseStatus.actual,
+      includeInSplit: true,
+      paidBy: alice,
+      paidFor: [alice],
+    ));
+
+    await repo.saveCategorySetting(
+      trip.id,
+      const CategorySetting(
+        key: 'Souvenirs', displayName: ' Gifts ', iconKey: 'gifts', hidden: true),
+    );
+    expect(await repo.getCategorySettings(trip.id), const [
+      CategorySetting(key: 'Souvenirs', displayName: 'Gifts', iconKey: 'gifts', hidden: true),
+    ]);
+    expect(await repo.getAvailableCategoryKeys(trip.id), isNot(contains('Souvenirs')));
+    final hiddenExpense = (await repo.getExpenses(trip.id)).single;
+    expect(hiddenExpense.category, 'Souvenirs');
+    expect(hiddenExpense.amount, Money.fromMajor(42, 'EUR'));
+
+    await repo.saveCategorySetting(trip.id, const CategorySetting(key: 'Souvenirs'));
+    expect(await repo.getAvailableCategoryKeys(trip.id), contains('Souvenirs'));
+    final restoredExpense = (await repo.getExpenses(trip.id)).single;
+    expect(restoredExpense.category, 'Souvenirs');
+    expect(restoredExpense.amount, Money.fromMajor(42, 'EUR'));
+
+    await expectLater(
+      repo.saveCategorySetting(
+        trip.id,
+        const CategorySetting(key: 'Souvenirs', displayName: '   '),
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('category settings are isolated per trip and built-in settings are not custom categories',
+      () async {
+    await repo.createTrip(makeTrip());
+    await repo.createTrip(Trip(
+      id: 't2',
+      name: 'Korea',
+      startDate: DateTime.utc(2026, 2, 1),
+      endDate: DateTime.utc(2026, 2, 5),
+      homeCurrency: 'KRW',
+      totalBudget: Money.fromMajor(500000, 'KRW'),
+      participants: const [Participant(id: 'p3', name: 'Carol')],
+    ));
+
+    await repo.saveCategorySetting(
+      't1', const CategorySetting(key: 'food', displayName: 'Meals', iconKey: 'groceries'),
+    );
+    await repo.saveCategorySetting('t2', const CategorySetting(key: 'food', hidden: true));
+
+    expect(await repo.getCategorySettings('t1'), const [
+      CategorySetting(key: 'food', displayName: 'Meals', iconKey: 'groceries'),
+    ]);
+    expect(await repo.getCategorySettings('t2'), const [CategorySetting(key: 'food', hidden: true)]);
+    expect(await repo.getCustomCategories('t1'), isEmpty);
+    expect(await repo.getCustomCategories('t2'), isEmpty);
+    expect(await repo.getAvailableCategoryKeys('t1'), contains('food'));
+    expect(await repo.getAvailableCategoryKeys('t2'), isNot(contains('food')));
+  });
+
   group('export/import', () {
+    test('invalid category settings are rejected before creating imported trips', () async {
+      final backup = backupToJson([TripBundle(trip: makeTrip(), expenses: const [], exchangeRates: const [])]);
+      final tripJson = (backup['trips'] as List).single as Map<String, dynamic>;
+      tripJson['categorySettings'] = [{'key': 'food', 'displayName': '   '}];
+      await expectLater(repo.importAllTripsFromJson(backup), throwsFormatException);
+      expect(await repo.getAllTrips(), isEmpty);
+    });
+
     test('v6 complete backup restores every legacy field and photo without mixing records', () async {
       final trip = makeTrip();
       await repo.createTrip(trip);
@@ -876,6 +962,48 @@ void main() {
       expect(restoredCategories, ['Souvenirs']);
 
       await freshDb.close();
+    });
+
+    test('export/import preserves built-in and hidden custom category settings', () async {
+      final trip = makeTrip();
+      await repo.createTrip(trip);
+      await repo.addCustomCategory(trip.id, 'Souvenirs');
+      await repo.saveCategorySetting(
+        trip.id,
+        const CategorySetting(key: 'food', displayName: 'Meals', iconKey: 'groceries'),
+      );
+      await repo.saveCategorySetting(
+        trip.id,
+        const CategorySetting(key: 'Souvenirs', iconKey: 'gifts', hidden: true),
+      );
+
+      final backup = await repo.exportAllTripsToJson();
+      final freshDb = AppDatabase.memory();
+      addTearDown(freshDb.close);
+      final restoredRepo = TripRepository(freshDb);
+      await restoredRepo.importAllTripsFromJson(backup);
+
+      expect(await restoredRepo.getCategorySettings(trip.id), const [
+        CategorySetting(key: 'Souvenirs', iconKey: 'gifts', hidden: true),
+        CategorySetting(key: 'food', displayName: 'Meals', iconKey: 'groceries'),
+      ]);
+      expect(await restoredRepo.getCustomCategories(trip.id), ['Souvenirs']);
+    });
+
+    test('importing a v7 backup without category settings leaves them empty', () async {
+      final v7Backup = backupToJson([TripBundle(
+        trip: makeTrip(),
+        expenses: const [],
+        exchangeRates: const [],
+        customCategories: const ['Souvenirs'],
+      )]);
+      v7Backup['schemaVersion'] = 7;
+      final tripJson = (v7Backup['trips'] as List).single as Map<String, dynamic>;
+      tripJson.remove('categorySettings');
+
+      await repo.importAllTripsFromJson(v7Backup);
+      expect(await repo.getCategorySettings('t1'), isEmpty);
+      expect(await repo.getCustomCategories('t1'), ['Souvenirs']);
     });
 
     test('exportAllTripsToJson then importAllTripsFromJson round-trips a trip\'s photo', () async {

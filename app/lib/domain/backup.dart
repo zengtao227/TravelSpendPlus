@@ -2,6 +2,7 @@ import 'package:csv/csv.dart';
 
 import 'civil_date.dart';
 import 'exchange_rate.dart';
+import 'expense_category.dart';
 import 'expense.dart';
 import 'money.dart';
 import 'participant.dart';
@@ -38,7 +39,11 @@ import 'trip.dart';
 /// expense date as a deterministic fallback timestamp because they did not
 /// record creation order. Single-day expenses remain single-day. Allocation
 /// is now always derived from dates, including backups carrying a false flag.
-const int kBackupSchemaVersion = 7;
+///
+/// v8 added the optional per-trip `categorySettings` list. The setting key is
+/// intentionally separate from an expense's category key, so renaming or
+/// hiding a category never rewrites existing expense records.
+const int kBackupSchemaVersion = 8;
 
 class UnsupportedBackupVersionException implements Exception {
   final int foundVersion;
@@ -59,6 +64,7 @@ class TripBundle {
   final List<Expense> expenses;
   final List<ExchangeRate> exchangeRates;
   final List<String> customCategories;
+  final List<CategorySetting> categorySettings;
   // Base64-encoded JPEG (already compressed by TripPhotoStore) — null when
   // the trip has no stored photo. This file has no dart:io dependency, so
   // the actual file read/write happens in TripRepository's export/import,
@@ -75,6 +81,7 @@ class TripBundle {
     required this.expenses,
     required this.exchangeRates,
     this.customCategories = const [],
+    this.categorySettings = const [],
     this.photoBase64,
     this.expensePhotosBase64 = const {},
   });
@@ -132,6 +139,7 @@ Map<String, dynamic> tripBundleToJson(TripBundle bundle) {
     'exchangeRates':
         bundle.exchangeRates.map((r) => {'fromCurrency': r.fromCurrency, 'rate': r.rate}).toList(),
     'customCategories': bundle.customCategories,
+    'categorySettings': bundle.categorySettings.map((setting) => setting.toJson()).toList(),
     if (bundle.photoBase64 != null) 'photo': bundle.photoBase64,
   };
 }
@@ -208,12 +216,20 @@ TripBundle tripBundleFromJson(Map<String, dynamic> json) {
   // Absent in a v1 backup (customCategories didn't exist yet) — default to
   // empty rather than requiring the key, so old backups still import.
   final customCategories = (json['customCategories'] as List?)?.cast<String>() ?? const [];
+  // A v7 (or older) backup does not have presentation settings. Its category
+  // keys still import intact through expenses/customCategories above.
+  final categorySettings = (json['categorySettings'] as List?)
+          ?.cast<Map<String, dynamic>>()
+          .map(CategorySetting.fromJson)
+          .toList() ??
+      const [];
 
   return TripBundle(
     trip: trip,
     expenses: expenses,
     exchangeRates: exchangeRates,
     customCategories: customCategories,
+    categorySettings: categorySettings,
     photoBase64: json['photo'] as String?,
     expensePhotosBase64: expensePhotosBase64,
   );

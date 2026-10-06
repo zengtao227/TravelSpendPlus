@@ -138,5 +138,18 @@
         "type": "String"
       }
     }
-  }
+  },
+  "manageCategories": "Kategorien verwalten",
+  "chooseCategoryIcon": "Symbol auswählen",
+  "hiddenCategory": "Ausgeblendet",
+  "restoreCategory": "Wiederherstellen",
+  "hideCategoryConfirm": "{name} für neue Ausgaben ausblenden? Bestehende Ausgaben behalten Kategorie und Betrag.",
+  "@hideCategoryConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "errorSaveCategory": "Kategorie konnte nicht gespeichert werden. Bitte erneut versuchen."
 }

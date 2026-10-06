@@ -1,3 +1,4 @@
+import 'package:travelspendplus/domain/expense_category.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -58,6 +59,35 @@ void main() {
           liveRateService: liveRateService,
         ),
       );
+
+  testWidgets('new expenses omit hidden categories and use custom labels and icons', (tester) async {
+    await repo.saveCategorySetting('t1', const CategorySetting(key: 'food', hidden: true));
+    await repo.saveCategorySetting('t1', const CategorySetting(key: 'drinks', displayName: 'Coffee', iconKey: 'shopping'));
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    expect(find.text('餐饮'), findsNothing);
+    expect(find.text('Coffee'), findsOneWidget);
+    await tester.tap(find.text('Coffee'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('expenseAmountField')), '25');
+    await tester.tap(find.byKey(const Key('saveExpenseButton')));
+    await tester.pumpAndSettle();
+    expect((await repo.getExpenses('t1')).single.category, 'drinks');
+  });
+
+  testWidgets('long category names fit the dropdown on a small phone', (tester) async {
+    tester.view.physicalSize = const Size(320, 800);
+    await repo.saveCategorySetting('t1', const CategorySetting(
+      key: 'food', displayName: 'A very long category name for meals and snacks during the trip',
+    ));
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('expenseCategoryField')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('filling a valid home-currency expense saves it as actual by default',
       (tester) async {

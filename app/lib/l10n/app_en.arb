@@ -151,5 +151,18 @@
         "type": "String"
       }
     }
-  }
+  },
+  "manageCategories": "Manage categories",
+  "chooseCategoryIcon": "Choose icon",
+  "hiddenCategory": "Hidden",
+  "restoreCategory": "Restore",
+  "hideCategoryConfirm": "Hide {name} from new expenses? Existing expenses will keep their category and amount.",
+  "@hideCategoryConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "errorSaveCategory": "Could not save category. Please try again."
 }

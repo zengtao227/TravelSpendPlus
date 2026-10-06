@@ -163,6 +163,16 @@ void main() {
         paid_for_ids TEXT NOT NULL
       )
     ''');
+      // TripCategories was introduced in schema v4, so a real v6 database
+      // already has this table even when it contains no custom categories.
+      await legacy.customStatement('''
+      CREATE TABLE trip_categories (
+        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        trip_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        UNIQUE (trip_id, name)
+      )
+    ''');
       await legacy.customStatement('''
       INSERT INTO expenses VALUES (
         'e-v6', 't1', 'food', 3000, 'EUR', 3000, 'Dinner',
@@ -207,7 +217,69 @@ void main() {
       expect(range.endDate!.toUtc(), DateTime.utc(2026, 1, 4));
       expect(noEnd.spreadAcrossDays, false);
 
-      expect(userVersion.read<int>('user_version'), 7);
+      expect(userVersion.read<int>('user_version'), 8);
+    } finally {
+      await upgraded?.close();
+      await legacy?.close();
+      if (await tempDir.exists()) await tempDir.delete(recursive: true);
+    }
+  });
+
+  test('upgrades v7 category rows and expenses to schema v8 without losing data', () async {
+    await db.close();
+    final tempDir = await Directory.systemTemp.createTemp('v7_category_migration_test');
+    final file = File('${tempDir.path}/travelspendplus.sqlite');
+    AppDatabase? legacy;
+    AppDatabase? upgraded;
+    try {
+      legacy = AppDatabase(NativeDatabase(file, enableMigrations: false));
+      await legacy.customStatement('''
+        CREATE TABLE trip_categories (
+          id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+          trip_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          UNIQUE (trip_id, name)
+        )
+      ''');
+      await legacy.customStatement("INSERT INTO trip_categories (trip_id, name) VALUES ('t1', 'Souvenirs')");
+      await legacy.customStatement('''
+        CREATE TABLE expenses (
+          id TEXT NOT NULL PRIMARY KEY,
+          trip_id TEXT NOT NULL,
+          category TEXT NOT NULL,
+          amount_minor_units INTEGER NOT NULL,
+          amount_currency TEXT NOT NULL,
+          amount_in_home_currency_minor_units INTEGER NOT NULL,
+          description TEXT NOT NULL,
+          date INTEGER NOT NULL,
+          end_date INTEGER,
+          location TEXT NOT NULL DEFAULT '',
+          exclude_from_breakdown INTEGER NOT NULL DEFAULT 0,
+          spread_across_days INTEGER NOT NULL DEFAULT 0,
+          created_at INTEGER NOT NULL DEFAULT 0,
+          status TEXT NOT NULL,
+          include_in_split INTEGER NOT NULL,
+          paid_by_id TEXT NOT NULL,
+          paid_for_ids TEXT NOT NULL
+        )
+      ''');
+      await legacy.customStatement("INSERT INTO expenses VALUES ('e1', 't1', 'Souvenirs', 4200, 'EUR', 4200, 'Gift', 1767312000, 1767312000, '', 0, 0, 7, 'actual', 1, 'p1', 'p1')");
+      await legacy.customStatement('PRAGMA user_version = 7');
+      await legacy.close();
+      legacy = null;
+
+      upgraded = AppDatabase(NativeDatabase(file));
+      final category = (await upgraded.select(upgraded.tripCategories).get()).single;
+      final expense = (await upgraded.select(upgraded.expenses).get()).single;
+      final userVersion = await upgraded.customSelect('PRAGMA user_version').getSingle();
+
+      expect(category.name, 'Souvenirs');
+      expect(category.displayName, isNull);
+      expect(category.iconKey, isNull);
+      expect(category.hidden, isFalse);
+      expect(expense.category, 'Souvenirs');
+      expect(expense.amountMinorUnits, 4200);
+      expect(userVersion.read<int>('user_version'), 8);
     } finally {
       await upgraded?.close();
       await legacy?.close();

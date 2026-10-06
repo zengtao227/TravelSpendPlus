@@ -759,6 +759,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Planned total: {amount}'**
   String dailyPlannedTotal(String amount);
+
+  /// No description provided for @manageCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage categories'**
+  String get manageCategories;
+
+  /// No description provided for @chooseCategoryIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose icon'**
+  String get chooseCategoryIcon;
+
+  /// No description provided for @hiddenCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get hiddenCategory;
+
+  /// No description provided for @restoreCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restoreCategory;
+
+  /// No description provided for @hideCategoryConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide {name} from new expenses? Existing expenses will keep their category and amount.'**
+  String hideCategoryConfirm(String name);
+
+  /// No description provided for @errorSaveCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save category. Please try again.'**
+  String get errorSaveCategory;
 }
 
 class _AppLocalizationsDelegate

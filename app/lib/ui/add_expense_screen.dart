@@ -15,6 +15,7 @@ import '../persistence/trip_repository.dart';
 import '../services/expense_photo_store.dart';
 import '../services/live_rate_service.dart';
 import 'currency_field.dart';
+import 'category_settings_screen.dart';
 import 'formatting.dart';
 import 'market_rate_helper.dart';
 
@@ -128,6 +129,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   late ExpenseStatus _status;
   List<ExchangeRate> _existingRates = [];
   List<String> _customCategories = [];
+  List<String> _availableCategoryKeys = List.of(kExpenseCategoryKeys);
+  List<CategorySetting> _categorySettings = [];
+  bool _categoriesLoaded = false;
   String? _categoryError;
   late final LiveRateService _liveRateService;
   String? _pickedPhotoPath;
@@ -234,7 +238,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   Future<void> _loadCategories() async {
     final categories = await widget.repository.getCustomCategories(widget.trip.id);
-    if (mounted) setState(() => _customCategories = categories);
+    final settings = await widget.repository.getCategorySettings(widget.trip.id);
+    final available = await widget.repository.getAvailableCategoryKeys(widget.trip.id);
+    if (!mounted) return;
+    setState(() {
+      _customCategories = categories;
+      _categorySettings = settings;
+      _categoriesLoaded = true;
+      _availableCategoryKeys = available;
+      if (!_isEditing && _category != null && !available.contains(_category)) _category = null;
+    });
   }
 
   // Prompts for a new category name, persists it, and selects it. Declining
@@ -247,14 +260,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       context: context,
       builder: (context) => _AddCategoryDialog(
         isDuplicate: (trimmed) =>
+            trimmed == _kAddCategorySentinel ||
             kExpenseCategoryKeys.contains(trimmed.toLowerCase()) ||
-            _customCategories.any((c) => c.toLowerCase() == trimmed.toLowerCase()),
+            [...kExpenseCategoryKeys, ..._customCategories].any((c) =>
+                categoryLabel(context, c, settings: _categorySettings).toLowerCase() == trimmed.toLowerCase()),
       ),
     );
     if (name == null) return;
     await widget.repository.addCustomCategory(widget.trip.id, name);
     setState(() {
       _customCategories = [..._customCategories, name];
+      _availableCategoryKeys = [..._availableCategoryKeys, name];
       _category = name;
       _categoryError = null;
     });
@@ -305,7 +321,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
     final formValid = _formKey.currentState!.validate();
-    final categoryValid = _category != null;
+    final categoryValid = _categoriesLoaded && _category != null &&
+        (_isEditing || _availableCategoryKeys.contains(_category));
     setState(() => _categoryError = categoryValid ? null : l10n.errorSelectCategory);
     if (!formValid || !categoryValid) return;
 
@@ -415,6 +432,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               // selected). Validation is done by hand in _save() instead of
               // via a Form validator, matching the same manual-error-text
               // pattern ExchangeRateSettingsScreen already uses.
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  icon: const Icon(Icons.category_outlined),
+                  label: Text(l10n.manageCategories),
+                  onPressed: () async {
+                    await Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => CategorySettingsScreen(trip: widget.trip, repository: widget.repository),
+                    ));
+                    await _loadCategories();
+                  },
+                ),
+              ),
               InputDecorator(
                 decoration: InputDecoration(labelText: l10n.category, errorText: _categoryError),
                 child: DropdownButtonHideUnderline(
@@ -423,22 +453,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     value: _category,
                     isExpanded: true,
                     items: [
-                      for (final key in kExpenseCategoryKeys)
+                      for (final key in _availableCategoryKeys)
                         DropdownMenuItem(
                           value: key,
                           child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            Icon(categoryIcon(key), size: 18),
+                            Icon(categoryIcon(key, settings: _categorySettings), size: 18),
                             const SizedBox(width: 8),
-                            Text(categoryLabel(context, key)),
-                          ]),
-                        ),
-                      for (final name in _customCategories)
-                        DropdownMenuItem(
-                          value: name,
-                          child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            Icon(categoryIcon(name), size: 18),
-                            const SizedBox(width: 8),
-                            Text(name),
+                            Flexible(child: Text(
+                              categoryLabel(context, key, settings: _categorySettings),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            )),
                           ]),
                         ),
                       // Defensive: an existing expense's category might not be
@@ -447,12 +472,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       // this, `value: _category` pointing at an item that
                       // isn't in `items` throws.
                       if (_category != null &&
-                          !kExpenseCategoryKeys.contains(_category) &&
-                          !_customCategories.contains(_category))
-                        DropdownMenuItem(value: _category, child: Text(_category!)),
+                          !_availableCategoryKeys.contains(_category))
+                        DropdownMenuItem(value: _category, child: Text(categoryLabel(context, _category!, settings: _categorySettings))),
                       DropdownMenuItem(value: _kAddCategorySentinel, child: Text(l10n.addCategory)),
                     ],
-                    onChanged: (value) {
+                    onChanged: !_categoriesLoaded ? null : (value) {
                       if (value == _kAddCategorySentinel) {
                         _promptAddCategory();
                         return;

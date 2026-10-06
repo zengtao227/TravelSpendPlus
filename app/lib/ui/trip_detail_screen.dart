@@ -12,12 +12,14 @@ import '../domain/civil_date.dart';
 import '../domain/currency_converter.dart';
 import '../domain/exchange_rate.dart';
 import '../domain/expense.dart';
+import '../domain/expense_category.dart';
 import '../domain/money.dart';
 import '../domain/trip.dart';
 import '../persistence/trip_repository.dart';
 import '../services/expense_photo_store.dart';
 import '../services/trip_photo_store.dart';
 import 'add_expense_screen.dart';
+import 'category_settings_screen.dart';
 import 'create_trip_screen.dart';
 import 'exchange_rate_settings_screen.dart';
 import 'file_io.dart' as file_io;
@@ -58,11 +60,12 @@ class _TripPhotoAvatar extends StatelessWidget {
 // falling back to the category icon instead of a zero-size box.
 class _ExpenseLeadingAvatar extends StatelessWidget {
   final Expense expense;
-  const _ExpenseLeadingAvatar({required this.expense});
+  final List<CategorySetting> categories;
+  const _ExpenseLeadingAvatar({required this.expense, this.categories = const []});
 
   Widget _categoryIconAvatar() => CircleAvatar(
     backgroundColor: AppColors.mutedText.withValues(alpha: 0.15),
-    child: Icon(categoryIcon(expense.category), color: AppColors.mutedText),
+    child: Icon(categoryIcon(expense.category, settings: categories), color: AppColors.mutedText),
   );
 
   @override
@@ -154,6 +157,9 @@ List<_ExpenseDayGroup> _groupDailyAllocations(List<Expense> expenses) {
 
 class _TripDetailScreenState extends State<TripDetailScreen> {
   late Future<_TripDetailData> _future;
+  List<CategorySetting> _categorySettings = [];
+  String _categoryLabel(String key) => categoryLabel(context, key, settings: _categorySettings);
+  IconData _categoryIcon(String key) => categoryIcon(key, settings: _categorySettings);
   String? _viewCurrency; // null = show in home currency
   BreakdownDimension _breakdownDimension = BreakdownDimension.category;
 
@@ -167,6 +173,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     final trip = await widget.repository.getTrip(widget.tripId);
     final expenses = await widget.repository.getExpenses(widget.tripId);
     final rates = await widget.repository.getExchangeRates(widget.tripId);
+    _categorySettings = await widget.repository.getCategorySettings(widget.tripId);
     return _TripDetailData(trip!, expenses, rates);
   }
 
@@ -254,7 +261,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           l10n.csvHeaderCurrency,
           l10n.csvHeaderAmountInHomeCurrency,
         ],
-        categoryLabel: (key) => categoryLabel(context, key),
+        categoryLabel: (key) => _categoryLabel(key),
         statusLabel: (status) => status == ExpenseStatus.actual
             ? l10n.statusActual
             : l10n.statusPlanned,
@@ -370,10 +377,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             for (final expense in matchingExpenses)
               ListTile(
                 key: Key('breakdownExpense-${expense.id}'),
-                leading: Icon(categoryIcon(expense.category)),
+                leading: Icon(_categoryIcon(expense.category)),
                 title: Text(
                   expense.description.isEmpty
-                      ? categoryLabel(context, expense.category)
+                      ? _categoryLabel(expense.category)
                       : expense.description,
                 ),
                 subtitle: Text(
@@ -406,6 +413,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               final trip = snapshot.data!.trip;
               return Row(
                 children: [
+                  IconButton(
+                    tooltip: l10n.manageCategories,
+                    icon: const Icon(Icons.category_outlined),
+                    onPressed: () async {
+                      await Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => CategorySettingsScreen(trip: trip, repository: widget.repository),
+                      ));
+                      if (mounted) _refresh();
+                    },
+                  ),
                   IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () async {
@@ -478,7 +495,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             if (_breakdownDimension == BreakdownDimension.location) {
               return key.isEmpty ? l10n.noLocation : key;
             }
-            return categoryLabel(context, key);
+            return _categoryLabel(key);
           }
 
           final displayCurrency = _viewCurrency ?? trip.homeCurrency;
@@ -957,16 +974,15 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                         );
                         _refresh();
                       },
-                      leading: _ExpenseLeadingAvatar(expense: allocation.expense),
+                      leading: _ExpenseLeadingAvatar(expense: allocation.expense, categories: _categorySettings),
                       title: Text(
                           allocation.expense.description.isEmpty
-                            ? categoryLabel(context,
-                                  allocation.expense.category)
+                            ? _categoryLabel(allocation.expense.category)
                             : allocation.expense.description,
                       ),
                       subtitle: Text(
                           [
-                            categoryLabel(context, allocation.expense.category),
+                            _categoryLabel(allocation.expense.category),
                             if (allocation.expense.location.isNotEmpty)
                               allocation.expense.location,
                             if (allocation.expense.spreadAcrossDays)

@@ -83,13 +83,17 @@ class TripExchangeRates extends Table {
       ];
 }
 
-/// A trip's user-added custom expense categories, additional to the fixed
-/// six built-in keys (see `domain/expense_category.dart`) — same shape and
-/// purpose as [TripExchangeRates]: a per-trip, user-extensible list.
+/// Custom category keys and per-trip overrides for built-in categories.
+/// Names remain stable so presentation changes never rewrite old expenses.
 class TripCategories extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get tripId => text().references(Trips, #id)();
+  // Immutable expense/category key. For legacy custom categories this is the
+  // user-entered name; presentation fields below can now change independently.
   TextColumn get name => text()();
+  TextColumn get displayName => text().nullable()();
+  TextColumn get iconKey => text().nullable()();
+  BoolColumn get hidden => boolean().withDefault(const Constant(false))();
 
   @override
   List<Set<Column>> get uniqueKeys => [
@@ -110,7 +114,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -147,6 +151,14 @@ class AppDatabase extends _$AppDatabase {
             await m.database.customStatement(
               'UPDATE expenses SET spread_across_days = 1 WHERE end_date > date',
             );
+          }
+          // Databases before v4 create TripCategories here from the current
+          // table definition, which already has these three fields. Existing
+          // v4-v7 tables need only the additive migration below.
+          if (from >= 4 && from < 8) {
+            await m.addColumn(tripCategories, tripCategories.displayName);
+            await m.addColumn(tripCategories, tripCategories.iconKey);
+            await m.addColumn(tripCategories, tripCategories.hidden);
           }
         },
       );

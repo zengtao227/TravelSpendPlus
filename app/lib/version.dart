@@ -3,4 +3,4 @@
 /// screenshot can tell exactly which build is actually running — this is
 /// the only reliable way to distinguish "already fixed, not yet installed"
 /// from "actually still broken" when debugging a report over chat.
-const String kAppVersion = '1.1.3+21';
+const String kAppVersion = '1.1.4+22';
