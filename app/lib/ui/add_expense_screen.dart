@@ -531,7 +531,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               const SizedBox(height: 12),
               ListTile(
                 key: const Key('expenseDateField'),
-                title: Text(l10n.date),
+                title: Text(l10n.startDate),
                 subtitle: Text(formatDate(context, _date)),
                 onTap: _pickDate,
               ),

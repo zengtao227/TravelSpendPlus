@@ -84,6 +84,15 @@ void main() {
         reason: 'left untouched, endDate defaults to the same single day as date');
   });
 
+  testWidgets('the expense form labels both ends of a date range clearly',
+      (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+
+    expect(find.text('开始日期'), findsOneWidget);
+    expect(find.text('结束日期'), findsOneWidget);
+  });
+
   testWidgets('the expense form keeps its save action above system insets', (
     tester,
   ) async {

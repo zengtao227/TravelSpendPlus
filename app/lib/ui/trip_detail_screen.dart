@@ -610,85 +610,74 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       if (value != null) _onViewCurrencyChanged(value, trip);
                     },
                   );
+                  final legend = Wrap(
+                    spacing: 16,
+                    runSpacing: 4,
+                    children: [
+                      _legendItem(
+                        context,
+                        AppColors.teal,
+                        l10n.actualLabel,
+                        display(summary.actualTotal),
+                      ),
+                      _legendItem(
+                        context,
+                        AppColors.gold,
+                        l10n.plannedLabel,
+                        display(summary.plannedTotal),
+                      ),
+                      if (hasBudget)
+                        _legendItem(
+                          context,
+                          AppColors.mutedText,
+                          l10n.remainingLabel,
+                          display(summary.remaining),
+                        ),
+                    ],
+                  );
                   return Card(
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) => Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // With budget tracking off, there's no meaningful
-                            // "total budget" number to show — the currency
-                            // dropdown (still needed as the entry point for
-                            // viewing in / switching the home currency) moves
-                            // up on its own instead of sitting beside a
-                            // misleading "0.00".
-                            if (hasBudget) ...[
-                              Text(
-                                l10n.totalBudget,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.mutedText,
-                                ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (hasBudget) ...[
+                            Text(
+                              l10n.totalBudget,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.mutedText,
                               ),
-                              if (constraints.maxWidth < 400) ...[
-                                Text(
-                                  formatMoney(display(summary.totalBudget)),
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.headlineMedium,
-                                ),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: currencyDropdown,
-                                ),
-                              ] else
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      formatMoney(display(summary.totalBudget)),
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.headlineMedium,
-                                    ),
-                                    currencyDropdown,
-                                  ],
-                                ),
-                              const SizedBox(height: 8),
-                            ] else
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: currencyDropdown,
-                              ),
-                            Wrap(
-                              spacing: 16,
-                              runSpacing: 8,
+                            ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                _legendItem(
-                                  context,
-                                  AppColors.teal,
-                                  l10n.actualLabel,
-                                  display(summary.actualTotal),
-                                ),
-                                _legendItem(
-                                  context,
-                                  AppColors.gold,
-                                  l10n.plannedLabel,
-                                  display(summary.plannedTotal),
-                                ),
-                                if (hasBudget)
-                                  _legendItem(
-                                    context,
-                                    AppColors.mutedText,
-                                    l10n.remainingLabel,
-                                    display(summary.remaining),
+                                Expanded(
+                                  child: Text(
+                                    formatMoney(display(summary.totalBudget)),
+                                    style:
+                                        Theme.of(context).textTheme.titleLarge,
                                   ),
+                                ),
+                                const SizedBox(width: 8),
+                                currencyDropdown,
                               ],
                             ),
-                          ],
-                        ),
+                            const SizedBox(height: 4),
+                            legend,
+                          ] else
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: legend),
+                                const SizedBox(width: 8),
+                                currencyDropdown,
+                              ],
+                            ),
+                        ],
                       ),
                     ),
                   );
