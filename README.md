@@ -52,6 +52,13 @@ F-Droid builds and signs its distributed APK. Maintainers publishing through
 another channel must configure a private release keystore outside version
 control and must never commit keystore files or passwords.
 
+## Installation packages
+
+Retained APKs are stored locally in `releases/<version>/`. See
+[`releases/README.md`](releases/README.md) for package selection and signing
+compatibility. Binary version folders are ignored by Git; downloadable packages
+are attached to [GitHub Releases](https://github.com/zengtao227/TravelSpendPlus/releases).
+
 ## F-Droid
 
 Store metadata is maintained under

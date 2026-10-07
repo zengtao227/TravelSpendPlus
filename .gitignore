@@ -1,1 +1,4 @@
 .DS_Store
+
+# Release binaries live here locally and are published as GitHub assets.
+/releases/*/

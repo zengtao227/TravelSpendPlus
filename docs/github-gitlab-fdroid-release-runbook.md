@@ -261,8 +261,9 @@ later docs-only commit on `main` is allowed but must not retag the release.
 ### Step 9 — Sign the three upstream GitHub APKs
 
 Reproducible F-Droid verification requires one developer-signed reference APK
-for each ABI. Work on copies outside the repository and keep the public build
-configuration unsigned. Locate `zipalign` and `apksigner` in the installed
+for each ABI. Keep final APKs in the Git-ignored project directory
+`releases/<version>/` and keep the public build configuration unsigned.
+Signing keys stay outside the repository. Locate `zipalign` and `apksigner` in the installed
 Android SDK build-tools directory, then use a release-specific temporary
 directory.
 
