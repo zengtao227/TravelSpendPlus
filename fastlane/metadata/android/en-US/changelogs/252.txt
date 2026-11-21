@@ -1,0 +1,1 @@
+This maintenance release prepares the Android packages for reproducible builds on F-Droid. Travel budgeting and expense tracking work as before.
