@@ -187,6 +187,9 @@ embeds the checkout path, so use the same path and source commit timestamp as
 the F-Droid build. Build all three target ABIs together. Each F-Droid build entry
 selects the corresponding split APK from that set.
 
+Use the Flutter SDK commit recorded in `app/.metadata` under `version.revision`.
+The F-Droid recipe reads that value from the tagged source before running Flutter.
+
 ```sh
 cd app
 flutter pub get
