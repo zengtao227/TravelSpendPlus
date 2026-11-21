@@ -39,11 +39,11 @@ publishes the developer-signed APK rather than replacing its signing identity.
 - Local F-Droid recipe copy:
   `docs/fdroid/com.zengtao.travelspendplus.yml`
 - Mirror workflow: `.github/workflows/mirror-to-gitlab.yml`
-- Source release: `1.0.2+17`
+- Source release: `1.1.7+25`
 - ABI version-code mapping: `armeabi-v7a = base*10+1`, `arm64-v8a = base*10+2`,
   `x86_64 = base*10+3`
-- For base code `17`, published Android version codes are `171`, `172`, `173`.
-- Release tag: `v1.0.2`
+- For base code `25`, published Android version codes are `251`, `252`, `253`.
+- Release tag: `v1.1.7`
 - Current F-Droid submission:
   `https://gitlab.com/fdroid/fdroiddata/-/merge_requests/44806`
 
@@ -181,6 +181,12 @@ Review results rather than treating every textual match as a dependency.
 
 ### Step 5 — Run the release gate
 
+Build the public reference APKs with the F-Droid Linux toolchain from
+`/home/vagrant/build/com.zengtao.travelspendplus/app`. Flutter's native output
+embeds the checkout path, so use the same path and source commit timestamp as
+the F-Droid build. Build all three target ABIs together. Each F-Droid build entry
+selects the corresponding split APK from that set.
+
 ```sh
 cd app
 flutter pub get
@@ -274,16 +280,18 @@ signing process, and clear it afterwards:
 RELEASE_STORE_PASSWORD="$(security find-generic-password -s com.zengtao.travelspendplus.release-signing -a zengtao227 -w)"
 export RELEASE_STORE_PASSWORD
 
-zipalign -p -f 4 <unsigned-apk-copy> <aligned-apk>
+zipalign -c -P 16 4 <unsigned-apk>
+cp <unsigned-apk> <public-apk>
 apksigner sign \
+  --alignment-preserved true \
   --ks "/Users/zengtao/Library/Application Support/TravelSpendPlus/release.keystore" \
   --ks-key-alias travelspendplus \
   --ks-pass env:RELEASE_STORE_PASSWORD \
   --key-pass env:RELEASE_STORE_PASSWORD \
-  <aligned-apk>
+  <public-apk>
 
-apksigner verify --verbose --print-certs <aligned-apk>
-shasum -a 256 <aligned-apk>
+apksigner verify --verbose --print-certs <public-apk>
+shasum -a 256 <public-apk>
 unset RELEASE_STORE_PASSWORD
 ```
 
@@ -296,6 +304,10 @@ TravelSpendPlus-<versionName>+<base*10+3>.apk
 ```
 
 The certificate fingerprint must match the value in section 3 for every APK.
+Build Tools 35 and newer can change ZIP alignment during signing. Preserving
+the build's existing alignment lets F-Droid copy the release signature onto its
+rebuild. Verify that signature copy with `fdroidserver.common.verify_apks`
+against each unsigned APK before uploading the public reference packages.
 Do not publish an unsigned or debug-signed APK as a release asset.
 
 ### Step 10 — Publish the GitHub Release
